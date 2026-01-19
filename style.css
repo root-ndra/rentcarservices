@@ -1,129 +1,142 @@
 /* --- VARIABLES & RESET --- */
 :root {
     --primary: #3498db;
-    --primary-dark: #2980b9;
-    --glass-bg: rgba(255, 255, 255, 0.9);
-    --dark-glass: rgba(30, 40, 50, 0.95);
-    --radius: 12px;
-    --shadow: 0 8px 30px rgba(0,0,0,0.2);
+    --primary-dark: #2c3e50;
+    --white-glass: rgba(255, 255, 255, 0.9);
+    --dark-glass: rgba(44, 62, 80, 0.95);
+    --success: #27ae60;
+    --danger: #e74c3c;
+    --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
 body { 
     font-family: 'Segoe UI', sans-serif; 
-    color: #333; 
-    background-size: cover; 
-    background-attachment: fixed; 
-    background-position: center;
-    background-color: #333; /* Fallback */
-    min-height: 100vh;
-    display: flex; flex-direction: column;
+    color: var(--primary-dark); 
+    line-height: 1.6;
+    background: url('https://i.ibb.co/JR6fhqY8/soarano.png') no-repeat center center fixed;
+    background-size: cover;
+    overflow: hidden; /* Empêche le scroll global classique */
+    height: 100vh;
+    width: 100vw;
 }
 
-/* --- HEADER --- */
+/* --- SCROLL SNAP CONTAINER (LE COEUR DU SYSTÈME) --- */
+.snap-container {
+    height: 100vh;
+    width: 100vw;
+    overflow-y: scroll; /* Permet le scroll vertical */
+    scroll-snap-type: y mandatory; /* Force l'arrêt sur les sections */
+    scroll-behavior: smooth;
+}
+
+/* Chaque section fait exactement la taille de l'écran */
+.snap-section {
+    height: 100vh;
+    width: 100vw;
+    scroll-snap-align: start;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding-top: 80px; /* Espace pour la navbar */
+    overflow: hidden; /* Pas de débordement */
+}
+
+/* Contenu interne scrollable (ex: liste voitures trop longue) */
+.scrollable-content {
+    flex: 1;
+    overflow-y: auto; /* Scroll interne autorisé */
+    padding: 20px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    /* Masquer la barre de scroll disgracieuse */
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+}
+
+/* --- NAVBAR FIXE --- */
 .navbar {
-    background: var(--dark-glass);
-    color: white;
-    padding: 15px 0;
-    position: sticky; top: 0; z-index: 1000;
+    position: fixed; top: 0; left: 0; width: 100%;
+    background: var(--dark-glass); backdrop-filter: blur(10px);
+    padding: 15px 30px; display: flex; justify-content: space-between; align-items: center;
+    z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
-.nav-container {
-    max-width: 1200px; margin: 0 auto; display: flex; 
-    justify-content: space-between; align-items: center; padding: 0 20px;
-}
-.logo { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 1.4rem; }
-.nav-links { list-style: none; display: flex; gap: 20px; }
-.nav-links a { color: white; text-decoration: none; transition: 0.3s; }
+.logo-container { display: flex; align-items: center; gap: 10px; color: white; font-weight: bold; font-size: 1.2rem; }
+.nav-logo { height: 40px; }
+.nav-links { list-style: none; display: flex; gap: 25px; }
+.nav-links a { color: white; text-decoration: none; font-weight: 500; text-transform: uppercase; font-size: 0.9rem; transition: 0.3s; cursor: pointer; }
 .nav-links a:hover { color: var(--primary); }
-.menu-toggle { display: none; background: none; border: none; color: white; font-size: 1.5rem; }
+.menu-toggle { display: none; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
 
-/* --- HERO --- */
-.hero-banner {
-    text-align: center; padding: 60px 20px; color: white;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.7);
-}
-.hero-banner h1 { font-size: 2.5rem; margin-bottom: 10px; }
-
-/* --- FORMULAIRE & CARDS --- */
-.container-form { max-width: 900px; margin: 0 auto 50px; padding: 0 20px; }
-.glass-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    border-radius: var(--radius);
-    padding: 30px;
+/* --- HERO SECTION (ACCUEIL) --- */
+.hero-content {
+    text-align: center; color: white;
+    background: rgba(44, 62, 80, 0.7);
+    padding: 40px; border-radius: 15px;
+    backdrop-filter: blur(5px);
+    margin: auto; /* Centre verticalement et horizontalement */
+    max-width: 800px;
     box-shadow: var(--shadow);
 }
+.hero-content h1 { font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 2px 10px black; }
+.btn-hero { background: var(--primary); color: white; border: none; padding: 15px 40px; font-size: 1.2rem; border-radius: 50px; cursor: pointer; transition: 0.3s; margin-top: 20px; font-weight: bold; }
+.btn-hero:hover { transform: scale(1.05); background: #2980b9; }
 
-.options-grid { 
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; 
-    margin-bottom: 30px;
+/* --- GRILLES (VOITURES / MEDIA) --- */
+.grid-voitures { 
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; 
+    padding-bottom: 50px;
 }
-.card-car {
-    background: white; border-radius: 8px; overflow: hidden; cursor: pointer;
-    border: 2px solid transparent; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+.carte-voiture {
+    background: var(--white-glass); border-radius: 12px; overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2); transition: 0.3s;
+    display: flex; flex-direction: column;
 }
-.card-car img { width: 100%; height: 140px; object-fit: cover; }
-.card-info { padding: 10px; text-align: center; }
-.card-car:hover { transform: translateY(-3px); }
-.card-car.selected { border-color: var(--primary); background: #f0f8ff; }
+.carte-voiture:hover { transform: translateY(-5px); }
+.carte-voiture img { width: 100%; height: 180px; object-fit: cover; }
+.carte-voiture h3 { padding: 10px 15px; font-size: 1.2rem; margin: 0; }
+.carte-voiture p { padding: 0 15px; font-size: 0.9rem; color: #666; }
+.carte-voiture .prix { color: var(--primary); font-weight: bold; font-size: 1.1rem; margin: 5px 0; }
+.carte-voiture button { margin-top: auto; width: 100%; padding: 15px; background: var(--primary-dark); color: white; border: none; cursor: pointer; font-weight: bold; }
 
-/* --- CHAMPS DE SAISIE --- */
-.sub-title {
-    margin: 30px 0 15px; border-bottom: 2px solid var(--primary); 
-    padding-bottom: 5px; color: var(--primary-dark);
+/* --- FORMULAIRES & RESERVATION --- */
+.container-form {
+    background: var(--white-glass); padding: 30px; border-radius: 12px;
+    max-width: 900px; margin: 0 auto 50px;
 }
-.grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-.form-group { display: flex; flex-direction: column; }
-.form-group label { font-size: 0.9rem; font-weight: 600; margin-bottom: 5px; }
-.form-group input { padding: 12px; border: 1px solid #ccc; border-radius: 6px; }
+.grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 10px; }
+.btn-whatsapp { background: #25D366; color: white; width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+.resume-box { background: var(--primary-dark); color: white; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: right; }
 
-/* Style spécial pour les trajets */
-.trajet-grid input { background: #f9f9f9; border-left: 3px solid var(--primary); }
+/* --- DIVERTISSEMENT & AVIS --- */
+.media-tabs button { padding: 10px 20px; background: rgba(255,255,255,0.5); border: none; cursor: pointer; margin-right: 5px; font-weight: bold; border-radius: 5px 5px 0 0; }
+.media-tabs button.active-tab { background: white; color: var(--primary); }
+.contact-layout { display: flex; flex-wrap: wrap; gap: 30px; }
+.form-contact-box, .avis-box { flex: 1; background: var(--white-glass); padding: 20px; border-radius: 12px; min-width: 300px; }
 
-/* --- BOUTONS & ALERTES --- */
-.btn-primary-large {
-    width: 100%; padding: 18px; background: var(--primary); color: white;
-    border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold;
-    cursor: pointer; margin-top: 25px; transition: 0.3s;
+/* --- FOOTER (DANS SECTION CONTACT) --- */
+.footer-internal {
+    margin-top: 40px; padding: 20px; background: var(--dark-glass); color: white; text-align: center; border-radius: 12px;
 }
-.btn-primary-large:hover { background: var(--primary-dark); }
-.btn-primary-large:disabled { background: #ccc; cursor: not-allowed; }
 
-.warning-box {
-    background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px;
-    margin-top: 20px; border-left: 5px solid #ffc107;
+/* --- BOUTON FLOTTANT --- */
+.floating-call-btn {
+    position: fixed; bottom: 20px; right: 20px;
+    background: #2ecc71; color: white; width: 60px; height: 60px;
+    border-radius: 50%; display: flex; justify-content: center; align-items: center;
+    text-decoration: none; font-size: 1.5rem; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    animation: pulse 2s infinite;
 }
-.price-tag { text-align: center; font-size: 1.3rem; font-weight: bold; margin: 20px 0; color: #27ae60; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(46, 204, 113, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); } }
 
-/* --- FLIP CARDS (CONDITIONS) --- */
-.flip-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-.flip-card { background: transparent; height: 200px; perspective: 1000px; }
-.flip-card-inner {
-    position: relative; width: 100%; height: 100%; text-align: center;
-    transition: transform 0.6s; transform-style: preserve-3d;
-}
-.flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
-.flip-card-front, .flip-card-back {
-    position: absolute; width: 100%; height: 100%;
-    backface-visibility: hidden; border-radius: 10px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-.flip-card-front { background: var(--dark-glass); color: white; }
-.flip-card-back { background: white; color: #333; transform: rotateY(180deg); overflow-y: auto; }
-
-/* --- FOOTER --- */
-#main-footer {
-    background: var(--dark-glass); color: white; padding: 40px 20px; margin-top: auto;
-}
-.footer-content {
-    max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 30px;
-}
-.social-links a { color: white; font-size: 1.5rem; margin-right: 15px; text-decoration: none; }
-
-/* RESPONSIVE */
+/* --- RESPONSIVE --- */
 @media (max-width: 768px) {
-    .nav-links { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; width: 100%; background: var(--dark-glass); padding: 20px; }
+    .nav-links { display: none; position: absolute; top: 100%; left: 0; width: 100%; background: var(--dark-glass); flex-direction: column; padding: 20px; text-align: center; }
     .nav-links.active { display: flex; }
     .menu-toggle { display: block; }
+    .grid-form { grid-template-columns: 1fr; }
+    .hero-content h1 { font-size: 1.8rem; }
 }

@@ -2,156 +2,202 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Admin - Rija Cars</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Rija Cars</title>
+    <link rel="stylesheet" href="style.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
     <style>
-        /* Styles spécifiques Admin pour ne pas surcharger style.css */
-        .admin-body { background: #f0f2f5; color: #333; padding: 20px; }
-        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .admin-card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        
-        /* Switch Toggle */
-        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #2196F3; }
-        input:checked + .slider:before { transform: translateX(26px); }
-
-        .car-admin-item { display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #eee; padding: 10px 0; }
-        .car-admin-item img { width: 80px; height: 50px; object-fit: cover; border-radius: 6px; }
-        .toggle-label { font-size: 0.85rem; color: #666; margin-left: 10px; }
-
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-size: 0.9rem; }
-        th { background: #f8f9fa; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
-        .badge-attente { background: #fff3cd; color: #856404; }
-        .badge-valide { background: #d4edda; color: #155724; }
+        /* Styles Admin spécifiques intégrés */
+        body { overflow: auto; background: #f4f6f9; height: auto; } /* Override du scroll snap */
+        .admin-header { background: white; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; }
+        .admin-container { padding: 20px; max-width: 1400px; margin: 0 auto; }
+        .admin-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn { padding: 10px 20px; border: none; background: white; cursor: pointer; border-radius: 5px; font-weight: bold; }
+        .tab-btn.active { background: #2c3e50; color: white; }
+        .view-section { display: none; }
+        .table-admin { width: 100%; border-collapse: collapse; background: white; }
+        .table-admin th, .table-admin td { padding: 15px; border-bottom: 1px solid #ddd; text-align: left; }
+        .form-box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
     </style>
 </head>
-<body class="admin-body">
+<body>
 
 <div class="admin-header">
-    <h1><i class="fas fa-cogs"></i> Administration</h1>
-    <a href="index.html" class="btn-primary-large" style="width:auto; padding: 10px 20px; margin:0;">Retour Site</a>
+    <h1>Administration Rija Cars</h1>
+    <a href="index.html" class="btn-dark">Retour Site</a>
 </div>
 
-<section class="admin-card">
-    <h2><i class="fas fa-car"></i> Gestion Affichage Calendrier</h2>
-    <p style="font-size:0.9rem; color:#666; margin-bottom:15px;">Activez ou désactivez l'affichage du calendrier public pour chaque voiture.</p>
-    <div id="liste-voitures-admin">
-        Chargement...
+<div class="admin-container">
+    
+    <div class="admin-tabs">
+        <button class="tab-btn active" onclick="switchTab('resas')">Réservations</button>
+        <button class="tab-btn" onclick="switchTab('voitures')">Voitures</button>
+        <button class="tab-btn" onclick="switchTab('maint')">Maintenance</button>
+        <button class="tab-btn" onclick="switchTab('partenaires')">Partenaires</button>
+        <button class="tab-btn" onclick="switchTab('media')">Divertissement</button>
+        <button class="tab-btn" onclick="switchTab('avis')">Avis</button>
+        <button class="tab-btn" onclick="switchTab('pubs')">Pubs</button>
     </div>
-</section>
 
-<section class="admin-card">
-    <h2><i class="fas fa-list-alt"></i> Demandes de Réservation</h2>
-    <div style="overflow-x: auto;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Client</th>
-                    <th>Véhicule</th>
-                    <th>Dates</th>
-                    <th>Logistique (Livr/Récup)</th>
-                    <th>Trajet Prévu</th>
-                    <th>Prix Total</th>
-                    <th>Statut</th>
-                </tr>
-            </thead>
-            <tbody id="table-reservations">
-                </tbody>
+    <div id="view-resas" class="view-section" style="display:block;">
+        <div class="form-box">
+            <h3>Ajouter Réservation Manuelle</h3>
+            <input type="text" id="new-resa-client" placeholder="Nom Client">
+            <select id="new-resa-car"></select>
+            <input type="date" id="new-resa-debut">
+            <input type="date" id="new-resa-fin">
+            <button onclick="addResaManual()" class="btn-dark">Créer</button>
+        </div>
+        <table class="table-admin">
+            <thead><tr><th>ID</th><th>Client</th><th>Voiture</th><th>Dates</th><th>Statut</th><th>Action</th></tr></thead>
+            <tbody id="tbody-resas"></tbody>
         </table>
     </div>
-</section>
+
+    <div id="view-voitures" class="view-section">
+        <div class="form-box">
+            <h3>Ajouter Voiture</h3>
+            <input type="text" id="new-car-nom" placeholder="Nom">
+            <input type="number" id="new-car-prix" placeholder="Prix">
+            <input type="text" id="new-car-img" placeholder="URL Image">
+            <button onclick="addCar()" class="btn-dark">Ajouter</button>
+        </div>
+        <div id="grid-admin-cars" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:20px;"></div>
+    </div>
+
+    <div id="view-maint" class="view-section">
+        <div class="form-box">
+            <h3>Ajouter Maintenance</h3>
+            <select id="maint-car-select"></select>
+            <input type="text" id="maint-type" placeholder="Type (Vidange, Pneus...)">
+            <input type="number" id="maint-cout" placeholder="Coût">
+            <input type="date" id="maint-date">
+            <button onclick="addMaint()" class="btn-dark">Enregistrer</button>
+        </div>
+        <table class="table-admin"><tbody id="tbody-maint"></tbody></table>
+    </div>
+
+    <div id="view-partenaires" class="view-section">
+        <div class="form-box">
+            <h3>Ajouter Partenaire</h3>
+            <input type="text" id="part-nom" placeholder="Nom">
+            <input type="email" id="part-email" placeholder="Email">
+            <button onclick="addPartner()" class="btn-dark">Ajouter</button>
+        </div>
+        <table class="table-admin"><tbody id="tbody-partenaires"></tbody></table>
+    </div>
+
+    <div id="view-media" class="view-section">
+        <div class="form-box">
+            <h3>Ajouter Media</h3>
+            <input type="text" id="media-nom" placeholder="Titre / Nom Radio">
+            <input type="text" id="media-url" placeholder="URL Audio / Flux">
+            <select id="media-type"><option value="radios">Radio</option><option value="divertissements">Playlist</option></select>
+            <button onclick="addMedia()" class="btn-dark">Ajouter</button>
+        </div>
+        <table class="table-admin"><tbody id="tbody-media"></tbody></table>
+    </div>
+
+    <div id="view-avis" class="view-section">
+        <h3>Modération Avis</h3>
+        <table class="table-admin"><tbody id="tbody-avis"></tbody></table>
+    </div>
+
+    <div id="view-pubs" class="view-section">
+        <div class="form-box">
+            <h3>Ajouter Publicité</h3>
+            <input type="text" id="pub-societe" placeholder="Société">
+            <input type="text" id="pub-img" placeholder="URL Image">
+            <button onclick="addPub()" class="btn-dark">Ajouter</button>
+        </div>
+        <table class="table-admin"><tbody id="tbody-pubs"></tbody></table>
+    </div>
+
+</div>
 
 <script>
-    // --- SUPABASE ADMIN ---
-    const sb = supabase.createClient(
-        'https://ctijwjcjmbfmfhzwbguk.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk'
-    );
+    // SUPABASE SETUP
+    const SUPABASE_URL = 'https://ctijwjcjmbfmfhzwbguk.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function initAdmin() {
-        chargerVoituresAdmin();
-        chargerReservations();
+    // NAVIGATION ONGLETS
+    function switchTab(id) {
+        document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+        document.getElementById('view-'+id).style.display = 'block';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        loadData(id);
     }
 
-    // 1. VOITURES & TOGGLE
-    async function chargerVoituresAdmin() {
-        const { data: voitures } = await sb.from('voitures').select('*').order('id');
-        const container = document.getElementById('liste-voitures-admin');
-        container.innerHTML = '';
-
-        voitures.forEach(v => {
-            container.innerHTML += `
-                <div class="car-admin-item">
-                    <img src="${v.image_url}" alt="car">
-                    <div style="flex:1;">
-                        <strong>${v.nom}</strong>
-                    </div>
-                    <div style="display:flex; align-items:center;">
-                        <label class="switch">
-                            <input type="checkbox" ${v.calendrier_public ? 'checked' : ''} onchange="updateCal(${v.id}, this.checked)">
-                            <span class="slider"></span>
-                        </label>
-                        <span class="toggle-label">${v.calendrier_public ? 'Calendrier Visible' : 'Calendrier Caché'}</span>
-                    </div>
-                </div>
-            `;
-        });
-    }
-
-    async function updateCal(id, etat) {
-        await sb.from('voitures').update({ calendrier_public: etat }).eq('id', id);
-        // Feedback visuel optionnel
-    }
-
-    // 2. RESERVATIONS
-    async function chargerReservations() {
-        const { data: resas } = await sb.from('reservations')
-            .select('*, voitures(nom)')
-            .order('created_at', { ascending: false });
+    async function loadData(type) {
+        if(type === 'resas') {
+            const { data } = await sb.from('reservations').select('*, voitures(nom)').order('id', {ascending:false});
+            document.getElementById('tbody-resas').innerHTML = data.map(r => `<tr><td>${r.id}</td><td>${r.nom}</td><td>${r.voitures?.nom}</td><td>${r.date_debut} au ${r.date_fin}</td><td>${r.statut}</td><td><button onclick="validerResa(${r.id})">Valider</button></td></tr>`).join('');
             
-        const tbody = document.getElementById('table-reservations');
-        tbody.innerHTML = '';
-
-        resas.forEach(r => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>
-                        <strong>${r.nom}</strong><br>
-                        <i class="fas fa-phone"></i> ${r.tel}
-                    </td>
-                    <td>${r.voitures ? r.voitures.nom : '<i>Supprimé</i>'}</td>
-                    <td>
-                        Du ${new Date(r.date_debut).toLocaleDateString()}<br>
-                        Au ${new Date(r.date_fin).toLocaleDateString()}
-                    </td>
-                    <td>
-                        <small>
-                            <b>Livr:</b> ${r.lieu_livraison || '-'} (${r.heure_livraison || '-'})<br>
-                            <b>Recup:</b> ${r.lieu_recup || '-'} (${r.heure_recup || '-'})
-                        </small>
-                    </td>
-                    <td>
-                        <small>
-                            1. ${r.trajet_1 || '-'}<br>
-                            2. ${r.trajet_2 || '-'}
-                        </small>
-                    </td>
-                    <td>${r.montant_total ? r.montant_total.toLocaleString() : 0} Ar</td>
-                    <td><span class="badge badge-${r.statut}">${r.statut}</span></td>
-                </tr>
-            `;
-        });
+            // Remplir select voitures
+            const { data: cars } = await sb.from('voitures').select('*');
+            const sel = document.getElementById('new-resa-car');
+            const selMaint = document.getElementById('maint-car-select');
+            let opts = cars.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+            sel.innerHTML = opts;
+            if(selMaint) selMaint.innerHTML = opts;
+        }
+        else if(type === 'voitures') {
+            const { data } = await sb.from('voitures').select('*');
+            document.getElementById('grid-admin-cars').innerHTML = data.map(v => `<div style="background:white; padding:10px; border:1px solid #ddd;"><strong>${v.nom}</strong><br>${v.prix_base} Ar</div>`).join('');
+        }
+        else if(type === 'partenaires') {
+            const { data } = await sb.from('partenaires').select('*');
+            document.getElementById('tbody-partenaires').innerHTML = data ? data.map(p => `<tr><td>${p.nom}</td><td>${p.email}</td><td>Actif</td></tr>`).join('') : '';
+        }
+        else if(type === 'media') {
+            // Charge radios
+            const { data } = await sb.from('radios').select('*');
+            document.getElementById('tbody-media').innerHTML = data ? data.map(m => `<tr><td>Radio</td><td>${m.nom}</td><td>${m.url_flux}</td></tr>`).join('') : '';
+        }
+        else if(type === 'avis') {
+            const { data } = await sb.from('avis').select('*');
+            document.getElementById('tbody-avis').innerHTML = data ? data.map(a => `<tr><td>${a.nom}</td><td>${a.commentaire}</td><td>${a.visible ? 'Publié' : 'Masqué'}</td><td><button onclick="toggleAvis(${a.id}, ${!a.visible})">Toggle</button></td></tr>`).join('') : '';
+        }
+        // ... (Logique similaire pour Maintenance et Pubs)
     }
 
-    window.onload = initAdmin;
+    // AJOUTS SIMPLIFIÉS (CRUD)
+    async function addCar() {
+        const nom = document.getElementById('new-car-nom').value;
+        const prix = document.getElementById('new-car-prix').value;
+        const img = document.getElementById('new-car-img').value;
+        await sb.from('voitures').insert([{nom, prix_base: prix, image_url: img}]);
+        loadData('voitures'); alert('Voiture ajoutée');
+    }
+
+    async function addResaManual() {
+        const r = {
+            nom: document.getElementById('new-resa-client').value,
+            id_voiture: document.getElementById('new-resa-car').value,
+            date_debut: document.getElementById('new-resa-debut').value,
+            date_fin: document.getElementById('new-resa-fin').value,
+            statut: 'valide'
+        };
+        await sb.from('reservations').insert([r]);
+        loadData('resas');
+    }
+
+    async function validerResa(id) {
+        await sb.from('reservations').update({statut: 'valide'}).eq('id', id);
+        loadData('resas');
+    }
+
+    async function toggleAvis(id, etat) {
+        await sb.from('avis').update({visible: etat}).eq('id', id);
+        loadData('avis');
+    }
+
+    // Init
+    loadData('resas');
 </script>
 
 </body>

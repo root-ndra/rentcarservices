@@ -3,126 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title">Chargement...</title>
+    <title>RIJA NIAINA CAR SERVICES</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="script.js" defer></script>
 </head>
 <body>
 
-<header class="navbar">
-    <div class="nav-container">
-        <div class="logo">
-            <img id="site-logo" src="" alt="Logo" style="display: none;">
-            <span id="site-name-header">RIJA CARS</span>
-        </div>
-        <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
-        <ul class="nav-links" id="nav-menu">
-            <li><a href="#home">Accueil</a></li>
-            <li><a href="#reservation">Réserver</a></li>
-            <li><a href="#conditions-section">Conditions</a></li>
-            <li><a href="admin.html" class="btn-admin-link">Espace Admin</a></li>
-        </ul>
+<a href="tel:+261388552432" class="floating-call-btn"><i class="fas fa-phone-alt"></i></a>
+
+<nav class="navbar">
+    <div class="logo-container">
+        <i class="fas fa-car-side"></i> <span>RIJA CARS</span>
     </div>
-</header>
+    <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+    <ul class="nav-links" id="nav-menu">
+        <li><a onclick="scrollToId('home')">Accueil</a></li>
+        <li><a onclick="scrollToId('flotte')">Véhicules</a></li>
+        <li><a onclick="scrollToId('divertissement')">Détente</a></li>
+        <li><a onclick="scrollToId('contact')">Contact</a></li>
+    </ul>
+</nav>
 
-<section id="home" class="hero-banner">
-    <h1>Votre voyage commence ici</h1>
-    <p>Confort, Sécurité et Fiabilité à Madagascar</p>
-</section>
+<div class="snap-container">
 
-<section id="reservation" class="container-form">
-    <div class="glass-card">
-        <h2 class="section-header"><i class="fas fa-calendar-check"></i> Nouvelle Réservation</h2>
-        
-        <div id="choix-vehicule-container" class="options-grid">
-            <p style="text-align:center; width:100%;">Chargement des véhicules...</p>
+    <section id="home" class="snap-section">
+        <div class="hero-content">
+            <h1>Voyagez en toute sérénité<br>à Madagascar</h1>
+            <p>Confort, Fiabilité et Discrétion pour vos déplacements professionnels et personnels.</p>
+            <button onclick="scrollToId('flotte')" class="btn-hero">Voir nos véhicules</button>
+            <div id="pub-home_top" class="ad-container" style="margin-top:20px;"></div>
         </div>
+    </section>
 
-        <div id="form-details-reservation" style="display:none;">
+    <section id="flotte" class="snap-section">
+        <div class="scrollable-content">
+            <h2 class="section-title">Notre Flotte</h2>
+            <div id="pub-flotte_top" class="ad-container"></div>
             
-            <h3 class="sub-title"><i class="fas fa-user"></i> Vos Coordonnées</h3>
-            <div class="grid-form">
-                <div class="form-group">
-                    <label>Nom Complet</label>
-                    <input type="text" id="res-nom" placeholder="Ex: Jean Rakoto">
-                </div>
-                <div class="form-group">
-                    <label>Téléphone (WhatsApp)</label>
-                    <input type="text" id="res-tel" placeholder="Ex: 034 00 000 00">
-                </div>
-                <div class="form-group">
-                    <label>Date de Début</label>
-                    <input type="date" id="res-debut" onchange="verifierDisponibilite()">
-                </div>
-                <div class="form-group">
-                    <label>Date de Fin</label>
-                    <input type="date" id="res-fin" onchange="verifierDisponibilite()">
-                </div>
+            <div id="container-voitures" class="grid-voitures">
+                <p style="color:white; text-align:center;">Chargement des véhicules...</p>
             </div>
 
-            <h3 class="sub-title"><i class="fas fa-truck-pickup"></i> Logistique</h3>
-            <div class="grid-form">
-                <div class="form-group">
-                    <label>Lieu de Livraison</label>
-                    <input type="text" id="res-lieu-livraison" placeholder="Ex: Aéroport Ivato">
+            <div id="reservation-panel" class="container-form" style="display:none; margin-top:30px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2>Réserver : <span id="nom-voiture-selectionnee" class="highlight-text"></span></h2>
+                    <button onclick="fermerReservation()" class="btn-back">Fermer X</button>
                 </div>
-                <div class="form-group">
-                    <label>Heure de Livraison</label>
-                    <input type="time" id="res-heure-livraison">
+                
+                <input type="hidden" id="id-voiture-input">
+                <input type="hidden" id="prix-base-input">
+
+                <div class="grid-form">
+                    <div>
+                        <label>Du :</label><input type="date" id="date-debut" onchange="calculerPrix()">
+                    </div>
+                    <div>
+                        <label>Au :</label><input type="date" id="date-fin" onchange="calculerPrix()">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Lieu de Récupération</label>
-                    <input type="text" id="res-lieu-recup" placeholder="Ex: Hôtel Colbert">
+                <div id="calendrier-dispo" style="margin-bottom:20px;"></div>
+
+                <div class="options-grid">
+                    <label><input type="checkbox" id="opt-livraison" onchange="calculerPrix()"> Livraison (+15k Ar)</label>
+                    <label><input type="checkbox" id="opt-recuperation" onchange="calculerPrix()"> Récupération (+15k Ar)</label>
                 </div>
-                <div class="form-group">
-                    <label>Heure de Récupération</label>
-                    <input type="time" id="res-heure-recup">
+                <div class="promo-container">
+                    <input type="text" id="code-promo" placeholder="Code Promo">
+                    <button onclick="verifierPromo()" class="btn-dark">Appliquer</button>
+                    <span id="msg-promo" style="font-weight:bold; margin-left:10px;"></span>
+                </div>
+
+                <div class="grid-form">
+                    <input type="text" id="loueur-nom" placeholder="Nom Complet">
+                    <input type="text" id="loueur-tel" placeholder="Téléphone / WhatsApp">
+                    <input type="text" id="loueur-cin" placeholder="N° CIN / Passeport">
+                    <input type="text" id="loueur-adresse" placeholder="Adresse">
+                </div>
+
+                <div class="resume-box">
+                    <p>Total estimé : <span id="prix-total" style="font-size:1.5rem; font-weight:bold;">0</span> Ar</p>
+                    <p>Acompte (50%) : <span id="prix-acompte">0</span> Ar</p>
+                </div>
+
+                <div style="margin-top:20px;">
+                    <label><input type="checkbox" id="check-conditions"> J'accepte les conditions générales</label>
+                    <button onclick="lancerReservationWhatsApp()" class="btn-whatsapp">
+                        <i class="fab fa-whatsapp"></i> Valider & Payer
+                    </button>
+                </div>
+
+                <div id="step-paiement" style="display:none; margin-top:20px; border-top:1px dashed #ccc; padding-top:20px;">
+                    <h3>Paiement</h3>
+                    <select id="pay-method"><option value="mvola">Mvola</option><option value="espece">Espèces</option></select>
+                    <input type="text" id="pay-ref" placeholder="Référence Transaction" style="margin-top:10px;">
+                    <button onclick="envoyerInfosPaiement()" class="btn-dark" style="width:100%; margin-top:10px;">Confirmer Paiement</button>
+                    
+                    <div id="step-download" style="display:none; margin-top:20px; text-align:center;">
+                        <p style="color:green;">Paiement validé !</p>
+                        <button onclick="telechargerFactureAuto()" class="btn-dark"><i class="fas fa-file-pdf"></i> Télécharger Facture</button>
+                    </div>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <h3 class="sub-title"><i class="fas fa-map-marked-alt"></i> Trajet Prévisionnel</h3>
-            <p style="font-size:0.9rem; margin-bottom:10px; opacity:0.8;">Indiquez les grandes étapes de votre voyage :</p>
-            <div class="grid-form trajet-grid">
-                <input type="text" id="res-trajet-1" placeholder="Étape 1 (Ex: Tana)">
-                <input type="text" id="res-trajet-2" placeholder="Étape 2 (Ex: Antsirabe)">
-                <input type="text" id="res-trajet-3" placeholder="Étape 3 (Ex: Morondava)">
-                <input type="text" id="res-trajet-4" placeholder="Étape 4 (Retour)">
+    <section id="divertissement" class="snap-section" style="background: rgba(44,62,80,0.8);">
+        <div class="scrollable-content">
+            <h2 class="section-title">Espace Détente</h2>
+            <div class="media-tabs" style="text-align:center; margin-bottom:20px;">
+                <button onclick="chargerMedia('radios')" class="active-tab">Radios</button>
+                <button onclick="chargerMedia('playlists')">Musique</button>
             </div>
+            <div id="conteneur-media" class="grid-voitures">
+                </div>
+        </div>
+    </section>
 
-            <div id="dispo-warning" class="warning-box" style="display:none;"></div>
-            <div id="calcul-prix" class="price-tag"></div>
+    <section id="contact" class="snap-section">
+        <div class="scrollable-content">
+            <h2 class="section-title">Contact & Avis</h2>
             
-            <button onclick="confirmerReservation()" id="btn-reserver" class="btn-primary-large">
-                CONFIRMER LA DEMANDE
-            </button>
-        </div>
-    </div>
-</section>
+            <div class="contact-layout">
+                <div class="form-contact-box">
+                    <h3>Nous écrire</h3>
+                    <input type="text" id="contact-nom" placeholder="Votre Nom">
+                    <textarea id="contact-message" rows="4" placeholder="Message..."></textarea>
+                    <button onclick="envoyerContactWhatsApp()" class="btn-whatsapp">WhatsApp</button>
+                </div>
+                
+                <div class="avis-box">
+                    <h3>Avis Clients</h3>
+                    <div id="liste-avis" style="margin-bottom:15px; max-height:200px; overflow-y:auto;"></div>
+                    <hr>
+                    <input type="text" id="avis-nom" placeholder="Votre Nom">
+                    <select id="avis-note"><option value="5">⭐⭐⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option></select>
+                    <textarea id="avis-msg" placeholder="Votre avis..."></textarea>
+                    <button onclick="envoyerAvis()" class="btn-dark" style="width:100%; margin-top:10px;">Publier</button>
+                </div>
+            </div>
 
-<section id="conditions-section" class="container-form">
-    <h2 style="text-align:center; color:white; margin-bottom:30px;">Conditions Générales</h2>
-    <div id="conditions-container" class="flip-cards-grid">
+            <div class="footer-internal">
+                <h3>RIJA NIAINA CAR SERVICES</h3>
+                <p>Analakely, Antananarivo 101</p>
+                <p>NIF: 5012357932 | STAT: 70209 11 2025 0 06328</p>
+                <p style="margin-top:10px; font-weight:bold;">+261 38 85 524 32</p>
+            </div>
         </div>
-</section>
+    </section>
 
-<footer id="main-footer">
-    <div class="footer-content">
-        <div class="footer-col">
-            <h4 id="footer-site-name">RIJA CARS</h4>
-            <p id="footer-addr"></p>
-            <p>NIF: <span id="footer-nif"></span></p>
-            <p>STAT: <span id="footer-stat"></span></p>
-        </div>
-        <div class="footer-col">
-            <h4>Contact Rapide</h4>
-            <p id="footer-phone"></p>
-            <div id="footer-socials" class="social-links"></div>
-        </div>
-    </div>
-</footer>
+</div>
 
 </body>
 </html>
