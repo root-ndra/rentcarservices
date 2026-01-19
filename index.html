@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIJA NIAINA CAR SERVICES - Location de voitures Antananarivo</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="script.js" defer></script>
+</head>
+<body style="display: flex; flex-direction: column; min-height: 100vh;">
+
+<a href="tel:+261388552432" class="floating-call-btn">
+    <i class="fas fa-phone-alt"></i>
+    <span>Appeler</span>
+</a>
+
+<nav class="navbar">
+    <div class="logo-container">
+        <img src="https://i.ibb.co/dw8gxWXL/1765001359376.png" alt="Logo" class="nav-logo">
+        <span>RIJA NIAINA CAR SERVICES</span>
+    </div>
+    
+    <button class="menu-toggle" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <ul class="nav-links" id="nav-menu">
+        <li><a href="#" onclick="naviguerVers('home')" class="active">Accueil</a></li>
+        <li><a href="#" onclick="naviguerVers('flotte')">Nos Voitures</a></li>
+        <li><a href="#" onclick="naviguerVers('divertissement')">Divertissement</a></li>
+        <li><a href="#" onclick="naviguerVers('contact')">Contact & Avis</a></li>
+    </ul>
+</nav>
+
+<main style="flex: 1;">
+    
+    <section id="home" class="page-section">
+        <div class="hero-banner">
+            <h1>Rija NIAINA Car Services</h1>
+            <p class="hero-description">
+                Chaque déplacement est pensé avec exigence et attention.
+				À Antananarivo, nous vous proposons des solutions de location de véhicules alliant confort, fiabilité et discrétion.
+				Notre engagement repose sur un service soigné, des véhicules rigoureusement entretenus et une expérience fluide, dédiée à votre sérénité.
+				Qu’il s’agisse de déplacements professionnels ou personnels, nous vous accompagnons avec ponctualité et professionnalisme..
+            </p>
+            <button onclick="naviguerVers('flotte')" class="btn-hero">Découvrir notre flotte <i class="fas fa-arrow-right"></i></button>
+        </div>
+
+        <div id="pub-home_top" class="ad-container"></div>
+        
+        <div class="features">
+            <div class="feature-box"><span class="feature-emoji">👨‍👩‍👧‍👦</span><h3>Famille</h3></div>
+            <div class="feature-box"><span class="feature-emoji">💼</span><h3>Affaires</h3></div>
+            <div class="feature-box"><span class="feature-emoji">🌴</span><h3>Évasion</h3></div>
+            <div class="feature-box"><span class="feature-emoji">🕊️</span><h3>Liberté</h3></div>
+            <div class="feature-box"><span class="feature-emoji">↔️</span><h3>Flexibilité</h3></div>
+        </div>
+
+        <div id="pub-home_bot" class="ad-container"></div>
+    </section>
+
+    <section id="flotte" class="page-section" style="display:none;">
+        <h2 class="section-title">Notre Collection</h2>
+        <div id="pub-flotte_top" class="ad-container"></div>
+        <div class="grid-voitures" id="container-voitures">
+            <p>Chargement du catalogue...</p>
+        </div>
+        <div id="pub-flotte_bot" class="ad-container"></div>
+    </section>
+
+    <section id="reservation" class="page-section" style="display:none;">
+        <button onclick="naviguerVers('flotte')" class="btn-back"><i class="fas fa-arrow-left"></i> Retour aux voitures</button>
+        
+        <div class="container-form">
+            <h2>Réservation : <span id="nom-voiture-selectionnee" class="highlight-text"></span></h2>
+            <input type="hidden" id="id-voiture-input">
+            <input type="hidden" id="ref-voiture-input">
+            <input type="hidden" id="prix-base-input">
+
+            <div class="bloc-calendrier">
+                <h3><i class="far fa-calendar-alt"></i> 1. Choisissez vos dates</h3>
+                <div id="calendrier-dispo"></div>
+                <div class="dates-inputs" style="margin-top:15px; display:flex; gap:10px;">
+                    <div style="flex:1;"><label>Du :</label><input type="date" id="date-debut" onchange="calculerPrix()"></div>
+                    <div style="flex:1;"><label>Au :</label><input type="date" id="date-fin" onchange="calculerPrix()"></div>
+                </div>
+            </div>
+
+            <hr style="margin: 30px 0; border:0; border-top:1px solid #eee;">
+
+            <div class="section-offres">
+                <h3><i class="fas fa-sliders-h"></i> 2. Options de Location</h3>
+                <div class="options-grid">
+                    <label><input type="radio" name="offre" value="jour" class="hidden-input" checked onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-sun"></i><span>Journée</span><span class="option-price">7h - 19h</span></div></label>
+                    <label><input type="radio" name="offre" value="nuit" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-moon"></i><span>Nuit</span><span class="option-price">19h - 7h</span></div></label>
+                    <label><input type="radio" name="offre" value="24h" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-clock"></i><span>24H</span><span class="option-price">Jour + Nuit</span></div></label>
+                </div>
+                <div class="options-grid">
+                    <label><input type="checkbox" id="opt-livraison" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-truck"></i><span>Livraison</span><span class="option-price">+15.000 Ar</span></div></label>
+                    <label><input type="checkbox" id="opt-recuperation" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-undo"></i><span>Récupération</span><span class="option-price">+15.000 Ar</span></div></label>
+                </div>
+                <label style="font-weight:600; color:#555;">Code promo ?</label>
+                <div class="promo-container">
+                    <input type="text" id="code-promo" placeholder="Code">
+                    <button onclick="verifierPromo()" class="btn-dark" style="padding:10px 20px;">OK</button>
+                </div>
+                <span id="msg-promo" style="font-size:0.9rem; font-weight:bold; margin-top:5px; display:block;"></span>
+            </div>
+
+            <hr style="margin: 30px 0; border:0; border-top:1px solid #eee;">
+
+            <div class="grid-form">
+                <div class="col-form">
+                    <h3><i class="fas fa-user"></i> 3. Vos Coordonnées</h3>
+                    <input type="text" id="loueur-nom" placeholder="Nom complet">
+                    <input type="text" id="loueur-prenom" placeholder="Prénom">
+                    <input type="text" id="loueur-adresse" placeholder="Adresse de résidence">
+                    <input type="tel" id="loueur-tel" placeholder="Téléphone / WhatsApp">
+                    <input type="text" id="loueur-cin" placeholder="N° CIN / Passeport / Permis">
+                </div>
+                <div class="col-form">
+                    <h3><i class="fas fa-phone-alt"></i> Contact d'Urgence</h3>
+                    <input type="text" id="urgence-nom" placeholder="Nom du contact">
+                    <input type="text" id="urgence-adresse" placeholder="Adresse du contact">
+                    <input type="tel" id="urgence-tel" placeholder="Téléphone du contact">
+                </div>
+            </div>
+
+            <div id="resume-prix" class="resume-box">
+                <h3 style="margin-top:0; color:white; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:10px;">Récapitulatif Financier</h3>
+                <p>Durée : <span id="txt-jours" style="font-weight:bold;">0</span> jours</p>
+                <p>Formule : <span id="txt-formule" style="font-weight:bold;">JOUR</span></p>
+                <p style="font-size:1.4rem; font-weight:bold; margin:10px 0;">Total : <span id="prix-total">0</span> Ar</p>
+                <p style="color:#3498db; font-weight:bold;">Acompte requis (50%) : <span id="prix-acompte">0</span> Ar</p>
+            </div>
+
+            <div class="conditions-box" style="margin: 20px 0; background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba;">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="check-conditions-step1">
+                    J'ai lu et j'accepte les conditions générales de location.
+                </label>
+                <div style="margin-left: 35px;">
+                    <a href="#" onclick="ouvrirModalConditions()" style="text-decoration: underline; color: #333;">Lire les conditions</a>
+                </div>
+            </div>
+
+            <div id="step-1-actions" class="actions">
+                <button id="btn-pre-resa" onclick="lancerReservationWhatsApp()" class="btn-whatsapp">
+                    <i class="fab fa-whatsapp"></i> 1. Réserver & Envoyer preuve
+                </button>
+                <p style="text-align:center; font-size:0.9rem; color:#666; margin-top:5px;">
+                    Cela enregistrera votre dossier et ouvrira WhatsApp pour prévenir l'agence.
+                </p>
+            </div>
+
+            <div id="step-2-paiement" style="display:none; margin-top:30px; border-top:2px dashed #ccc; padding-top:20px;">
+                <h3 style="color:var(--primary-dark);"><i class="fas fa-money-bill-wave"></i> 2. Finaliser le Paiement</h3>
+                
+                <div class="payment-section" style="background:#f8f9fa; padding:25px; border-radius:12px; border:1px solid #ddd;">
+                    <label style="font-weight:bold;">Mode de paiement</label>
+                    <select id="pay-method" onchange="togglePaymentFields()" style="background:white;">
+                        <option value="">-- Choisir --</option>
+                        <option value="mvola">Mobile Money (Mvola)</option>
+                        <option value="espece">Espèces (Agence)</option>
+                    </select>
+
+                    <div id="fields-mvola" style="display:none; margin-top:10px;">
+                        <input type="text" id="pay-mvola-nom" placeholder="Nom du titulaire Mvola">
+                        <input type="tel" id="pay-mvola-num" placeholder="034 XX XXX XX">
+                        <input type="text" id="pay-mvola-ref" placeholder="Référence Transaction (SMS)">
+                    </div>
+                    <div id="fields-espece" style="display:none; margin-top:10px;">
+                        <input type="text" id="pay-cash-nom" placeholder="Nom du déposant">
+                    </div>
+                    
+                    <div id="fields-montant" style="display:none; margin-top:10px;">
+                        <label>Montant payé :</label>
+                        <select id="pay-choix-montant" onchange="toggleAutreMontant()">
+                            <option value="50">Acompte (50%)</option>
+                            <option value="100">Totalité (100%)</option>
+                            <option value="autre">Autre montant</option>
+                        </select>
+                        <div id="field-autre-montant" style="display:none; margin-top:10px;">
+                            <input type="number" id="pay-valeur-autre" placeholder="Montant en Ar">
+                        </div>
+                    </div>
+
+                    <button onclick="envoyerInfosPaiement()" class="btn-dark" style="width:100%; margin-top:15px; background:#27ae60;">
+                        <i class="fas fa-check-circle"></i> Paiement Effectué
+                    </button>
+                </div>
+            </div>
+
+            <div id="step-3-download" style="display:none; text-align:center; margin-top:30px; background:#eafaf1; padding:20px; border-radius:10px;">
+                <h3 style="color:#27ae60;">Dossier en cours de validation...</h3>
+                <p>L'administrateur vérifie votre paiement. Cette page se mettra à jour automatiquement.</p>
+                
+                <div class="otp-loader">
+                    <div class="spinner"></div> En attente du code OTP Admin...
+                </div>
+
+                <div style="margin-top:20px;">
+                    <input type="text" id="input-otp-auto" placeholder="Code OTP..." readonly 
+                           style="text-align:center; font-size:1.5rem; letter-spacing:5px; width:200px; background:#eee;">
+                    <br>
+                    <button id="btn-dl-pdf" onclick="telechargerFactureAuto()" class="btn-dark" disabled 
+                            style="background:#95a5a6; cursor:not-allowed; margin-top:10px;">
+                        <i class="fas fa-file-pdf"></i> Télécharger Facture
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section id="divertissement" class="page-section" style="display:none;">
+        <h2 class="section-title">Ambiance à bord</h2>
+        <div id="pub-media_top" class="ad-container"></div>
+        <div class="media-tabs">
+            <button onclick="chargerMedia('radios')" class="active-tab">📻 Radios FM</button>
+            <button onclick="chargerMedia('playlists')">🎵 Playlists</button>
+        </div>
+        <div id="conteneur-media" class="grid-voitures"></div>
+        <div id="pub-media_bot" class="ad-container"></div>
+    </section>
+
+    <section id="contact" class="page-section" style="display:none;">
+        <h2 class="section-title">Contact & Avis</h2>
+        <div class="contact-layout">
+            <div class="form-contact-box">
+                <h3>Envoyez-nous un message</h3>
+                <select id="contact-sujet"><option value="Suggestion">Suggestion</option><option value="Partenariat">Partenariat</option><option value="Devis">Devis</option><option value="Autre">Autre</option></select>
+                <input type="text" id="contact-nom" placeholder="Votre Nom">
+                <textarea id="contact-message" rows="5" placeholder="Votre message..."></textarea>
+                <button onclick="envoyerContactWhatsApp()" class="btn-whatsapp"><i class="fab fa-whatsapp"></i> Discuter sur WhatsApp</button>
+            </div>
+            <div class="avis-box">
+                <h3>Avis Clients</h3>
+                <div id="liste-avis" style="margin-bottom:20px;"></div>
+                <hr>
+                <h3>Votre avis compte</h3>
+                <input type="text" id="avis-nom" placeholder="Votre Nom">
+                <select id="avis-note"><option value="5">⭐⭐⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="3">⭐⭐⭐</option><option value="2">⭐⭐</option><option value="1">⭐</option></select>
+                <textarea id="avis-commentaire" placeholder="Votre expérience..."></textarea>
+                <button onclick="envoyerAvis()" class="btn-dark">Publier</button>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<footer class="site-footer">
+    <div class="footer-content">
+        <h3>Rija NIAINA Car Services</h3>
+        <p><i class="fas fa-map-marker-alt"></i> Siae 33 Ambodifilao, Analakely, Antananarivo 101</p>
+        <p class="footer-legal">NIF: 5012357932 | STAT: 70209 11 2025 0 06328</p>
+        <p class="footer-phone"><i class="fas fa-phone"></i> +261 38 85 524 32</p>
+        <div style="margin-top: 15px;">
+            <a href="https://www.facebook.com/share/1HBzQMGGN7/" target="_blank" style="color: white; text-decoration: none; font-weight: bold; font-size: 1.1rem;">
+                <i class="fab fa-facebook" style="color: #1877F2; margin-right: 8px;"></i> Suivez-nous sur Facebook
+            </a>
+        </div>
+    </div>
+</footer>
+
+<div id="modal-conditions" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <span class="close-modal" onclick="fermerModalConditions()">&times;</span>
+        <h3><i class="fas fa-file-contract"></i> Conditions Générales</h3>
+        
+        <div class="conditions-scroll-box">
+            <h4>1. Conducteur</h4>
+            <p>Le locataire doit avoir plus de 23 ans et un permis valide (+2 ans).</p>
+            <h4>2. Paiement & Caution</h4>
+            <p>L'acompte de 50% est requis pour bloquer le véhicule. Aucune caution n'est exigée avant le départ.</p>
+            <h4>3. Utilisation</h4>
+            <p>Usage en "bon père de famille". Sous-location interdite.</p>
+            <p>Le véhicule est destiné à un usage personnel et non-commercial sur routes carrossables uniquement.</p>
+            <p>Le locataire s'engage à signaler immédiatement tout incident ou dysfonctionnement au loueur.</p>
+            <h4>4. Carburant</h4>
+            <p>Le carburant est à la charge du locataire. Le véhicule doit être restitué avec le même niveau qu'au départ.</p>
+            <h4>5. Dommage</h4>
+            <p>En cas de casse, détérioration ou vandalisme constaté au retour (incluant mais non limité à: bris de glace, optiques cassés, pneus déchirés ou crevés, rayures profondes...) les frais de remise en état sont à la charge exclusive et immédiate du locataire.</p>
+            <p>Toute immobilisation du véhicule due à un dommage causé par le locataire n’interrompt pas la location ; les frais correspondants restent à sa charge.</p>
+        </div>
+        <button onclick="fermerModalConditions()" class="btn-dark" style="width:100%;">Fermer</button>
+    </div>
+</div>
+
+</body>
+</html>
