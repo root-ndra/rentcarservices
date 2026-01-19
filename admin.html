@@ -67,11 +67,6 @@
         .fc-toolbar-title { font-size: 0.8rem !important; }
         .fc-button { padding: 2px 4px !important; font-size: 0.65rem !important; }
 
-        .vidange-container { margin-top: 10px; padding: 8px; background: #f0f3f4; border-radius: 8px; font-size: 0.8rem; }
-        .vidange-bar-bg { height: 6px; background: #ddd; border-radius: 4px; overflow: hidden; margin: 5px 0; }
-        .vidange-bar-fill { height: 100%; transition: width 0.5s; }
-        .vidange-text { display: flex; justify-content: space-between; color: #555; font-size: 0.7rem; }
-
         .card-actions { padding: 10px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; gap: 5px; }
         .btn-action { flex: 1; padding: 8px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; text-align:center; }
         .btn-maint { background: #f39c12; color: white; } .btn-km { background: #34495e; color: white; } .btn-hist { background: #95a5a6; color: white; }
@@ -107,8 +102,6 @@
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 25px; border-radius: 10px; width: 90%; max-width: 600px; position: relative; max-height: 90vh; overflow-y: auto; }
         .close-modal { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: #777; }
-        .history-list { list-style: none; padding: 0; margin: 0; }
-        .history-item { border-bottom: 1px solid #eee; padding: 12px 5px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
         
         @media (max-width: 768px) {
             .admin-header { flex-direction: column; gap: 15px; text-align: center; }
@@ -123,7 +116,7 @@
 
     <div id="login-screen" class="login-wrapper">
         <div class="login-box">
-            <h2>Admin Rija Cars</h2>
+            <h2 id="login-title">Admin Access</h2>
             <p style="color:#777; font-size:0.9rem; margin-bottom:20px;">Accès sécurisé</p>
             
             <input type="email" id="admin-email" placeholder="Email Administrateur" 
@@ -144,7 +137,7 @@
         <div class="admin-header">
             <div>
                 <h1 style="margin:0;">Administration</h1>
-                <small>Gestion Rija Niaina Car Services</small>
+                <small id="admin-header-subtext">Gestion...</small>
             </div>
             
             <div class="user-profile-corner">
@@ -216,12 +209,8 @@
                             </select>
                         </div>
                     </div>
-                    <div style="margin-top:10px; background:#e8f8f5; padding:10px; border-left:4px solid #2ecc71; font-size:0.9rem;">
-                        <strong><i class="fas fa-info-circle"></i> Procédure :</strong> Remplissez ce formulaire pour définir les infos du contrat. Si l'utilisateur n'existe pas encore dans la base d'authentification, vous devrez l'inviter via l'interface Supabase > Authentication.
-                    </div>
                     <button onclick="upsertPartenaire()" class="btn-publish" style="width:100%; margin-top:10px; padding:10px;">Enregistrer Fiche Partenaire</button>
                 </div>
-                
                 <div class="table-container">
                     <table id="table-partenaires">
                         <thead><tr><th>Partenaire</th><th>Contact</th><th>Contrat / Fin</th><th>Royalties</th><th>Statut</th><th>Actions</th></tr></thead>
@@ -262,8 +251,93 @@
                 </div>
             </div>
 
-            <div id="view-maintenances" style="display:none;"><div class="table-container"><table id="table-maint-global"><thead><tr><th>Date</th><th>Voiture</th><th>Type</th><th>Détails</th><th>Coût</th><th>Actions</th></tr></thead><tbody id="tbody-maint-global"></tbody></table></div></div>
-            <div id="view-promos" style="display:none;"></div> <div id="view-avis" style="display:none;"></div> <div id="view-pubs" style="display:none;"></div> <div id="view-media" style="display:none;"></div> <div id="view-config" style="display:none;">
+            <div id="view-maintenances" style="display:none;">
+                <div class="table-container">
+                    <table id="table-maint-global">
+                        <thead><tr><th>Date</th><th>Voiture</th><th>Type</th><th>Détails</th><th>Coût</th><th>Actions</th></tr></thead>
+                        <tbody id="tbody-maint-global"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-promos" style="display:none;">
+                <div class="form-box">
+                    <h3 class="section-title-admin"><i class="fas fa-tag"></i> Ajouter un Code Promo</h3>
+                    <div class="form-grid">
+                        <div><label>Code (ex: ETE2024)</label><input type="text" id="promo-code" placeholder="Code en majuscule"></div>
+                        <div><label>Réduction (%)</label><input type="number" id="promo-pourcent" placeholder="Ex: 10"></div>
+                        <div><label>Min. Jours</label><input type="number" id="promo-jours" placeholder="Ex: 3" value="1"></div>
+                        <div><label>Date Début</label><input type="date" id="promo-debut"></div>
+                        <div><label>Date Fin</label><input type="date" id="promo-fin"></div>
+                    </div>
+                    <button onclick="ajouterPromo()" class="btn-publish" style="width:100%; padding:12px; margin-top:10px;">Créer Code</button>
+                </div>
+                <div class="table-container">
+                    <table id="table-promos">
+                        <thead><tr><th>Code</th><th>Réduction</th><th>Conditions</th><th>Validité</th><th>Statut</th><th>Actions</th></tr></thead>
+                        <tbody id="tbody-promos"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-avis" style="display:none;">
+                <div class="table-container">
+                    <table id="table-avis">
+                        <thead><tr><th>Date</th><th>Client</th><th>Note</th><th>Commentaire</th><th>Statut</th><th>Action</th></tr></thead>
+                        <tbody id="tbody-avis"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-pubs" style="display:none;">
+                <div class="form-box">
+                    <h3 class="section-title-admin"><i class="fas fa-plus-circle"></i> Ajouter une Publicité</h3>
+                    <div class="form-grid">
+                        <div><label>Société</label><input type="text" id="pub-societe" placeholder="Nom de la société"></div>
+                        <div><label>Contact</label><input type="text" id="pub-contact" placeholder="Tél ou Email"></div>
+                        <div><label>Emplacement</label><select id="pub-emplacement"><option value="home_top">Accueil Haut</option><option value="home_bot">Accueil Bas</option><option value="flotte_top">Liste Voitures Haut</option></select></div>
+                        <div><label>Lien Image (URL)</label><input type="text" id="pub-image" placeholder="https://..."></div>
+                        <div><label>Lien Redirection</label><input type="text" id="pub-lien" placeholder="Site web"></div>
+                        <div><label>Date Début</label><input type="date" id="pub-debut" onchange="calculerFinPub()"></div>
+                        <div><label>Durée</label><select id="pub-duree" onchange="calculerFinPub()"><option value="7">7 jours</option><option value="15">15 jours</option><option value="30">1 mois</option><option value="90">3 mois</option><option value="365">1 an</option></select></div>
+                        <div><label>Fin (Calculée)</label><input type="date" id="pub-fin" readonly style="background:#eee;"></div>
+                    </div>
+                    <button onclick="ajouterPub()" class="btn-publish" style="margin-top:15px; padding:10px 20px; width:100%;">Enregistrer Pub</button>
+                </div>
+                <div class="table-container">
+                    <table id="table-pubs">
+                        <thead><tr><th>Société</th><th>Emplacement</th><th>Période</th><th>Image</th><th>Statut</th><th>Actions</th></tr></thead>
+                        <tbody id="tbody-pubs"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-media" style="display:none;">
+                <div class="form-box">
+                    <h3 class="section-title-admin"><i class="fas fa-broadcast-tower"></i> Ajouter une Radio</h3>
+                    <div class="form-grid">
+                        <div><label>Nom</label><input type="text" id="rad-nom" placeholder="Ex: RDJ"></div>
+                        <div><label>Flux</label><input type="text" id="rad-url" placeholder="http://stream..."></div>
+                        <div><label>Logo (URL)</label><input type="text" id="rad-logo" placeholder="https://image..."></div>
+                    </div>
+                    <button onclick="ajouterRadio()" class="btn-publish" style="margin-top:15px; padding:10px 20px; width:100%;">Ajouter Radio</button>
+                </div>
+                <div class="table-container"><table id="table-radios"><thead><tr><th>Logo</th><th>Nom</th><th>Flux</th><th>Statut</th><th>Action</th></tr></thead><tbody id="tbody-radios"></tbody></table></div>
+                
+                <div class="form-box" style="margin-top:40px;">
+                    <h3 class="section-title-admin"><i class="fas fa-music"></i> Gestion Playlist</h3>
+                    <input type="hidden" id="play-id-edit">
+                    <div class="form-grid">
+                        <div><label>Titre</label><input type="text" id="play-titre" placeholder="Ex: Top Hits"></div>
+                        <div><label>Plateforme</label><select id="play-plateforme"><option value="youtube">YouTube</option><option value="spotify">Spotify</option><option value="deezer">Deezer</option></select></div>
+                        <div><label>Lien</label><input type="text" id="play-url" placeholder="URL (Playlist ou Vidéo)"></div>
+                    </div>
+                    <button id="btn-save-playlist" onclick="ajouterPlaylist()" class="btn-publish" style="margin-top:15px; padding:10px 20px; width:100%;">Ajouter Playlist</button>
+                </div>
+                <div class="table-container"><table id="table-playlists"><thead><tr><th>Plateforme</th><th>Titre</th><th>Lien</th><th>Statut</th><th>Action</th></tr></thead><tbody id="tbody-playlists"></tbody></table></div>
+            </div>
+
+            <div id="view-config" style="display:none;">
                 <div class="form-box">
                     <h3 class="section-title-admin"><i class="fas fa-cogs"></i> Paramètres Généraux</h3>
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px; background: #f8f9fa; border-radius: 8px;">
@@ -347,16 +421,17 @@
         </div>
     </div>
     
-    <div id="modal-profil" class="modal-overlay" style="display:none;"><div class="modal-content"><span class="close-modal" onclick="fermerModal('modal-profil')">×</span><h3>Profil</h3><p>Fonctionnalité profil simplifiée.</p></div></div>
+    <div id="modal-profil" class="modal-overlay" style="display:none;"><div class="modal-content"><span class="close-modal" onclick="fermerModal('modal-profil')">×</span><h3>Profil</h3><p>Vous êtes connecté en tant qu'administrateur.</p></div></div>
     
     <script src="script.js"></script>
     <script>
-        // PAS DE RE-DECLARATION DE SUPABASE ICI
-        // sb est accessible via script.js
+        // --- LOGIQUE ADMIN SPÉCIFIQUE ---
+        // Les fonctions communes sont dans script.js
+        // Ici on redéfinit/complète les fonctions spécifiques à l'admin pour VOIR les données.
 
         let periodeAnalyse = 'mois';
         let globalVoitures = [];
-        let currentUserRole = 'partenaire';
+        let currentUserRole = 'admin'; // Par défaut admin
 
         // --- AUTH ADMIN ---
         async function loginAdmin() {
@@ -389,12 +464,7 @@
                 
                 const user = session.user;
                 document.getElementById('header-user-name').innerText = user.email;
-                
-                // Récupérer le rôle (table partenaires ou metadata)
-                // Ici on simplifie en checkant la table partenaires
-                const { data: part } = await sb.from('partenaires').select('role').eq('user_id', user.id).single();
-                currentUserRole = part ? part.role : 'admin'; // Fallback admin si pas trouvé
-                document.getElementById('header-user-role').innerText = currentUserRole.toUpperCase();
+                document.getElementById('header-user-role').innerText = "ADMINISTRATEUR";
 
                 chargerConfigAdmin();
                 chargerDashboard(); 
@@ -404,7 +474,30 @@
             }
         }
 
-        // --- DASHBOARD LOGIC ---
+        // --- CHARGEMENT CONFIG JSON (NOUVEAU) ---
+        async function chargerConfigAdmin() {
+            try {
+                const response = await fetch('site_config.json');
+                const config = await response.json();
+                
+                // Injection dynamique
+                document.getElementById('admin-header-subtext').innerText = "Gestion " + config.header.siteName;
+                document.title = "Admin - " + config.header.siteName;
+                
+                // Config Calendrier
+                const { data } = await sb.from('config_site').select('value').eq('key', 'calendar_visible').single();
+                const toggle = document.getElementById('toggle-calendar-global');
+                const txt = document.getElementById('status-calendar-text');
+                if (data) {
+                    let isVisible = (data.value === true || data.value === "true");
+                    toggle.checked = isVisible;
+                    txt.innerText = isVisible ? "VISIBLE" : "MASQUÉ";
+                    txt.style.color = isVisible ? "#2ecc71" : "#e74c3c";
+                }
+            } catch(e) { console.error("Erreur config admin", e); }
+        }
+
+        // --- NAVIGATION ---
         function switchTab(tabName) {
             ['dashboard', 'reservations', 'maintenances', 'avis', 'pubs', 'media', 'promos', 'partenaires', 'config'].forEach(t => { 
                 const el = document.getElementById('view-'+t); if(el) el.style.display = 'none'; 
@@ -414,14 +507,23 @@
             
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active')); event.currentTarget.classList.add('active');
             
-            if(tabName==='reservations') chargerVoituresPourSelect(); 
+            // Chargement des données spécifiques à l'onglet
+            if(tabName==='reservations') { chargerVoituresPourSelect(); chargerTableReservations(); }
+            if(tabName==='maintenances') chargerTableMaintenances();
+            if(tabName==='promos') chargerTablePromos();
+            if(tabName==='partenaires') chargerTablePartenaires();
+            if(tabName==='avis') chargerTableAvis();
+            if(tabName==='pubs') chargerTablePubs();
+            if(tabName==='media') chargerTableMedia();
             if(tabName==='config') chargerConfigAdmin();
         }
 
+        // --- DASHBOARD (VUE GLOBALE) ---
         async function chargerDashboard() {
             const grid = document.getElementById('grid-voitures');
             grid.innerHTML = '<p>Chargement...</p>';
             
+            // Récupère TOUTES les voitures (sans filtre user)
             const { data: voitures } = await sb.from('voitures').select('*').order('created_at', { ascending: false });
             globalVoitures = voitures || [];
             
@@ -431,7 +533,7 @@
 
             globalVoitures.forEach(v => {
                 const card = document.createElement('div');
-                card.className = 'car-card status-dispo'; // Simplifié, la logique statut complexe est dans votre script d'origine
+                card.className = 'car-card status-dispo'; 
                 
                 const isReservable = (v.reservable !== false);
                 const reservableClass = isReservable ? 'toggle-on' : 'toggle-off';
@@ -450,49 +552,21 @@
                                 <i class="fas ${reservableIcon}"></i> ${reservableText}
                             </div>
                         </div>
-                        <div class="kpi-row">
-                            <div class="kpi-item"><div class="kpi-val">0</div><small>Mois</small></div>
-                            <div class="kpi-item"><div class="kpi-val">0</div><small>Total</small></div>
-                        </div>
                     </div>
                     <div class="card-actions">
-                        <button class="btn-action btn-maint"><i class="fas fa-tools"></i></button>
-                        <button class="btn-action btn-hist"><i class="fas fa-history"></i></button>
+                        <button class="btn-action btn-edit" onclick="alert('TODO: Edit')"><i class="fas fa-edit"></i></button>
                     </div>
                 `;
                 grid.appendChild(card);
             });
         }
 
-        // --- ACTIONS SPECIFIQUES ---
         async function toggleReservable(id, currentVal) {
             const newVal = !currentVal;
             if(!confirm(`Changer le statut en ${newVal ? 'RÉSERVABLE' : 'CONTACT UNIQUEMENT'} ?`)) return;
-
             const { error } = await sb.from('voitures').update({ reservable: newVal }).eq('id', id);
             if(error) alert("Erreur: " + error.message);
             else chargerDashboard();
-        }
-
-        async function chargerConfigAdmin() {
-            const { data } = await sb.from('config_site').select('value').eq('key', 'calendar_visible').single();
-            const toggle = document.getElementById('toggle-calendar-global');
-            const txt = document.getElementById('status-calendar-text');
-            if (data) {
-                let isVisible = (data.value === true || data.value === "true");
-                toggle.checked = isVisible;
-                txt.innerText = isVisible ? "VISIBLE" : "MASQUÉ";
-                txt.style.color = isVisible ? "#2ecc71" : "#e74c3c";
-            }
-        }
-
-        async function toggleGlobalCalendar() {
-            const toggle = document.getElementById('toggle-calendar-global');
-            const isVisible = toggle.checked;
-            const txt = document.getElementById('status-calendar-text');
-            txt.innerText = isVisible ? "VISIBLE" : "MASQUÉ";
-            txt.style.color = isVisible ? "#2ecc71" : "#e74c3c";
-            await sb.from('config_site').upsert({ key: 'calendar_visible', value: isVisible });
         }
 
         function ouvrirModalVoiture() { document.getElementById('modal-voiture').style.display = 'flex'; }
@@ -500,7 +574,6 @@
 
         async function ajouterVoiture() {
             const { data: { user } } = await sb.auth.getUser();
-            
             const nom = document.getElementById('new-car-nom').value;
             const prix = document.getElementById('new-car-prix').value;
             const places = document.getElementById('new-car-places').value;
@@ -515,10 +588,9 @@
             if(!nom || !prix) return alert("Nom et Prix requis");
 
             const voiture = { 
-                nom: nom, type: type, transmission: transmission, prix_base: parseInt(prix), 
+                nom, type, transmission, prix_base: parseInt(prix), 
                 image_url: imageMain, ref_id: ref, kilometrage: 0, proprietaire_id: user.id,
-                places: parseInt(places), carburant: carburant, description: description,
-                reservable: isReservable
+                places: parseInt(places), carburant, description, reservable: isReservable
             };
 
             const { error } = await sb.from('voitures').insert([voiture]);
@@ -526,14 +598,186 @@
             else { alert("Voiture ajoutée !"); fermerModal('modal-voiture'); chargerDashboard(); }
         }
 
-        // Placeholder functions pour éviter erreurs si appelées
-        function chargerVoituresPourSelect() {} 
-        function calculerPrixAdmin() {}
-        function updateResteAdmin() {}
-        function creerReservationAdmin() {}
-        function upsertPartenaire() {}
-        function calculerFinContrat() {}
+        // --- RESERVATIONS (FULL ADMIN VIEW) ---
+        async function chargerVoituresPourSelect() {
+            const sel = document.getElementById('new-resa-voiture');
+            sel.innerHTML = '<option>Chargement...</option>';
+            const { data } = await sb.from('voitures').select('id, nom, prix_base');
+            sel.innerHTML = '';
+            if(data) data.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.text = v.nom;
+                opt.dataset.prix = v.prix_base;
+                sel.appendChild(opt);
+            });
+        }
+
+        async function chargerTableReservations() {
+            const tbody = document.getElementById('tbody-resa-full');
+            tbody.innerHTML = '<tr><td colspan="7">Chargement...</td></tr>';
+            
+            // On récupère TOUTES les réservations + info voiture
+            const { data: resas, error } = await sb.from('reservations')
+                .select('*, voitures(nom)')
+                .order('created_at', { ascending: false });
+
+            if(error) { tbody.innerHTML = `<tr><td colspan="7">Erreur: ${error.message}</td></tr>`; return; }
+            
+            tbody.innerHTML = '';
+            if(!resas || resas.length === 0) { tbody.innerHTML = '<tr><td colspan="7">Aucune réservation.</td></tr>'; return; }
+
+            resas.forEach(r => {
+                const tr = document.createElement('tr');
+                const reste = r.montant_total - (r.paiement_montant_declare || 0);
+                const statusColor = r.statut === 'valide' ? 'green' : (r.statut === 'annulee' ? 'red' : 'orange');
+                
+                tr.innerHTML = `
+                    <td>#${r.id}</td>
+                    <td>${r.nom}<br><small>${r.tel}</small></td>
+                    <td>${r.voitures ? r.voitures.nom : 'Inconnu'}<br><small>${r.date_debut} au ${r.date_fin}</small></td>
+                    <td>${r.paiement_methode || '-'}<br><small>${r.paiement_ref || ''}</small></td>
+                    <td>Total: ${r.montant_total}<br>Payé: ${r.paiement_montant_declare || 0}<br><strong style="color:${reste>0?'red':'green'}">Reste: ${reste}</strong></td>
+                    <td>
+                        Code OTP: <strong>${r.code_otp || '-'}</strong>
+                        <br>
+                        <select onchange="updateStatutResa('${r.id}', this.value)" style="padding:2px; font-size:0.8rem;">
+                            <option value="en_attente" ${r.statut==='en_attente'?'selected':''}>Attente</option>
+                            <option value="valide" ${r.statut==='valide'?'selected':''}>Validé</option>
+                            <option value="annulee" ${r.statut==='annulee'?'selected':''}>Annulé</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn-action-small btn-publish" onclick="genererOTP('${r.id}')">Générer OTP</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Mise à jour rapide du statut
+        async function updateStatutResa(id, val) {
+            await sb.from('reservations').update({ statut: val }).eq('id', id);
+        }
+
+        async function genererOTP(id) {
+            const code = Math.floor(1000 + Math.random() * 9000);
+            const { error } = await sb.from('reservations').update({ code_otp: code, statut: 'valide' }).eq('id', id);
+            if(!error) { alert("OTP Généré: " + code); chargerTableReservations(); }
+        }
         
+        // Logique Formulaire Nouvelle Resa (Admin)
+        function toggleNewResaForm() { 
+            const f = document.getElementById('form-new-resa'); 
+            f.style.display = (f.style.display === 'none') ? 'block' : 'none'; 
+        }
+        function calculerPrixAdmin() { /* Logique simplifiée possible ici */ }
+        function updateResteAdmin() { /* Logique simplifiée possible ici */ }
+        async function creerReservationAdmin() {
+            // Implémentation basique de création
+            const vid = document.getElementById('new-resa-voiture').value;
+            const nom = document.getElementById('new-resa-nom').value;
+            const deb = document.getElementById('new-resa-debut').value;
+            const fin = document.getElementById('new-resa-fin').value;
+            const montant = document.getElementById('new-resa-montant').value;
+            
+            if(!vid || !deb || !fin) return alert("Champs manquants");
+            
+            const { error } = await sb.from('reservations').insert([{
+                id_voiture: vid, nom: nom, date_debut: deb, date_fin: fin, montant_total: montant, statut: 'valide'
+            }]);
+            
+            if(error) alert("Erreur: "+error.message);
+            else { alert("Créé !"); chargerTableReservations(); toggleNewResaForm(); }
+        }
+
+        // --- MAINTENANCES ---
+        async function chargerTableMaintenances() {
+            const tbody = document.getElementById('tbody-maint-global');
+            tbody.innerHTML = '<tr><td colspan="6">Chargement...</td></tr>';
+            const { data } = await sb.from('maintenances').select('*, voitures(nom)').order('date_debut', {ascending:false});
+            tbody.innerHTML = '';
+            if(!data || !data.length) { tbody.innerHTML = '<tr><td colspan="6">Aucune maintenance.</td></tr>'; return; }
+            data.forEach(m => {
+                tbody.innerHTML += `<tr><td>${m.date_debut}</td><td>${m.voitures?.nom}</td><td>${m.type}</td><td>${m.details}</td><td>${m.cout}</td><td>-</td></tr>`;
+            });
+        }
+
+        // --- PARTENAIRES ---
+        async function chargerTablePartenaires() {
+            const tbody = document.getElementById('tbody-partenaires');
+            tbody.innerHTML = '<tr><td colspan="6">Chargement...</td></tr>';
+            const { data } = await sb.from('partenaires').select('*');
+            tbody.innerHTML = '';
+            if(!data || !data.length) { tbody.innerHTML = '<tr><td colspan="6">Aucun partenaire.</td></tr>'; return; }
+            data.forEach(p => {
+                tbody.innerHTML += `<tr><td>${p.nom} ${p.prenom}</td><td>${p.email}<br>${p.tel}</td><td>Fin: ${p.fin_contrat}</td><td>${p.royalties}%</td><td>Actif</td><td><button class="btn-action-small btn-delete">Suppr</button></td></tr>`;
+            });
+        }
+        
+        function calculerFinContrat() {
+            const days = parseInt(document.getElementById('part-duree').value);
+            const date = new Date(); date.setDate(date.getDate() + days);
+            document.getElementById('part-fin').value = date.toISOString().split('T')[0];
+        }
+
+        async function upsertPartenaire() {
+            const nom = document.getElementById('part-nom').value;
+            const email = document.getElementById('part-email').value;
+            if(!nom || !email) return alert("Nom et Email requis");
+            // Note: Normalement il faut créer le User Auth Supabase d'abord. Ici on insère juste en base.
+            const { error } = await sb.from('partenaires').insert([{ 
+                nom, email, 
+                tel: document.getElementById('part-tel').value,
+                prenom: document.getElementById('part-prenom').value,
+                fin_contrat: document.getElementById('part-fin').value,
+                royalties: document.getElementById('part-royalties').value
+            }]);
+            if(error) alert("Erreur: " + error.message);
+            else { alert("Partenaire ajouté"); chargerTablePartenaires(); }
+        }
+
+        // --- AUTRES TABLES (PROMOS, AVIS, PUBS) ---
+        async function chargerTablePromos() { /* Code similaire ... */ }
+        async function chargerTableAvis() { 
+            const tb = document.getElementById('tbody-avis');
+            const { data } = await sb.from('avis').select('*');
+            tb.innerHTML = data ? data.map(a => `<tr><td>${new Date(a.created_at).toLocaleDateString()}</td><td>${a.nom}</td><td>${a.note}/5</td><td>${a.commentaire}</td><td>${a.visible?'Visible':'Masqué'}</td><td><button onclick="toggleAvis(${a.id}, ${a.visible})" class="btn-action-small btn-edit">Toggle</button></td></tr>`).join('') : '';
+        }
+        async function toggleAvis(id, state) { await sb.from('avis').update({visible:!state}).eq('id', id); chargerTableAvis(); }
+
+        async function chargerTablePubs() {
+             const tb = document.getElementById('tbody-pubs');
+             const { data } = await sb.from('pubs').select('*');
+             tb.innerHTML = data ? data.map(p => `<tr><td>${p.societe}</td><td>${p.emplacement}</td><td>${p.date_fin}</td><td><img src="${p.image_url}" width="50"></td><td>Actif</td><td>-</td></tr>`).join('') : '';
+        }
+        
+        async function ajouterPub() {
+            const pub = {
+                societe: document.getElementById('pub-societe').value,
+                emplacement: document.getElementById('pub-emplacement').value,
+                image_url: document.getElementById('pub-image').value,
+                date_fin: document.getElementById('pub-fin').value
+            };
+            await sb.from('pubs').insert([pub]);
+            alert("Pub ajoutée"); chargerTablePubs();
+        }
+        
+        function calculerFinPub() {
+             const days = parseInt(document.getElementById('pub-duree').value);
+             const deb = new Date(document.getElementById('pub-debut').value || new Date());
+             deb.setDate(deb.getDate() + days);
+             document.getElementById('pub-fin').value = deb.toISOString().split('T')[0];
+        }
+
+        // --- CONFIG ---
+        async function toggleGlobalCalendar() {
+            const toggle = document.getElementById('toggle-calendar-global');
+            const isVisible = toggle.checked;
+            document.getElementById('status-calendar-text').innerText = isVisible ? "VISIBLE" : "MASQUÉ";
+            await sb.from('config_site').upsert({ key: 'calendar_visible', value: isVisible });
+        }
+
         // Initialisation
         verifierSession();
 
