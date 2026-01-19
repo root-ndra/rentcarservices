@@ -25,8 +25,9 @@ let currentReservationId = null;
 let reductionActive = 0;
 let currentCarReservations = [];
 
-// --- 0. CHARGEMENT CONFIG JSON (Header/Footer/Conditions) ---
+// --- 0. CHARGEMENT CONFIG JSON & DB ---
 async function loadConfig() {
+    // 1. Charger Config JSON (Textes, Logo)
     try {
         const response = await fetch('site_config.json');
         const config = await response.json();
@@ -56,7 +57,7 @@ async function loadConfig() {
 
     } catch (e) { console.error("Erreur chargement config", e); }
 
-    // Chargement Conditions
+    // 2. Charger Conditions JSON
     try {
         const respCond = await fetch('conditions.json');
         const conditions = await respCond.json();
@@ -78,6 +79,16 @@ async function loadConfig() {
             </div>`;
         });
     } catch (e) { console.error("Erreur chargement conditions", e); }
+
+    // 3. CHARGER CONFIG CALENDRIER DEPUIS DB (ADMIN CONTROL)
+    const { data: calConfig } = await sb.from('config_site').select('value').eq('key', 'calendar_visible').single();
+    if (calConfig) {
+        const isVisible = (calConfig.value === true || calConfig.value === "true");
+        const wrapper = document.getElementById('wrapper-calendrier-global');
+        if (wrapper) {
+            wrapper.style.display = isVisible ? 'block' : 'none';
+        }
+    }
 }
 
 // --- INTERFACE ---
@@ -121,12 +132,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         voitures.forEach(v => {
             const div = document.createElement('div');
             div.className = 'carte-voiture';
+            
+            // Infos dynamiques
+            const places = v.places ? `<i class="fas fa-user-friends"></i> ${v.places} places` : '';
+            const carbu = v.carburant ? `<i class="fas fa-gas-pump"></i> ${v.carburant}` : '';
+            
             div.innerHTML = `
                 <img src="${v.image_url}" alt="${v.nom}">
                 <h3>${v.nom}</h3>
-                <p>${v.type} - ${v.transmission}</p>
+                <div style="padding: 0 20px; color: #555; font-size: 0.9rem; display: flex; gap: 10px; justify-content: center;">
+                    <span><i class="fas fa-cogs"></i> ${v.transmission}</span>
+                    <span>${places}</span>
+                    <span>${carbu}</span>
+                </div>
                 <p class="prix">${formatPrix(v.prix_base)} Ar / jour</p>
-                <button onclick="selectionnerVoiture('${v.id}', '${v.nom}', ${v.prix_base}, '${v.ref_id}')">Réserver</button>
+                <button onclick="selectionnerVoiture('${v.id}', '${v.nom}', ${v.prix_base}, '${v.ref_id}', \`${v.description || ''}\`)">Réserver</button>
             `;
             container.appendChild(div);
         });
@@ -140,11 +160,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 function formatPrix(prix) { return prix.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
 
 // --- SELECTION VOITURE ---
-function selectionnerVoiture(id, nom, prix, ref) {
+function selectionnerVoiture(id, nom, prix, ref, description) {
     voitureSelectionnee = { id, nom, prix, ref };
     naviguerVers('reservation');
     
     document.getElementById('nom-voiture-selectionnee').innerText = nom;
+    document.getElementById('desc-voiture-selectionnee').innerText = description || ""; // Affiche la description
     document.getElementById('id-voiture-input').value = id;
     document.getElementById('ref-voiture-input').value = ref;
     document.getElementById('prix-base-input').value = prix;
@@ -316,7 +337,6 @@ async function lancerReservationWhatsApp() {
         type_offre: calcul.offre,
         montant_total: calcul.total,
         statut: 'en_attente',
-        // Nouveaux champs (S'assurer que les colonnes existent dans Supabase)
         lieu_livraison: livraison.lieu,
         heure_livraison: livraison.heure,
         lieu_recuperation: recuperation.lieu,
@@ -391,8 +411,6 @@ function activerBoutonDownload(code) {
 function telechargerFactureAuto() { if(window.currentResaData) genererPDF(window.currentResaData); }
 
 function genererPDF(resa) {
-    // Cette fonction est identique à celle de l'Admin mais côté client
-    // Pour simplifier, j'utilise la même logique
     if (!window.jspdf) return;
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -421,7 +439,7 @@ function genererPDF(resa) {
         `Urgence: ${resa.urgence_nom || '-'} (${resa.urgence_tel || '-'})`
     ].join('\n');
 
-    // Détails complets Location (avec nouveaux champs)
+    // Détails complets Location
     const locInfo = [
         `Du: ${resa.date_debut} Au: ${resa.date_fin} (${duree}j)`,
         `Départ: ${resa.lieu_livraison || 'Agence'} à ${resa.heure_livraison || '-'}`,
