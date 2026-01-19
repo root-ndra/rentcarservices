@@ -1,25 +1,30 @@
+// --- CONFIGURATION SUPABASE ---
 const SUPABASE_URL = 'https://ctijwjcjmbfmfhzwbguk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// --- CONSTANTES RÔLES / TABS ---
 const ROLE_SUPER_ADMIN = 'super_admin';
-const RESTRICTED_TABS = ['partenaires', 'promos', 'pubs', 'media', 'config'];
+const ROLE_PARTENAIRE = 'partenaire';
+const restrictedTabs = ['partenaires', 'promos', 'pubs', 'media', 'config'];
 
+// --- ÉTAT GLOBAL ---
 let currentUser = null;
 let currentUserRole = null;
 let globalVoitures = [];
 let periodeAnalyse = 'mois';
 
+// --- AUTHENTIFICATION ---
 async function loginAdmin() {
   const email = document.getElementById('admin-email').value.trim();
   const password = document.getElementById('admin-pass').value.trim();
-  const err = document.getElementById('login-error');
-  err.style.display = 'none';
+  const errorMsg = document.getElementById('login-error');
+  errorMsg.style.display = 'none';
 
   const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) {
-    err.innerText = error.message;
-    err.style.display = 'block';
+    errorMsg.innerText = error.message;
+    errorMsg.style.display = 'block';
   } else {
     verifierSession();
   }
@@ -45,45 +50,37 @@ async function verifierSession() {
 
   await chargerRoleUtilisateur(currentUser.id);
   appliquerInterfaceSelonRole();
-  await chargerConfigAdmin();
+  chargerConfigAdmin();
   chargerDashboard();
 }
 
+// --- RÔLE & UI ---
 async function chargerRoleUtilisateur(userId) {
-  const { data, error } = await sb
-    .from('partenaires')
-    .select('role')
-    .eq('user_id', userId)
-    .maybeSingle();
-
+  const { data, error } = await sb.from('partenaires').select('role').eq('user_id', userId).maybeSingle();
   if (error) {
     console.warn('Impossible de charger le rôle', error);
-    currentUserRole = 'partenaire';
+    currentUserRole = ROLE_PARTENAIRE;
   } else {
-    currentUserRole = data?.role || 'partenaire';
+    currentUserRole = data?.role || ROLE_PARTENAIRE;
   }
 }
 
 function appliquerInterfaceSelonRole() {
   const badge = document.getElementById('header-user-role');
-  if (currentUserRole === ROLE_SUPER_ADMIN) {
-    badge.innerText = 'SUPER ADMIN';
-    badge.style.background = '#27ae60';
-  } else {
-    badge.innerText = 'PARTENAIRE';
-    badge.style.background = '#7f8c8d';
-    RESTRICTED_TABS.forEach((tab) => {
-      const btn = document.getElementById(`btn-tab-${tab}`);
-      if (btn) btn.classList.add('hidden');
-    });
-  }
+  badge.innerText = currentUserRole === ROLE_SUPER_ADMIN ? 'SUPER ADMIN' : 'PARTENAIRE';
+  badge.style.background = currentUserRole === ROLE_SUPER_ADMIN ? '#27ae60' : '#7f8c8d';
+
+  restrictedTabs.forEach((tab) => {
+    const btn = document.getElementById(`btn-tab-${tab}`);
+    if (btn) btn.style.display = currentUserRole === ROLE_SUPER_ADMIN ? 'flex' : 'none';
+  });
 }
 
 function switchTab(tabName, evt) {
-  const views = ['dashboard', 'reservations', 'maintenances', 'avis', 'pubs', 'media', 'promos', 'partenaires', 'config'];
-  views.forEach((v) => {
-    const el = document.getElementById(`view-${v}`);
-    if (el) el.style.display = (v === tabName) ? 'block' : 'none';
+  const sections = ['dashboard','reservations','maintenances','avis','pubs','media','promos','partenaires','config'];
+  sections.forEach((sec) => {
+    const elt = document.getElementById(`view-${sec}`);
+    if (elt) elt.style.display = sec === tabName ? 'block' : 'none';
   });
 
   document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.remove('active'));
@@ -99,6 +96,7 @@ function switchTab(tabName, evt) {
   if (tabName === 'config') chargerConfigAdmin();
 }
 
+// --- CONFIG ---
 async function chargerConfigAdmin() {
   try {
     const response = await fetch('site_config.json');
@@ -118,65 +116,81 @@ async function chargerConfigAdmin() {
   label.style.color = visible ? '#27ae60' : '#e74c3c';
 }
 
+async function toggleGlobalCalendar() {
+  if (currentUserRole !== ROLE_SUPER_ADMIN) {
+    alert('Action réservée au super admin.');
+    document.getElementById('toggle-calendar-global').checked = !document.getElementById('toggle-calendar-global').checked;
+    return;
+  }
+  const toggle = document.getElementById('toggle-calendar-global');
+  const visible = toggle.checked;
+  await sb.from('config_site').upsert({ key: 'calendar_visible', value: visible });
+  const label = document.getElementById('status-calendar-text');
+  label.innerText = visible ? 'VISIBLE' : 'MASQUÉ';
+  label.style.color = visible ? '#27ae60' : '#e74c3c';
+}
+
+// --- DASHBOARD VOITURES ---
+function resumeDescription(text) {
+  if (!text) return '<em>Aucune description</em>';
+  return text.length > 160 ? `${text.slice(0, 160)}…` : text;
+}
+
+function formatPrix(val) {
+  if (val === null || val === undefined) return '0';
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
 async function chargerDashboard() {
-  const container = document.getElementById('grid-voitures');
-  container.innerHTML = '<p>Chargement…</p>';
+  const grid = document.getElementById('grid-voitures');
+  grid.innerHTML = '<p>Chargement…</p>';
 
   let query = sb.from('voitures').select('*').order('created_at', { ascending: false });
   if (currentUserRole !== ROLE_SUPER_ADMIN) query = query.eq('proprietaire_id', currentUser.id);
 
   const { data, error } = await query;
   if (error) {
-    container.innerHTML = `<p>Erreur: ${error.message}</p>`;
+    grid.innerHTML = `<p>Erreur: ${error.message}</p>`;
     return;
   }
   globalVoitures = data || [];
   if (!globalVoitures.length) {
-    container.innerHTML = '<p>Aucune voiture</p>';
+    grid.innerHTML = '<p>Aucune voiture.</p>';
     return;
   }
 
-  container.innerHTML = '';
-  globalVoitures.forEach((v) => {
-    const isReservable = v.reservable !== false;
+  grid.innerHTML = '';
+  globalVoitures.forEach((voiture) => {
     const card = document.createElement('div');
+    const isReservable = voiture.reservable !== false;
     card.className = `car-card ${isReservable ? 'dispo' : 'indispo'}`;
     card.innerHTML = `
       <div class="top">
         <div>
-          <strong style="font-size:1.1rem;">${v.nom}</strong><br/>
-          <span style="color:#999;">Ref: ${v.ref_id || '-'}</span>
+          <strong style="font-size:1.1rem;">${voiture.nom}</strong><br/>
+          <span style="color:#999;">Ref: ${voiture.ref_id || '-'}</span>
         </div>
         <span class="user-role-badge" style="background:${isReservable ? '#27ae60' : '#f39c12'};">${isReservable ? 'Réservable' : 'Contact'}</span>
       </div>
       <div class="meta">
-        <span><i class="fas fa-gas-pump"></i> ${v.carburant || '-'}</span>
-        <span><i class="fas fa-cogs"></i> ${v.transmission || '-'}</span>
-        <span><i class="fas fa-user-friends"></i> ${v.places || '-'} places</span>
-        <span><i class="fas fa-money-bill"></i> ${formatPrix(v.prix_base)} Ar/j</span>
+        <span><i class="fas fa-gas-pump"></i> ${voiture.carburant || '-'}</span>
+        <span><i class="fas fa-cogs"></i> ${voiture.transmission || '-'}</span>
+        <span><i class="fas fa-user-friends"></i> ${voiture.places || '-'} places</span>
+        <span><i class="fas fa-money-bill"></i> ${formatPrix(voiture.prix_base)} Ar/j</span>
       </div>
-      <div class="description">${resumeDescription(v.description)}</div>
+      <div class="description">${resumeDescription(voiture.description)}</div>
       <div class="stats">
-        <span>Type: ${v.type || '-'}</span>
-        <span>Vidange: ${v.prochaine_vidange || '-'}</span>
+        <span>Type: ${voiture.type || '-'}</span>
+        <span>Vidange: ${voiture.prochaine_vidange || '-'}</span>
       </div>
       <div class="actions">
-        <button class="btn-action btn-primary" onclick="toggleReservable('${v.id}', ${isReservable})">
+        <button class="btn-action btn-primaire" onclick="toggleReservable('${voiture.id}', ${isReservable})">
           ${isReservable ? 'Désactiver' : 'Activer'}
         </button>
-        <button class="btn-action btn-secondary" onclick="ouvrirModalVoiture('${v.id}')">Modifier</button>
+        <button class="btn-action btn-sec" onclick="ouvrirModalVoiture('${voiture.id}')">Modifier</button>
       </div>`;
-    container.appendChild(card);
+    grid.appendChild(card);
   });
-}
-
-function resumeDescription(text) {
-  if (!text) return '<em>Aucune description</em>';
-  return text.length > 150 ? `${text.slice(0, 150)}…` : text;
-}
-function formatPrix(val) {
-  if (val === null || val === undefined) return '0';
-  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
 async function toggleReservable(id, currentVal) {
@@ -187,6 +201,7 @@ async function toggleReservable(id, currentVal) {
   else chargerDashboard();
 }
 
+// --- MODALE VOITURE ---
 function ouvrirModalVoiture(id = null) {
   document.getElementById('modal-voiture').style.display = 'flex';
   document.getElementById('modal-voiture').dataset.editId = id || '';
@@ -250,16 +265,12 @@ async function ajouterVoiture() {
   }
 }
 
-function setPeriode(p) {
-  periodeAnalyse = p;
-  document.getElementById('btn-periode-mois').classList.toggle('btn-primary', p === 'mois');
-  document.getElementById('btn-periode-annee').classList.toggle('btn-primary', p === 'annee');
-}
-
+// --- TABLEAU RÉSERVATIONS ---
 function toggleNewResaForm() {
   const form = document.getElementById('form-new-resa');
   form.style.display = form.style.display === 'none' ? 'block' : 'none';
 }
+
 function calculerPrixAdmin() {
   const select = document.getElementById('new-resa-voiture');
   const prix = parseInt(select.options[select.selectedIndex]?.dataset.prix, 10) || 0;
@@ -271,6 +282,7 @@ function calculerPrixAdmin() {
   document.getElementById('new-resa-montant').value = montant;
   updateResteAdmin();
 }
+
 function updateResteAdmin() {
   const total = parseInt(document.getElementById('new-resa-montant').value, 10) || 0;
   const paye = parseInt(document.getElementById('new-resa-paye').value, 10) || 0;
@@ -370,7 +382,9 @@ async function chargerTableReservations() {
           <option value="annulee" ${resa.statut === 'annulee' ? 'selected' : ''}>Annulé</option>
         </select>
       </td>
-      <td><button class="btn-small" style="background:#8e44ad;" onclick="genererOTP('${resa.id}')">OTP</button></td>`;
+      <td>
+        <button class="btn-action btn-primaire" onclick="genererOTP('${resa.id}')">OTP</button>
+      </td>`;
     tbody.appendChild(tr);
   });
 }
@@ -389,12 +403,19 @@ async function genererOTP(id) {
   }
 }
 
+// --- MAINTENANCES ---
 async function chargerTableMaintenances() {
   const tbody = document.getElementById('tbody-maint-global');
   tbody.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
 
-  let query = sb.from('maintenances').select('*, voitures!inner(nom, proprietaire_id)').order('date_debut', { ascending: false });
-  if (currentUserRole !== ROLE_SUPER_ADMIN) query = query.eq('voitures.proprietaire_id', currentUser.id);
+  let query = sb
+    .from('maintenances')
+    .select('*, voitures!inner(id, nom, proprietaire_id)')
+    .order('date_debut', { ascending: false });
+
+  if (currentUserRole !== ROLE_SUPER_ADMIN) {
+    query = query.eq('voitures.proprietaire_id', currentUser.id);
+  }
 
   const { data, error } = await query;
   if (error) {
@@ -405,17 +426,22 @@ async function chargerTableMaintenances() {
     tbody.innerHTML = '<tr><td colspan="6">Aucune maintenance.</td></tr>';
     return;
   }
-  tbody.innerHTML = data.map((m) => `
-    <tr>
-      <td>${m.date_debut || '-'}</td>
-      <td>${m.voitures?.nom || '-'}</td>
-      <td>${m.type_intervention || '-'}</td>
-      <td>${m.details || '-'}</td>
-      <td>${formatPrix(m.cout || 0)} Ar</td>
-      <td>-</td>
-    </tr>`).join('');
+  tbody.innerHTML = data
+    .map(
+      (m) => `
+        <tr>
+          <td>${m.date_debut}</td>
+          <td>${m.voitures?.nom || '-'}</td>
+          <td>${m.type_intervention || '-'}</td>
+          <td>${m.details || '-'}</td>
+          <td>${formatPrix(m.cout || 0)} Ar</td>
+          <td>-</td>
+        </tr>`
+    )
+    .join('');
 }
 
+// --- PARTENAIRES ---
 async function chargerTablePartenaires() {
   if (currentUserRole !== ROLE_SUPER_ADMIN) {
     document.getElementById('tbody-partenaires').innerHTML = '<tr><td colspan="6">Section réservée.</td></tr>';
@@ -433,22 +459,27 @@ async function chargerTablePartenaires() {
     tbody.innerHTML = '<tr><td colspan="6">Aucun partenaire.</td></tr>';
     return;
   }
-  tbody.innerHTML = data.map((p) => `
-    <tr>
-      <td>${p.nom_complet}</td>
-      <td>${p.email}<br>${p.telephone || '-'}</td>
-      <td>${p.date_fin_contrat || '-'}</td>
-      <td>${p.commission_taux || 0}%</td>
-      <td>${p.est_gele ? 'Gelé' : 'Actif'}</td>
-      <td>-</td>
-    </tr>`).join('');
+
+  tbody.innerHTML = data
+    .map(
+      (p) => `
+        <tr>
+          <td>${p.nom_complet}</td>
+          <td>${p.email}<br>${p.telephone || '-'}</td>
+          <td>${p.date_fin_contrat || '-'}</td>
+          <td>${p.commission_taux || 0}%</td>
+          <td>${p.est_gele ? 'Gelé' : 'Actif'}</td>
+          <td>-</td>
+        </tr>`
+    )
+    .join('');
 }
 
 function calculerFinContrat() {
   const days = parseInt(document.getElementById('part-duree').value, 10);
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  document.getElementById('part-fin').value = date.toISOString().split('T')[0];
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  document.getElementById('part-fin').value = d.toISOString().split('T')[0];
 }
 
 async function upsertPartenaire() {
@@ -459,67 +490,97 @@ async function upsertPartenaire() {
     telephone: document.getElementById('part-tel').value,
     date_fin_contrat: document.getElementById('part-fin').value,
     commission_taux: document.getElementById('part-royalties').value,
-    role: 'partenaire',
+    role: ROLE_PARTENAIRE,
   };
-  if (!payload.email) return alert('Email requis');
+  if (!payload.email) {
+    alert('Email requis');
+    return;
+  }
   const { error } = await sb.from('partenaires').insert([payload]);
   if (error) alert(error.message);
   else chargerTablePartenaires();
 }
 
+// --- CODES PROMO ---
+async function chargerTablePromos() {
+  const tbody = document.getElementById('tbody-promos');
+  tbody.innerHTML = '<tr><td colspan="5">Chargement…</td></tr>';
+
+  const { data, error } = await sb.from('codes_promo').select('*').order('date_debut', { ascending: true });
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="5">Erreur: ${error.message}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = (data || [])
+    .map(
+      (p) => `
+        <tr>
+          <td>${p.code}</td>
+          <td>${p.reduction_pourcent}%</td>
+          <td>${p.date_debut} → ${p.date_fin}</td>
+          <td>${p.min_jours} jours min.</td>
+          <td>${p.actif ? 'Actif' : 'Inactif'}</td>
+        </tr>`
+    )
+    .join('');
+}
+
 async function ajouterPromo() {
   const payload = {
-    code: document.getElementById('promo-code').value.toUpperCase(),
+    code: document.getElementById('promo-code').value.trim().toUpperCase(),
     reduction_pourcent: parseInt(document.getElementById('promo-pourcent').value, 10) || 0,
     min_jours: parseInt(document.getElementById('promo-jours').value, 10) || 1,
     date_debut: document.getElementById('promo-debut').value,
     date_fin: document.getElementById('promo-fin').value,
     actif: true,
   };
-  if (!payload.code) return alert('Code requis');
+  if (!payload.code) {
+    alert('Code requis');
+    return;
+  }
   const { error } = await sb.from('codes_promo').insert([payload]);
   if (error) alert(error.message);
   else chargerTablePromos();
 }
 
-async function chargerTablePromos() {
-  const tbody = document.getElementById('tbody-promos');
-  tbody.innerHTML = '<tr><td colspan="5">Chargement…</td></tr>';
-  const { data, error } = await sb.from('codes_promo').select('*').order('date_debut', { ascending: true });
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan="5">Erreur: ${error.message}</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = (data || []).map((p) => `
-    <tr>
-      <td>${p.code}</td>
-      <td>${p.reduction_pourcent}%</td>
-      <td>${p.date_debut || '-'} ➜ ${p.date_fin || '-'}</td>
-      <td>${p.min_jours || 1} jours min.</td>
-      <td>${p.actif ? 'Actif' : 'Inactif'}</td>
-    </tr>`).join('');
-}
-
+// --- AVIS ---
 async function chargerTableAvis() {
   const tbody = document.getElementById('tbody-avis');
+  tbody.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
+
   const { data, error } = await sb.from('avis').select('*').order('created_at', { ascending: false });
   if (error) {
     tbody.innerHTML = `<tr><td colspan="6">Erreur: ${error.message}</td></tr>`;
     return;
   }
-  tbody.innerHTML = (data || []).map((a) => `
-    <tr>
-      <td>${new Date(a.created_at).toLocaleDateString('fr-FR')}</td>
-      <td>${a.nom}</td>
-      <td>${a.note}/5</td>
-      <td>${a.commentaire}</td>
-      <td>${a.visible ? 'Visible' : 'Masqué'}</td>
-      <td><button class="btn-small" style="background:#3498db;" onclick="toggleAvis(${a.id}, ${a.visible})">Basculer</button></td>
-    </tr>`).join('');
+  tbody.innerHTML = (data || [])
+    .map(
+      (a) => `
+        <tr>
+          <td>${new Date(a.created_at).toLocaleDateString('fr-FR')}</td>
+          <td>${a.nom}</td>
+          <td>${a.note}/5</td>
+          <td>${a.commentaire}</td>
+          <td>${a.visible ? 'Visible' : 'Masqué'}</td>
+          <td><button class="btn-action btn-sec" onclick="toggleAvis(${a.id}, ${a.visible})">Basculer</button></td>
+        </tr>`
+    )
+    .join('');
 }
+
 async function toggleAvis(id, visible) {
   await sb.from('avis').update({ visible: !visible }).eq('id', id);
   chargerTableAvis();
+}
+
+// --- PUBLICITÉS ---
+function calculerFinPub() {
+  const debut = document.getElementById('pub-debut').value;
+  if (!debut) return;
+  const days = parseInt(document.getElementById('pub-duree').value, 10);
+  const d = new Date(debut);
+  d.setDate(d.getDate() + days);
+  document.getElementById('pub-fin').value = d.toISOString().split('T')[0];
 }
 
 async function ajouterPub() {
@@ -537,23 +598,97 @@ async function ajouterPub() {
   if (error) alert(error.message);
   else chargerTablePubs();
 }
+
 async function chargerTablePubs() {
   const tbody = document.getElementById('tbody-pubs');
-  tbody.innerHTML = '<tr><td colspan="5">Chargement…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
+
   const { data, error } = await sb.from('publicites').select('*').order('date_debut', { ascending: false });
   if (error) {
-    tbody.innerHTML = `<tr><td colspan="5">Erreur: ${error.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6">Erreur: ${error.message}</td></tr>`;
     return;
   }
-  tbody.innerHTML = (data || []).map((p) => `
-    <tr>
-      <td>${p.societe}</td>
-      <td>${p.emplacement}</td>
-      <td>${p.date_debut || '-'} ➜ ${p.date_fin || '-'}</td>
-      <td><img src="${p.image_url}" alt="${p.societe}" style="width:60px;"></td>
-      <td>${p.actif ? 'Actif' : 'Inactif'}</td>
-    </tr>`).join('');
+  tbody.innerHTML = (data || [])
+    .map(
+      (p) => `
+        <tr>
+          <td>${p.societe}</td>
+          <td>${p.emplacement}</td>
+          <td>${p.date_debut} → ${p.date_fin}</td>
+          <td><img src="${p.image_url}" alt="${p.societe}" style="width:60px; height:50px; object-fit:cover;"></td>
+          <td>${p.actif ? 'Actif' : 'Inactif'}</td>
+          <td>-</td>
+        </tr>`
+    )
+    .join('');
 }
 
-function calculerFinPub() {
-  const debut = document.getElement
+// --- MEDIA ---
+async function ajouterRadio() {
+  const payload = {
+    nom: document.getElementById('rad-nom').value,
+    url_flux: document.getElementById('rad-url').value,
+    image_url: document.getElementById('rad-logo').value,
+    actif: true,
+  };
+  const { error } = await sb.from('radios').insert([payload]);
+  if (error) alert(error.message);
+  else chargerTableMedia();
+}
+
+async function ajouterPlaylist() {
+  const payload = {
+    titre: document.getElementById('play-titre').value,
+    plateforme: document.getElementById('play-plateforme').value,
+    url_embed: document.getElementById('play-url').value,
+    actif: true,
+  };
+  const { error } = await sb.from('playlists').insert([payload]);
+  if (error) alert(error.message);
+  else chargerTableMedia();
+}
+
+async function chargerTableMedia() {
+  const tbRadios = document.getElementById('tbody-radios');
+  const { data: radios } = await sb.from('radios').select('*').order('created_at', { ascending: false });
+  tbRadios.innerHTML = (radios || [])
+    .map(
+      (r) => `
+        <tr>
+          <td><img src="${r.image_url}" style="width:40px;height:40px;object-fit:contain;"></td>
+          <td>${r.nom}</td>
+          <td>${r.url_flux}</td>
+          <td>${r.actif ? 'Actif' : 'Inactif'}</td>
+        </tr>`
+    )
+    .join('');
+
+  const tbPlay = document.getElementById('tbody-playlists');
+  const { data: playlists } = await sb.from('playlists').select('*').order('created_at', { ascending: false });
+  tbPlay.innerHTML = (playlists || [])
+    .map(
+      (p) => `
+        <tr>
+          <td>${p.plateforme}</td>
+          <td>${p.titre}</td>
+          <td>${p.url_embed}</td>
+          <td>${p.actif ? 'Actif' : 'Inactif'}</td>
+        </tr>`
+    )
+    .join('');
+}
+
+// --- PROFIL MODAL ---
+function ouvrirModalProfil() {
+  document.getElementById('modal-profil').style.display = 'flex';
+}
+
+// --- ANALYTICS UI ---
+function setPeriode(p) {
+  periodeAnalyse = p;
+  document.getElementById('btn-periode-mois').classList.toggle('btn-primaire', p === 'mois');
+  document.getElementById('btn-periode-annee').classList.toggle('btn-primaire', p === 'annee');
+}
+
+// --- DÉMARRAGE ---
+verifierSession();
