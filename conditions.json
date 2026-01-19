@@ -1,0 +1,27 @@
+[
+    {
+        "title": "Conducteur",
+        "icon": "fas fa-user-check",
+        "details": "Le locataire doit avoir plus de 23 ans et un permis de conduire valide depuis plus de 2 ans."
+    },
+    {
+        "title": "Paiement & Caution",
+        "icon": "fas fa-wallet",
+        "details": "Acompte de 50% requis. Pas de caution exigée avant le départ, mais une pièce d'identité est obligatoire."
+    },
+    {
+        "title": "Utilisation",
+        "icon": "fas fa-road",
+        "details": "Usage 'bon père de famille'. Sous-location interdite. Routes carrossables uniquement."
+    },
+    {
+        "title": "Carburant",
+        "icon": "fas fa-gas-pump",
+        "details": "À la charge du locataire. Le véhicule doit être restitué avec le même niveau de carburant qu'au départ."
+    },
+    {
+        "title": "Dommage",
+        "icon": "fas fa-car-crash",
+        "details": "En cas de casse ou rayure, les frais de remise en état sont à la charge immédiate du locataire."
+    }
+]

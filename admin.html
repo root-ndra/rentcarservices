@@ -4,201 +4,228 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Rija Cars</title>
-    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
     <style>
-        /* Styles Admin spécifiques intégrés */
-        body { overflow: auto; background: #f4f6f9; height: auto; } /* Override du scroll snap */
-        .admin-header { background: white; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; }
-        .admin-container { padding: 20px; max-width: 1400px; margin: 0 auto; }
-        .admin-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab-btn { padding: 10px 20px; border: none; background: white; cursor: pointer; border-radius: 5px; font-weight: bold; }
-        .tab-btn.active { background: #2c3e50; color: white; }
-        .view-section { display: none; }
-        .table-admin { width: 100%; border-collapse: collapse; background: white; }
-        .table-admin th, .table-admin td { padding: 15px; border-bottom: 1px solid #ddd; text-align: left; }
-        .form-box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        /* Styles Admin Spécifiques (Conserver les styles existants + Ajouts) */
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; padding-bottom: 50px; }
+        .admin-container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+        .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #2c3e50; color: white; }
+        .btn-action-small { padding: 5px 10px; cursor: pointer; border: none; border-radius: 4px; color: white; margin: 2px; }
+        .form-box { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ddd; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
     </style>
 </head>
 <body>
 
-<div class="admin-header">
-    <h1>Administration Rija Cars</h1>
-    <a href="index.html" class="btn-dark">Retour Site</a>
-</div>
-
-<div class="admin-container">
-    
-    <div class="admin-tabs">
-        <button class="tab-btn active" onclick="switchTab('resas')">Réservations</button>
-        <button class="tab-btn" onclick="switchTab('voitures')">Voitures</button>
-        <button class="tab-btn" onclick="switchTab('maint')">Maintenance</button>
-        <button class="tab-btn" onclick="switchTab('partenaires')">Partenaires</button>
-        <button class="tab-btn" onclick="switchTab('media')">Divertissement</button>
-        <button class="tab-btn" onclick="switchTab('avis')">Avis</button>
-        <button class="tab-btn" onclick="switchTab('pubs')">Pubs</button>
-    </div>
-
-    <div id="view-resas" class="view-section" style="display:block;">
-        <div class="form-box">
-            <h3>Ajouter Réservation Manuelle</h3>
-            <input type="text" id="new-resa-client" placeholder="Nom Client">
-            <select id="new-resa-car"></select>
-            <input type="date" id="new-resa-debut">
-            <input type="date" id="new-resa-fin">
-            <button onclick="addResaManual()" class="btn-dark">Créer</button>
+    <div id="login-screen" style="height:100vh; display:flex; justify-content:center; align-items:center; background:#2c3e50;">
+        <div style="background:white; padding:30px; border-radius:10px; text-align:center;">
+            <h2>Admin Rija Cars</h2>
+            <input type="email" id="admin-email" placeholder="Email" style="width:100%; padding:10px; margin-bottom:10px;">
+            <input type="password" id="admin-pass" placeholder="Password" style="width:100%; padding:10px; margin-bottom:10px;">
+            <button onclick="loginAdmin()" style="width:100%; padding:10px; background:#3498db; color:white;">Connexion</button>
         </div>
-        <table class="table-admin">
-            <thead><tr><th>ID</th><th>Client</th><th>Voiture</th><th>Dates</th><th>Statut</th><th>Action</th></tr></thead>
-            <tbody id="tbody-resas"></tbody>
-        </table>
     </div>
 
-    <div id="view-voitures" class="view-section">
-        <div class="form-box">
-            <h3>Ajouter Voiture</h3>
-            <input type="text" id="new-car-nom" placeholder="Nom">
-            <input type="number" id="new-car-prix" placeholder="Prix">
-            <input type="text" id="new-car-img" placeholder="URL Image">
-            <button onclick="addCar()" class="btn-dark">Ajouter</button>
+    <div id="admin-content" style="display:none;">
+        <div class="admin-container">
+            <h1>Administration Rija Cars</h1>
+            <button onclick="logoutAdmin()" style="background:#c0392b; color:white; padding:10px;">Déconnexion</button>
+            <br><br>
+
+            <div style="margin-bottom:20px;">
+                <button onclick="switchTab('dashboard')">Dashboard</button>
+                <button onclick="switchTab('reservations')">Réservations</button>
+                <button onclick="switchTab('maintenances')">Maintenances</button>
+            </div>
+
+            <div id="view-dashboard">
+                <div id="grid-voitures" class="grid-dashboard"></div>
+            </div>
+
+            <div id="view-reservations" style="display:none;">
+                
+                <button onclick="document.getElementById('form-new-resa').style.display='block'" style="background:#2ecc71; color:white; padding:10px;">+ Nouvelle Réservation</button>
+                
+                <div id="form-new-resa" class="form-box" style="display:none; margin-top:10px;">
+                    <h3>Nouvelle Réservation (Admin)</h3>
+                    <div class="form-grid">
+                        <div><label>Voiture</label><select id="new-resa-voiture"></select></div>
+                        <div><label>Client Nom</label><input type="text" id="new-resa-nom"></div>
+                        <div><label>Client Tél</label><input type="text" id="new-resa-tel"></div>
+                        <div><label>Début</label><input type="date" id="new-resa-debut"></div>
+                        <div><label>Fin</label><input type="date" id="new-resa-fin"></div>
+                        
+                        <div><label>Lieu Livraison</label><input type="text" id="new-resa-liv-lieu"></div>
+                        <div><label>Heure Livraison</label><input type="time" id="new-resa-liv-heure"></div>
+                        <div><label>Lieu Récup.</label><input type="text" id="new-resa-rec-lieu"></div>
+                        <div><label>Heure Récup.</label><input type="time" id="new-resa-rec-heure"></div>
+                        <div><label>Trajet</label><input type="text" id="new-resa-trajet"></div>
+
+                        <div><label>Montant (Ar)</label><input type="number" id="new-resa-montant"></div>
+                        <div><label>Déjà Payé</label><input type="number" id="new-resa-paye"></div>
+                    </div>
+                    <button onclick="creerReservationAdmin()" style="background:#2ecc71; color:white; padding:10px; width:100%; margin-top:10px;">Valider</button>
+                </div>
+
+                <div class="table-container" style="margin-top:20px;">
+                    <table id="table-resa-full">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Client / Urgence</th>
+                                <th>Voiture / Dates</th>
+                                <th>Logistique & Trajet</th>
+                                <th>Paiement (Payeur)</th>
+                                <th>Finances</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-resa-full"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-maintenances" style="display:none;">...</div>
         </div>
-        <div id="grid-admin-cars" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:20px;"></div>
     </div>
-
-    <div id="view-maint" class="view-section">
-        <div class="form-box">
-            <h3>Ajouter Maintenance</h3>
-            <select id="maint-car-select"></select>
-            <input type="text" id="maint-type" placeholder="Type (Vidange, Pneus...)">
-            <input type="number" id="maint-cout" placeholder="Coût">
-            <input type="date" id="maint-date">
-            <button onclick="addMaint()" class="btn-dark">Enregistrer</button>
-        </div>
-        <table class="table-admin"><tbody id="tbody-maint"></tbody></table>
-    </div>
-
-    <div id="view-partenaires" class="view-section">
-        <div class="form-box">
-            <h3>Ajouter Partenaire</h3>
-            <input type="text" id="part-nom" placeholder="Nom">
-            <input type="email" id="part-email" placeholder="Email">
-            <button onclick="addPartner()" class="btn-dark">Ajouter</button>
-        </div>
-        <table class="table-admin"><tbody id="tbody-partenaires"></tbody></table>
-    </div>
-
-    <div id="view-media" class="view-section">
-        <div class="form-box">
-            <h3>Ajouter Media</h3>
-            <input type="text" id="media-nom" placeholder="Titre / Nom Radio">
-            <input type="text" id="media-url" placeholder="URL Audio / Flux">
-            <select id="media-type"><option value="radios">Radio</option><option value="divertissements">Playlist</option></select>
-            <button onclick="addMedia()" class="btn-dark">Ajouter</button>
-        </div>
-        <table class="table-admin"><tbody id="tbody-media"></tbody></table>
-    </div>
-
-    <div id="view-avis" class="view-section">
-        <h3>Modération Avis</h3>
-        <table class="table-admin"><tbody id="tbody-avis"></tbody></table>
-    </div>
-
-    <div id="view-pubs" class="view-section">
-        <div class="form-box">
-            <h3>Ajouter Publicité</h3>
-            <input type="text" id="pub-societe" placeholder="Société">
-            <input type="text" id="pub-img" placeholder="URL Image">
-            <button onclick="addPub()" class="btn-dark">Ajouter</button>
-        </div>
-        <table class="table-admin"><tbody id="tbody-pubs"></tbody></table>
-    </div>
-
-</div>
 
 <script>
-    // SUPABASE SETUP
+    // --- MEME CONFIG QUE SCRIPT.JS ---
     const SUPABASE_URL = 'https://ctijwjcjmbfmfhzwbguk.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk';
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // NAVIGATION ONGLETS
-    function switchTab(id) {
-        document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
-        document.getElementById('view-'+id).style.display = 'block';
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        loadData(id);
+    // Login/Logout (Idem original)
+    async function loginAdmin() {
+        const email = document.getElementById('admin-email').value;
+        const pass = document.getElementById('admin-pass').value;
+        const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+        if(error) alert(error.message); else { document.getElementById('login-screen').style.display='none'; document.getElementById('admin-content').style.display='block'; chargerTableReservations(); chargerVoituresSelect(); }
+    }
+    async function logoutAdmin() { await sb.auth.signOut(); location.reload(); }
+
+    function switchTab(t) {
+        document.getElementById('view-dashboard').style.display='none';
+        document.getElementById('view-reservations').style.display='none';
+        document.getElementById('view-'+t).style.display='block';
     }
 
-    async function loadData(type) {
-        if(type === 'resas') {
-            const { data } = await sb.from('reservations').select('*, voitures(nom)').order('id', {ascending:false});
-            document.getElementById('tbody-resas').innerHTML = data.map(r => `<tr><td>${r.id}</td><td>${r.nom}</td><td>${r.voitures?.nom}</td><td>${r.date_debut} au ${r.date_fin}</td><td>${r.statut}</td><td><button onclick="validerResa(${r.id})">Valider</button></td></tr>`).join('');
-            
-            // Remplir select voitures
-            const { data: cars } = await sb.from('voitures').select('*');
-            const sel = document.getElementById('new-resa-car');
-            const selMaint = document.getElementById('maint-car-select');
-            let opts = cars.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
-            sel.innerHTML = opts;
-            if(selMaint) selMaint.innerHTML = opts;
-        }
-        else if(type === 'voitures') {
-            const { data } = await sb.from('voitures').select('*');
-            document.getElementById('grid-admin-cars').innerHTML = data.map(v => `<div style="background:white; padding:10px; border:1px solid #ddd;"><strong>${v.nom}</strong><br>${v.prix_base} Ar</div>`).join('');
-        }
-        else if(type === 'partenaires') {
-            const { data } = await sb.from('partenaires').select('*');
-            document.getElementById('tbody-partenaires').innerHTML = data ? data.map(p => `<tr><td>${p.nom}</td><td>${p.email}</td><td>Actif</td></tr>`).join('') : '';
-        }
-        else if(type === 'media') {
-            // Charge radios
-            const { data } = await sb.from('radios').select('*');
-            document.getElementById('tbody-media').innerHTML = data ? data.map(m => `<tr><td>Radio</td><td>${m.nom}</td><td>${m.url_flux}</td></tr>`).join('') : '';
-        }
-        else if(type === 'avis') {
-            const { data } = await sb.from('avis').select('*');
-            document.getElementById('tbody-avis').innerHTML = data ? data.map(a => `<tr><td>${a.nom}</td><td>${a.commentaire}</td><td>${a.visible ? 'Publié' : 'Masqué'}</td><td><button onclick="toggleAvis(${a.id}, ${!a.visible})">Toggle</button></td></tr>`).join('') : '';
-        }
-        // ... (Logique similaire pour Maintenance et Pubs)
+    async function chargerVoituresSelect() {
+        const {data} = await sb.from('voitures').select('id, nom');
+        const s = document.getElementById('new-resa-voiture');
+        s.innerHTML = '';
+        data.forEach(v => s.innerHTML += `<option value="${v.id}">${v.nom}</option>`);
     }
 
-    // AJOUTS SIMPLIFIÉS (CRUD)
-    async function addCar() {
-        const nom = document.getElementById('new-car-nom').value;
-        const prix = document.getElementById('new-car-prix').value;
-        const img = document.getElementById('new-car-img').value;
-        await sb.from('voitures').insert([{nom, prix_base: prix, image_url: img}]);
-        loadData('voitures'); alert('Voiture ajoutée');
-    }
-
-    async function addResaManual() {
+    // --- CREATION RESA ADMIN (Avec nouveaux champs) ---
+    async function creerReservationAdmin() {
         const r = {
-            nom: document.getElementById('new-resa-client').value,
-            id_voiture: document.getElementById('new-resa-car').value,
+            id_voiture: document.getElementById('new-resa-voiture').value,
+            nom: document.getElementById('new-resa-nom').value,
+            tel: document.getElementById('new-resa-tel').value,
             date_debut: document.getElementById('new-resa-debut').value,
             date_fin: document.getElementById('new-resa-fin').value,
-            statut: 'valide'
+            montant_total: document.getElementById('new-resa-montant').value,
+            paiement_montant_declare: document.getElementById('new-resa-paye').value,
+            // Nouveaux champs
+            lieu_livraison: document.getElementById('new-resa-liv-lieu').value,
+            heure_livraison: document.getElementById('new-resa-liv-heure').value,
+            lieu_recuperation: document.getElementById('new-resa-rec-lieu').value,
+            heure_recuperation: document.getElementById('new-resa-rec-heure').value,
+            trajet_details: document.getElementById('new-resa-trajet').value,
+            statut: 'valide',
+            code_otp: 'ADMIN'
         };
         await sb.from('reservations').insert([r]);
-        loadData('resas');
+        alert("Réservation créée");
+        chargerTableReservations();
     }
 
-    async function validerResa(id) {
-        await sb.from('reservations').update({statut: 'valide'}).eq('id', id);
-        loadData('resas');
+    // --- TABLEAU ET PDF ---
+    async function chargerTableReservations() {
+        const { data } = await sb.from('reservations').select('*, voitures(nom, ref_id)').order('id', {ascending:false});
+        const tbody = document.getElementById('tbody-resa-full');
+        tbody.innerHTML = '';
+
+        data.forEach(r => {
+            // Calculs
+            const total = parseFloat(r.montant_total);
+            const paye = parseFloat(r.paiement_montant_declare) || 0;
+            const reste = total - paye;
+
+            // Infos complètes "récupérées"
+            const contactInfo = `<strong>${r.nom}</strong> ${r.prenom || ''}<br>${r.tel}<br>Urgence: ${r.urgence_nom || '-'} (${r.urgence_tel || '-'})`;
+            const trajetInfo = `<strong>Départ:</strong> ${r.lieu_livraison || 'Agence'} (${r.heure_livraison || '-'})<br><strong>Retour:</strong> ${r.lieu_recuperation || 'Agence'} (${r.heure_recuperation || '-'})<br><strong>Trajet:</strong> ${r.trajet_details || '-'}`;
+            const payeurInfo = `${r.paiement_methode || '-'}<br>Titulaire: <strong>${r.paiement_titulaire || '-'}</strong><br>Ref: ${r.paiement_ref || '-'}`;
+            const financeInfo = `Total: ${total}<br>Payé: <span style="color:green">${paye}</span><br>Reste: <span style="color:red; font-weight:bold;">${reste}</span>`;
+
+            tbody.innerHTML += `
+            <tr>
+                <td>#${r.id}</td>
+                <td>${contactInfo}</td>
+                <td>${r.voitures?.nom}<br>${r.date_debut} au ${r.date_fin}</td>
+                <td style="font-size:0.85rem;">${trajetInfo}</td>
+                <td>${payeurInfo}</td>
+                <td>${financeInfo}</td>
+                <td>
+                    <button class="btn-action-small" style="background:#8e44ad" onclick="genererPDFAdmin(${r.id})"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="btn-action-small" style="background:#e74c3c" onclick="deleteResa(${r.id})">X</button>
+                </td>
+            </tr>`;
+        });
     }
 
-    async function toggleAvis(id, etat) {
-        await sb.from('avis').update({visible: etat}).eq('id', id);
-        loadData('avis');
+    // --- GENERATION PDF ADMIN (AVEC TOUTES LES NOUVELLES INFOS) ---
+    async function genererPDFAdmin(id) {
+        const { data: r } = await sb.from('reservations').select('*, voitures(nom)').eq('id', id).single();
+        if(!r) return;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // En-tête
+        doc.setFillColor(44, 62, 80); doc.rect(0, 0, 210, 40, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFontSize(22);
+        doc.text("RIJA NIAINA CAR SERVICES", 105, 15, {align:"center"});
+        doc.setFontSize(10);
+        doc.text("ADMINISTRATION - DUPLICATA", 105, 25, {align:"center"});
+
+        doc.setTextColor(0,0,0);
+        doc.text(`Facture N° ${r.id}`, 14, 50);
+
+        // Contenu riche
+        const client = `CLIENT\nNom: ${r.nom} ${r.prenom || ''}\nTél: ${r.tel}\nCIN: ${r.cin_passeport || '-'}\nAdresse: ${r.adresse || '-'}\n\nURGENCE\nNom: ${r.urgence_nom || '-'}\nTél: ${r.urgence_tel || '-'}`;
+        
+        const trajet = `VÉHICULE: ${r.voitures?.nom}\n\nDATES\nDu: ${r.date_debut}\nAu: ${r.date_fin}\n\nLOGISTIQUE\nLivraison: ${r.lieu_livraison || 'Agence'} (${r.heure_livraison || '-'})\nRécup: ${r.lieu_recuperation || 'Agence'} (${r.heure_recuperation || '-'})\n\nTRAJET PRÉVU\n${r.trajet_details || '-'}`;
+        
+        const paye = parseFloat(r.paiement_montant_declare) || 0;
+        const reste = parseFloat(r.montant_total) - paye;
+        
+        const finance = `Total: ${r.montant_total} Ar\nPayé: ${paye} Ar\nReste: ${reste} Ar\n\nINFOS PAIEMENT\nMode: ${r.paiement_methode}\nPayeur: ${r.paiement_titulaire}\nRef: ${r.paiement_numero || r.paiement_ref}`;
+
+        doc.autoTable({
+            startY: 60,
+            head: [['CLIENT', 'DÉTAILS & LOGISTIQUE', 'FINANCES']],
+            body: [[client, trajet, finance]],
+            theme: 'grid',
+            headStyles: { fillColor: [44, 62, 80] },
+            columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 80 }, 2: { cellWidth: 50 } }
+        });
+
+        doc.save(`Admin_Facture_${r.id}.pdf`);
     }
 
-    // Init
-    loadData('resas');
+    async function deleteResa(id) { if(confirm("Supprimer ?")) await sb.from('reservations').delete().eq('id', id); chargerTableReservations(); }
 </script>
-
 </body>
 </html>
