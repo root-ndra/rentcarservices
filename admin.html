@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Rent Cars Services</title>
+    <title>Admin - Rija Niaina Car Services</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -11,283 +11,295 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    
+
     <style>
-        /* --- STYLES ADMIN --- */
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; margin: 0; padding-bottom: 50px; }
-        .admin-header { background: white; padding: 15px 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        .user-profile-corner { display: flex; align-items: center; gap: 15px; }
-        .user-name-display { font-weight: bold; color: #2c3e50; text-align: right; line-height: 1.2; }
-        .user-role-badge { font-size: 0.75rem; color: #7f8c8d; font-weight: normal; }
+        /* Styles spécifiques Admin */
+        body { background-color: #f4f6f9; }
+        .admin-layout { max-width: 1400px; margin: 0 auto; padding: 20px; }
         
-        .admin-container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+        .header-bar {
+            background: white; padding: 15px 20px; border-radius: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px;
+        }
         
-        .admin-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .tab-btn { padding: 12px 20px; background: transparent; border: none; font-size: 0.95rem; font-weight: 600; color: #555; cursor: pointer; border-radius: 6px; transition: 0.3s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
-        .tab-btn:hover { background: #f0f0f0; color: #2c3e50; }
+        .role-badge {
+            padding: 5px 10px; border-radius: 15px; color: white; 
+            font-size: 0.8rem; font-weight: bold; text-transform: uppercase;
+        }
+        .badge-admin { background-color: #e74c3c; }
+        .badge-partner { background-color: #3498db; }
+
+        /* Onglets */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn {
+            padding: 10px 20px; border: none; background: white; 
+            cursor: pointer; border-radius: 5px; font-weight: 600; color: #555;
+            transition: 0.3s;
+        }
+        .tab-btn:hover { background: #eee; }
         .tab-btn.active { background: #2c3e50; color: white; }
+        
+        /* Masquer pour partenaire */
+        .super-admin-only { display: none !important; }
+        body.is-super-admin .super-admin-only { display: inline-block !important; }
+        body.is-super-admin .row-super-admin { display: table-row !important; }
 
-        .grid-dashboard { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .car-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; border-top: 5px solid transparent; }
-        
-        .status-dispo { border-top-color: #2ecc71; } .status-louee { border-top-color: #e74c3c; } .status-maintenance { border-top-color: #f39c12; }
-        .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; color: white; text-transform: uppercase; }
-        .bg-green { background: #2ecc71; } .bg-red { background: #e74c3c; } .bg-orange { background: #f39c12; } .bg-blue { background: #3498db; }
-        
-        .card-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
-        .card-body { padding: 15px; }
-        .card-actions { padding: 10px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; gap: 5px; }
-        .btn-action { flex: 1; padding: 8px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; text-align:center; }
-        .btn-maint { background: #f39c12; color: white; } .btn-km { background: #34495e; color: white; }
-        
-        .table-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-x: auto; margin-bottom: 30px; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th { background: #2c3e50; color: white; padding: 15px; text-align: left; }
-        td { padding: 12px 15px; border-bottom: 1px solid #eee; }
-        tr:hover { background-color: #f9f9f9; }
+        /* Grille Voitures */
+        .grid-cars { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .card img { width: 100%; height: 150px; object-fit: cover; border-radius: 5px; }
 
-        .form-box { background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ddd; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        
-        .login-wrapper { height: 100vh; display: flex; justify-content: center; align-items: center; background: #2c3e50; }
-        .login-box { background: white; padding: 30px; border-radius: 10px; width: 400px; text-align: center; }
-        
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 10px; width: 90%; max-width: 600px; position: relative; max-height: 90vh; overflow-y: auto; }
-        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; }
+        /* Tableaux */
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #2c3e50; color: white; }
 
-        /* Helpers Visibilité selon rôle */
-        .only-super-admin { display: none !important; }
-        .show-super-admin .only-super-admin { display: block !important; }
-        .show-super-admin .only-super-admin-flex { display: flex !important; }
-        .show-super-admin .only-super-admin-inline { display: inline-block !important; }
+        /* Login */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #2c3e50; display: flex; justify-content: center; align-items: center; z-index: 999;
+        }
+        .login-box { background: white; padding: 30px; border-radius: 8px; width: 350px; text-align: center; }
+        .login-box input { width: 100%; padding: 10px; margin-bottom: 10px; box-sizing: border-box; }
+        .login-box button { width: 100%; padding: 10px; background: #3498db; color: white; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="login-wrapper">
+    <div id="login-screen">
         <div class="login-box">
-            <h2>Admin Rija Cars</h2>
-            <p>Accès Partenaire & Super Admin</p>
-            <input type="email" id="admin-email" placeholder="Email" style="margin-bottom:10px;">
-            <input type="password" id="admin-pass" placeholder="Mot de passe" style="margin-bottom:20px;">
-            <button onclick="loginAdmin()" style="width:100%; padding:15px; background:#3498db; color:white; border:none; cursor:pointer;">Connexion</button>
-            <p id="login-error" style="color:red; display:none;"></p>
+            <h2>Espace Pro</h2>
+            <p>Rija Niaina Car Services</p>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Mot de passe">
+            <button onclick="handleLogin()">Se connecter</button>
+            <p id="error-msg" style="color:red; display:none; margin-top:10px;"></p>
         </div>
     </div>
 
-    <div id="admin-content" style="display:none;">
-        <div class="admin-header">
+    <div id="admin-interface" class="admin-layout" style="display:none;">
+        <div class="header-bar">
             <div>
-                <h1 style="margin:0;">Administration</h1>
-                <small id="role-display-text">Chargement...</small>
+                <h2 style="margin:0;">Tableau de Bord</h2>
+                <small id="user-email-display">...</small>
             </div>
-            <div class="user-profile-corner">
-                <div class="user-name-display">
-                    <span id="header-user-name">...</span><br>
-                    <span id="header-user-role" class="user-role-badge">...</span>
-                </div>
-                <button onclick="logoutAdmin()" title="Déconnexion" style="background:#c0392b; color:white; border:none; padding:10px;">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
+            <div>
+                <span id="role-display" class="role-badge badge-partner">Chargement...</span>
+                <button onclick="handleLogout()" style="margin-left:15px; padding:5px 10px; background:#c0392b; color:white; border:none; border-radius:4px; cursor:pointer;">Déconnexion</button>
             </div>
         </div>
 
-        <div class="admin-container">
-            <div class="admin-tabs">
-                <button class="tab-btn active" onclick="switchTab('dashboard')"><i class="fas fa-car"></i> Mes Voitures</button>
-                <button class="tab-btn" onclick="switchTab('reservations')"><i class="fas fa-list-alt"></i> Réservations</button>
-                <button class="tab-btn" onclick="switchTab('maintenances')"><i class="fas fa-tools"></i> Maintenances</button>
-                
-                <button class="tab-btn only-super-admin" onclick="switchTab('partenaires')"><i class="fas fa-users-cog"></i> Utilisateurs (Admin)</button>
-                <button class="tab-btn only-super-admin" onclick="switchTab('config')"><i class="fas fa-cogs"></i> Config Site</button>
-                <button class="tab-btn only-super-admin" onclick="switchTab('promos')"><i class="fas fa-tags"></i> Codes Promo</button>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('voitures')">🚗 Mes Voitures</button>
+            <button class="tab-btn" onclick="showTab('reservations')">📅 Réservations</button>
+            <button class="tab-btn super-admin-only" onclick="showTab('utilisateurs')">👥 Utilisateurs (Admin)</button>
+        </div>
+
+        <div id="tab-voitures">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <h3>Gestion Flotte</h3>
+                <button onclick="openModalCar()" style="background:#27ae60; color:white; border:none; padding:10px 15px; border-radius:5px; cursor:pointer;">+ Nouvelle Voiture</button>
             </div>
-
-            <div id="view-dashboard">
-                <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                    <button onclick="ouvrirModalVoiture()" style="background:#2ecc71; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer;">
-                        <i class="fas fa-plus-circle"></i> Ajouter une Voiture
-                    </button>
-                </div>
-                <div id="grid-voitures" class="grid-dashboard"></div>
+            <div id="cars-grid" class="grid-cars">
+                <p>Chargement...</p>
             </div>
+        </div>
 
-            <div id="view-reservations" style="display:none;">
-                <h3 class="section-title-admin">Suivi des Réservations</h3>
-                <div class="table-container">
-                    <table id="table-resa-full">
-                        <thead><tr><th>#</th><th>Client</th><th>Voiture</th><th>Dates</th><th>Montant</th><th>Statut</th></tr></thead>
-                        <tbody id="tbody-resa-full"></tbody>
-                    </table>
-                </div>
-            </div>
+        <div id="tab-reservations" style="display:none;">
+            <h3>Suivi Réservations</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#ID</th>
+                        <th>Client</th>
+                        <th>Voiture</th>
+                        <th>Dates</th>
+                        <th>Total</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody id="resas-tbody"></tbody>
+            </table>
+        </div>
 
-            <div id="view-maintenances" style="display:none;">
-                <h3>Maintenances & Entretiens</h3>
-                 <div class="table-container">
-                    <table id="table-maint">
-                        <thead><tr><th>Voiture</th><th>Type</th><th>Dates</th><th>Coût</th><th>Action</th></tr></thead>
-                        <tbody id="tbody-maint"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="view-partenaires" style="display:none;">
-                <h3>Gestion des Utilisateurs & Rôles</h3>
-                <p>En tant que Super Admin, vous pouvez promouvoir d'autres utilisateurs.</p>
-                <div class="table-container">
-                    <table id="table-partenaires">
-                        <thead><tr><th>Email</th><th>Nom</th><th>Rôle Actuel</th><th>Action</th></tr></thead>
-                        <tbody id="tbody-partenaires"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="view-config" style="display:none;"><h3>Configuration Générale</h3><p>Options globales du site.</p></div>
-            <div id="view-promos" style="display:none;"><h3>Codes Promo</h3></div>
-
+        <div id="tab-utilisateurs" style="display:none;">
+            <h3>Gestion des Rôles</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Rôle Actuel</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="users-tbody"></tbody>
+            </table>
         </div>
     </div>
 
-    <div id="modal-voiture" class="modal-overlay">
-        <div class="modal-content">
-            <span class="close-modal" onclick="fermerModal('modal-voiture')">×</span>
-            <h3>Ajouter / Modifier Voiture</h3>
-            <div class="form-grid">
-                <div><label>Nom</label><input id="car-nom"></div>
-                <div><label>Prix (Ar/j)</label><input id="car-prix" type="number"></div>
-                <div><label>Ref ID</label><input id="car-ref"></div>
-                <div><label>Image URL</label><input id="car-img"></div>
-                <div><label>Description</label><textarea id="car-desc"></textarea></div>
-                <div>
-                    <label>Réservable en ligne ?</label>
-                    <select id="car-reservable">
-                        <option value="true">Oui</option>
-                        <option value="false">Non (Contact Seul)</option>
-                    </select>
-                </div>
-            </div>
-            <button onclick="sauvegarderVoiture()" style="width:100%; margin-top:10px; padding:10px; background:#3498db; color:white; border:none;">Enregistrer</button>
+    <div id="modal-car" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
+        <div style="background:white; padding:20px; border-radius:8px; width:400px; position:relative;">
+            <span onclick="document.getElementById('modal-car').style.display='none'" style="position:absolute; right:15px; top:10px; cursor:pointer; font-size:1.5rem;">&times;</span>
+            <h3>Ajouter Voiture</h3>
+            <input type="text" id="car-nom" placeholder="Nom (ex: Toyota V8)" style="width:100%; margin-bottom:10px; padding:8px;">
+            <input type="text" id="car-ref" placeholder="Immatriculation / Ref" style="width:100%; margin-bottom:10px; padding:8px;">
+            <input type="number" id="car-prix" placeholder="Prix par jour (Ar)" style="width:100%; margin-bottom:10px; padding:8px;">
+            <input type="text" id="car-img" placeholder="URL Image" style="width:100%; margin-bottom:10px; padding:8px;">
+            <textarea id="car-desc" placeholder="Description" style="width:100%; margin-bottom:10px; padding:8px;"></textarea>
+            <label><input type="checkbox" id="car-reservable" checked> Réservable en ligne</label>
+            <br><br>
+            <button onclick="saveCar()" style="width:100%; background:#27ae60; color:white; border:none; padding:10px; cursor:pointer;">Enregistrer</button>
         </div>
     </div>
-
-    <script src="script.js"></script>
 
     <script>
-        // --- LOGIQUE ADMIN SPÉCIFIQUE ---
-        let currentUser = null;
-        let currentRole = 'partenaire'; // par défaut
+        // --- 1. CONFIG SUPABASE ---
+        const SUPABASE_URL = 'https://ctijwjcjmbfmfhzwbguk.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk';
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 1. LOGIN ADMIN
-        async function loginAdmin() {
-            const email = document.getElementById('admin-email').value;
-            const password = document.getElementById('admin-pass').value;
+        let currentUser = null;
+        let currentRole = 'partenaire';
+
+        // --- 2. AUTHENTIFICATION ---
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
             
             const { data, error } = await sb.auth.signInWithPassword({ email, password });
-            if (error) {
-                document.getElementById('login-error').innerText = error.message;
-                document.getElementById('login-error').style.display = 'block';
+            if(error) {
+                document.getElementById('error-msg').innerText = error.message;
+                document.getElementById('error-msg').style.display = 'block';
             } else {
-                checkSessionAdmin();
+                window.location.reload();
             }
         }
 
-        async function logoutAdmin() {
+        async function handleLogout() {
             await sb.auth.signOut();
             window.location.reload();
         }
 
-        // 2. VERIFICATION SESSION & ROLE
-        async function checkSessionAdmin() {
+        // --- 3. INITIALISATION ---
+        async function initAdmin() {
             const { data: { session } } = await sb.auth.getSession();
-            if (session) {
-                currentUser = session.user;
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('admin-content').style.display = 'block';
-                document.getElementById('header-user-name').innerText = currentUser.email;
-
-                // Récupérer le Rôle depuis la table 'partenaires'
-                // NOTE: Si l'utilisateur n'existe pas dans la table partenaires, on le crée à la volée
-                let { data: part } = await sb.from('partenaires').select('*').eq('user_id', currentUser.id).single();
-                
-                if (!part) {
-                    // Création auto du profil partenaire
-                    const { data: newPart, error } = await sb.from('partenaires').insert([
-                        { user_id: currentUser.id, email: currentUser.email, role: 'partenaire' }
-                    ]).select().single();
-                    part = newPart;
-                }
-
-                currentRole = part ? part.role : 'partenaire';
-                
-                // --- APPLIQUER LA VISIBILITÉ ---
-                document.getElementById('header-user-role').innerText = currentRole.toUpperCase();
-                document.getElementById('role-display-text').innerText = (currentRole === 'super_admin') 
-                    ? "Mode: SUPER ADMIN (Accès Total)" 
-                    : "Mode: PARTENAIRE (Accès Limité)";
-
-                const body = document.body;
-                if (currentRole === 'super_admin') {
-                    document.getElementById('admin-content').classList.add('show-super-admin');
-                } else {
-                    document.getElementById('admin-content').classList.remove('show-super-admin');
-                }
-
-                chargerDashboard();
+            
+            if(!session) {
+                document.getElementById('login-screen').style.display = 'flex';
+                return;
             }
+
+            currentUser = session.user;
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('admin-interface').style.display = 'block';
+            document.getElementById('user-email-display').innerText = currentUser.email;
+
+            // Récupération ou création du profil partenaire
+            let { data: partner } = await sb.from('partenaires').select('*').eq('user_id', currentUser.id).single();
+            
+            if(!partner) {
+                // Création auto si n'existe pas
+                const { data: newP } = await sb.from('partenaires').insert([{
+                    user_id: currentUser.id,
+                    email: currentUser.email,
+                    role: 'partenaire'
+                }]).select().single();
+                partner = newP;
+            }
+
+            // Gestion Rôles
+            currentRole = partner ? partner.role : 'partenaire';
+            
+            const roleBadge = document.getElementById('role-display');
+            roleBadge.innerText = currentRole === 'super_admin' ? 'SUPER ADMIN' : 'PARTENAIRE';
+            roleBadge.className = `role-badge ${currentRole === 'super_admin' ? 'badge-admin' : 'badge-partner'}`;
+
+            if(currentRole === 'super_admin') {
+                document.body.classList.add('is-super-admin');
+                loadAllUsers(); // Seulement si admin
+            }
+
+            // Chargement données
+            loadCars();
+            loadReservations();
         }
 
-        // 3. DASHBOARD (Voitures)
-        async function chargerDashboard() {
-            const grid = document.getElementById('grid-voitures');
-            grid.innerHTML = '<p>Chargement...</p>';
+        // --- 4. GESTION VOITURES ---
+        async function loadCars() {
+            const container = document.getElementById('cars-grid');
+            container.innerHTML = 'Chargement...';
+
+            // Grâce au RLS : Admin reçoit tout, Partenaire reçoit que les siennes
+            const { data: cars } = await sb.from('voitures').select('*').order('created_at', {ascending:false});
             
-            // RLS filtre automatiquement : Admin voit tout, Partenaire voit les siennes
-            const { data: voitures } = await sb.from('voitures').select('*').order('created_at', { ascending: false });
-            
-            grid.innerHTML = '';
-            if (voitures && voitures.length > 0) {
-                voitures.forEach(v => {
-                    grid.innerHTML += `
-                    <div class="car-card status-dispo">
-                        <div class="card-header">
-                            <strong>${v.nom}</strong>
-                            <span class="badge bg-green">Visible</span>
-                        </div>
-                        <div class="card-body">
-                            <small>Ref: ${v.ref_id}</small><br>
-                            <small>Prix: ${v.prix_base} Ar</small>
-                        </div>
-                        <div class="card-actions">
-                            <button class="btn-action btn-maint" onclick="alert('Maintenance à venir')"><i class="fas fa-tools"></i></button>
-                            <button class="btn-action" style="background:#e74c3c; color:white;" onclick="supprimerVoiture('${v.id}')"><i class="fas fa-trash"></i></button>
+            container.innerHTML = '';
+            if(cars && cars.length > 0) {
+                cars.forEach(c => {
+                    container.innerHTML += `
+                    <div class="card">
+                        <img src="${c.image_url || 'https://via.placeholder.com/300'}" alt="${c.nom}">
+                        <h4>${c.nom}</h4>
+                        <p>${c.prix_base} Ar/jour</p>
+                        <small style="color:gray">${c.reservable ? '✅ Réservable' : '📞 Contact'}</small>
+                        <div style="margin-top:10px;">
+                             <button onclick="deleteCar('${c.id}')" style="background:#e74c3c; color:white; border:none; padding:5px; border-radius:3px; cursor:pointer;">Supprimer</button>
                         </div>
                     </div>`;
                 });
             } else {
-                grid.innerHTML = '<p>Aucune voiture affichée.</p>';
+                container.innerHTML = '<p>Aucune voiture trouvée.</p>';
             }
         }
 
-        // 4. RESERVATIONS
-        async function chargerReservations() {
-            const tbody = document.getElementById('tbody-resa-full');
-            tbody.innerHTML = '<tr><td colspan="6">Chargement...</td></tr>';
+        async function saveCar() {
+            const nom = document.getElementById('car-nom').value;
+            const prix = document.getElementById('car-prix').value;
+            const ref = document.getElementById('car-ref').value;
+            const img = document.getElementById('car-img').value;
+            const desc = document.getElementById('car-desc').value;
+            const reservable = document.getElementById('car-reservable').checked;
 
-            // RLS fait le travail de filtre
-            const { data: resas } = await sb.from('reservations').select('*, voitures(nom)').order('created_at', { ascending: false });
+            if(!nom || !prix) return alert('Champs requis !');
 
+            const { error } = await sb.from('voitures').insert([{
+                nom, 
+                ref_id: ref,
+                prix_base: parseInt(prix),
+                image_url: img,
+                description: desc,
+                reservable: reservable,
+                proprietaire_id: currentUser.id // Lien crucial
+            }]);
+
+            if(error) alert('Erreur: ' + error.message);
+            else {
+                document.getElementById('modal-car').style.display = 'none';
+                loadCars();
+            }
+        }
+
+        async function deleteCar(id) {
+            if(!confirm('Supprimer cette voiture ?')) return;
+            const { error } = await sb.from('voitures').delete().eq('id', id);
+            if(error) alert('Erreur: ' + error.message);
+            else loadCars();
+        }
+
+        // --- 5. GESTION RESERVATIONS ---
+        async function loadReservations() {
+            const tbody = document.getElementById('resas-tbody');
+            const { data: resas } = await sb.from('reservations').select('*, voitures(nom)').order('created_at', {ascending:false});
+            
             tbody.innerHTML = '';
             if(resas) {
                 resas.forEach(r => {
                     tbody.innerHTML += `
                     <tr>
                         <td>${r.id}</td>
-                        <td>${r.nom} (${r.tel})</td>
-                        <td>${r.voitures ? r.voitures.nom : 'Inconnu'}</td>
-                        <td>${r.date_debut} au ${r.date_fin}</td>
+                        <td>${r.nom}<br><small>${r.tel}</small></td>
+                        <td>${r.voitures ? r.voitures.nom : 'Sup.'}</td>
+                        <td>${r.date_debut} / ${r.date_fin}</td>
                         <td>${r.montant_total} Ar</td>
                         <td>${r.statut}</td>
                     </tr>`;
@@ -295,92 +307,54 @@
             }
         }
 
-        // 5. GESTION UTILISATEURS (Super Admin)
-        async function chargerPartenaires() {
-            if(currentRole !== 'super_admin') return; // Sécurité UI
+        // --- 6. GESTION UTILISATEURS (ADMIN ONLY) ---
+        async function loadAllUsers() {
+            const tbody = document.getElementById('users-tbody');
+            const { data: users, error } = await sb.from('partenaires').select('*');
             
-            const tbody = document.getElementById('tbody-partenaires');
-            tbody.innerHTML = '<tr><td colspan="4">Chargement...</td></tr>';
-            
-            const { data: parts } = await sb.from('partenaires').select('*');
+            if(error) return; // Normal si pas admin
             
             tbody.innerHTML = '';
-            if(parts) {
-                parts.forEach(p => {
-                    const isMe = (p.user_id === currentUser.id);
-                    const btnPromote = (p.role === 'partenaire') 
-                        ? `<button onclick="changerRole('${p.user_id}', 'super_admin')" style="background:#2ecc71; color:white; border:none; padding:5px;">Promouvoir Admin</button>` 
-                        : `<button onclick="changerRole('${p.user_id}', 'partenaire')" style="background:#e74c3c; color:white; border:none; padding:5px;">Rétrograder</button>`;
-                    
-                    tbody.innerHTML += `
-                    <tr>
-                        <td>${p.email}</td>
-                        <td>${p.nom || '-'}</td>
-                        <td><strong>${p.role.toUpperCase()}</strong></td>
-                        <td>${isMe ? 'Vous' : btnPromote}</td>
-                    </tr>`;
-                });
-            }
+            users.forEach(u => {
+                const isMe = u.user_id === currentUser.id;
+                let btn = '';
+                
+                if(!isMe) {
+                    if(u.role === 'partenaire') {
+                        btn = `<button onclick="setRole('${u.user_id}', 'super_admin')" style="background:#27ae60; color:white; border:none; cursor:pointer;">Promouvoir Admin</button>`;
+                    } else {
+                        btn = `<button onclick="setRole('${u.user_id}', 'partenaire')" style="background:#e67e22; color:white; border:none; cursor:pointer;">Rétrograder</button>`;
+                    }
+                } else {
+                    btn = '<small>(Vous)</small>';
+                }
+
+                tbody.innerHTML += `
+                <tr>
+                    <td>${u.email}</td>
+                    <td><strong>${u.role.toUpperCase()}</strong></td>
+                    <td>${btn}</td>
+                </tr>`;
+            });
         }
 
-        async function changerRole(targetId, newRole) {
-            if(!confirm("Êtes-vous sûr de changer le rôle de cet utilisateur ?")) return;
-            const { error } = await sb.from('partenaires').update({ role: newRole }).eq('user_id', targetId);
-            if(error) alert("Erreur: " + error.message);
-            else chargerPartenaires();
+        async function setRole(uid, role) {
+            if(!confirm('Changer le rôle ?')) return;
+            await sb.from('partenaires').update({ role: role }).eq('user_id', uid);
+            loadAllUsers();
         }
 
-        // 6. AJOUTER VOITURE (Auto-assignation Propriétaire)
-        async function sauvegarderVoiture() {
-            const nom = document.getElementById('car-nom').value;
-            const prix = document.getElementById('car-prix').value;
-            const ref = document.getElementById('car-ref').value;
-            const img = document.getElementById('car-img').value;
-            const desc = document.getElementById('car-desc').value;
-            const reservable = document.getElementById('car-reservable').value === 'true';
-
-            if(!nom || !prix) return alert("Champs obligatoires manquants");
-
-            const newCar = {
-                nom, prix_base: parseInt(prix), ref_id: ref, image_url: img, description: desc,
-                reservable: reservable,
-                proprietaire_id: currentUser.id // IMPORTANT : Lie la voiture à l'utilisateur connecté
-            };
-
-            const { error } = await sb.from('voitures').insert([newCar]);
-            if(error) alert("Erreur : " + error.message);
-            else {
-                alert("Voiture ajoutée !");
-                fermerModal('modal-voiture');
-                chargerDashboard();
-            }
-        }
-
-        async function supprimerVoiture(id) {
-            if(confirm("Supprimer cette voiture ?")) {
-                const { error } = await sb.from('voitures').delete().eq('id', id);
-                if(error) alert("Erreur: " + error.message);
-                else chargerDashboard();
-            }
-        }
-
-        // TABS
-        function switchTab(tab) {
-            document.querySelectorAll('[id^="view-"]').forEach(el => el.style.display = 'none');
-            document.getElementById('view-'+tab).style.display = 'block';
-            
+        function showTab(id) {
+            document.querySelectorAll('[id^="tab-"]').forEach(d => d.style.display='none');
+            document.getElementById('tab-'+id).style.display='block';
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-
-            if(tab === 'reservations') chargerReservations();
-            if(tab === 'partenaires') chargerPartenaires();
+            event.target.classList.add('active');
         }
 
-        function ouvrirModalVoiture() { document.getElementById('modal-voiture').style.display = 'flex'; }
-        function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
+        function openModalCar() { document.getElementById('modal-car').style.display='flex'; }
 
-        // Init
-        checkSessionAdmin();
+        // Lancement
+        initAdmin();
     </script>
 </body>
 </html>
