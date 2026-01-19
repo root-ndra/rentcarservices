@@ -1,7 +1,7 @@
 // --- FONCTION DU MENU ---
 function toggleMenu() { 
     const nav = document.getElementById('nav-menu');
-    nav.classList.toggle('active');
+    if(nav) nav.classList.toggle('active');
 }
 
 // Fonction Couleur Aléatoire
@@ -24,35 +24,68 @@ let voitureSelectionnee = null;
 let currentReservationId = null; 
 let reductionActive = 0;
 let currentCarReservations = [];
+let siteConfigGlobal = null; // Stocke la config globale pour accès partout
 
 // --- 0. CHARGEMENT CONFIG JSON & DB ---
 async function loadConfig() {
     // 1. Charger Config JSON (Textes, Logo)
     try {
         const response = await fetch('site_config.json');
-        const config = await response.json();
+        siteConfigGlobal = await response.json();
 
-        // Header
-        document.getElementById('header-site-name').innerText = config.header.siteName;
-        document.getElementById('header-logo').src = config.header.logoUrl;
-        document.getElementById('hero-title').innerText = config.header.siteName;
-        document.getElementById('footer-title').innerText = config.header.siteName;
+        // Sécurité : Vérifier si on est sur index.html avant de manipuler le DOM
+        if (document.getElementById('header-site-name')) {
+            // Header
+            document.getElementById('header-site-name').innerText = siteConfigGlobal.header.siteName;
+            document.getElementById('header-logo').src = siteConfigGlobal.header.logoUrl;
+            if(document.getElementById('hero-title')) document.getElementById('hero-title').innerText = siteConfigGlobal.header.siteName;
+            if(document.getElementById('footer-title')) document.getElementById('footer-title').innerText = siteConfigGlobal.header.siteName;
 
-        // Footer
-        document.getElementById('footer-address').innerText = config.footer.address;
-        document.getElementById('footer-nif').innerText = config.footer.nif;
-        document.getElementById('footer-stat').innerText = config.footer.stat;
-        document.getElementById('footer-phone').innerText = config.footer.phone;
-        
-        // Socials
-        const socialContainer = document.getElementById('footer-socials');
-        if(config.footer.socials.facebook) socialContainer.innerHTML += `<a href="${config.footer.socials.facebook}" target="_blank" style="color:white; margin:0 10px; font-size:1.5rem;"><i class="fab fa-facebook"></i></a>`;
-        if(config.footer.socials.tiktok) socialContainer.innerHTML += `<a href="${config.footer.socials.tiktok}" target="_blank" style="color:white; margin:0 10px; font-size:1.5rem;"><i class="fab fa-tiktok"></i></a>`;
-        if(config.footer.socials.instagram) socialContainer.innerHTML += `<a href="${config.footer.socials.instagram}" target="_blank" style="color:white; margin:0 10px; font-size:1.5rem;"><i class="fab fa-instagram"></i></a>`;
+            // Footer
+            document.getElementById('footer-address').innerText = siteConfigGlobal.footer.address;
+            document.getElementById('footer-nif').innerText = siteConfigGlobal.footer.nif;
+            document.getElementById('footer-stat').innerText = siteConfigGlobal.footer.stat;
+            document.getElementById('footer-phone').innerText = siteConfigGlobal.contact.phoneDisplay;
+            
+            // Call Button & WhatsApp Logic Global
+            const callBtn = document.getElementById('call-btn-link');
+            if(callBtn) callBtn.href = `tel:${siteConfigGlobal.contact.phoneCall}`;
 
-        // Map
-        if(config.footer.mapUrl) {
-            document.getElementById('footer-map').innerHTML = `<iframe src="${config.footer.mapUrl}" width="100%" height="250" style="border:0; border-radius:10px;" allowfullscreen="" loading="lazy"></iframe>`;
+            // Socials
+            const socialContainer = document.getElementById('footer-socials');
+            if (socialContainer) {
+                socialContainer.innerHTML = ''; // Reset pour éviter doublons
+                if(siteConfigGlobal.footer.socials.facebook) socialContainer.innerHTML += `<a href="${siteConfigGlobal.footer.socials.facebook}" target="_blank" style="color:white; margin:0 10px; font-size:1.5rem;"><i class="fab fa-facebook"></i></a>`;
+                if(siteConfigGlobal.footer.socials.tiktok) socialContainer.innerHTML += `<a href="${siteConfigGlobal.footer.socials.tiktok}" target="_blank" style="color:white; margin:0 10px; font-size:1.5rem;"><i class="fab fa-tiktok"></i></a>`;
+                if(siteConfigGlobal.footer.socials.instagram) socialContainer.innerHTML += `<a href="${siteConfigGlobal.footer.socials.instagram}" target="_blank" style="color:white; margin:0 10px; font-size:1.5rem;"><i class="fab fa-instagram"></i></a>`;
+            }
+
+            // Map
+            const footerMap = document.getElementById('footer-map');
+            if(siteConfigGlobal.footer.mapUrl && footerMap) {
+                footerMap.innerHTML = `<iframe src="${siteConfigGlobal.footer.mapUrl}" width="100%" height="250" style="border:0; border-radius:10px;" allowfullscreen="" loading="lazy"></iframe>`;
+            }
+
+            // Charger les Features (Pourquoi nous choisir)
+            const featureContainer = document.getElementById('features-container-dynamic');
+            if (featureContainer && siteConfigGlobal.features) {
+                featureContainer.innerHTML = '';
+                siteConfigGlobal.features.forEach(f => {
+                    featureContainer.innerHTML += `
+                    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+                        <div class="flip-card-inner">
+                            <div class="flip-card-front">
+                                <span class="feature-emoji">${f.emoji}</span>
+                                <h3>${f.title}</h3>
+                                <small>(Cliquez ici)</small>
+                            </div>
+                            <div class="flip-card-back">
+                                <p>${f.text}</p>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            }
         }
 
     } catch (e) { console.error("Erreur chargement config", e); }
@@ -62,31 +95,35 @@ async function loadConfig() {
         const respCond = await fetch('conditions.json');
         const conditions = await respCond.json();
         const condContainer = document.getElementById('container-conditions-cards');
-        condContainer.innerHTML = '';
-        conditions.forEach(c => {
-            condContainer.innerHTML += `
-            <div class="flip-card" onclick="this.classList.toggle('flipped')">
-                <div class="flip-card-inner">
-                    <div class="flip-card-front">
-                        <i class="${c.icon}" style="font-size:2rem; margin-bottom:10px;"></i>
-                        <h3>${c.title}</h3>
-                        <small>(Voir)</small>
+        if (condContainer) {
+            condContainer.innerHTML = '';
+            conditions.forEach(c => {
+                condContainer.innerHTML += `
+                <div class="flip-card" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <i class="${c.icon}" style="font-size:2rem; margin-bottom:10px;"></i>
+                            <h3>${c.title}</h3>
+                            <small>(Voir)</small>
+                        </div>
+                        <div class="flip-card-back">
+                            <p>${c.details}</p>
+                        </div>
                     </div>
-                    <div class="flip-card-back">
-                        <p>${c.details}</p>
-                    </div>
-                </div>
-            </div>`;
-        });
+                </div>`;
+            });
+        }
     } catch (e) { console.error("Erreur chargement conditions", e); }
 
     // 3. CHARGER CONFIG CALENDRIER DEPUIS DB (ADMIN CONTROL)
-    const { data: calConfig } = await sb.from('config_site').select('value').eq('key', 'calendar_visible').single();
-    if (calConfig) {
-        const isVisible = (calConfig.value === true || calConfig.value === "true");
-        const wrapper = document.getElementById('wrapper-calendrier-global');
-        if (wrapper) {
-            wrapper.style.display = isVisible ? 'block' : 'none';
+    if(sb) {
+        const { data: calConfig } = await sb.from('config_site').select('value').eq('key', 'calendar_visible').single();
+        if (calConfig) {
+            const isVisible = (calConfig.value === true || calConfig.value === "true");
+            const wrapper = document.getElementById('wrapper-calendrier-global');
+            if (wrapper) {
+                wrapper.style.display = isVisible ? 'block' : 'none';
+            }
         }
     }
 }
@@ -116,56 +153,80 @@ function naviguerVers(pageId) {
     const activeSection = document.getElementById(pageId);
     if(activeSection) activeSection.style.display = 'block';
     window.scrollTo(0,0);
-    document.getElementById('nav-menu').classList.remove('active');
+    const navMenu = document.getElementById('nav-menu');
+    if(navMenu) navMenu.classList.remove('active');
 }
 
 // --- INIT ---
 document.addEventListener('DOMContentLoaded', async () => {
     if(!sb) return;
-    loadConfig();
+    await loadConfig();
 
     const container = document.getElementById('container-voitures');
-    const { data: voitures } = await sb.from('voitures').select('*');
-    
-    if(voitures) {
-        container.innerHTML = ''; 
-        voitures.forEach(v => {
-            const div = document.createElement('div');
-            div.className = 'carte-voiture';
-            
-            // Infos dynamiques
-            const places = v.places ? `<i class="fas fa-user-friends"></i> ${v.places} places` : '';
-            const carbu = v.carburant ? `<i class="fas fa-gas-pump"></i> ${v.carburant}` : '';
-            
-            div.innerHTML = `
-                <img src="${v.image_url}" alt="${v.nom}">
-                <h3>${v.nom}</h3>
-                <div style="padding: 0 20px; color: #555; font-size: 0.9rem; display: flex; gap: 10px; justify-content: center;">
-                    <span><i class="fas fa-cogs"></i> ${v.transmission}</span>
-                    <span>${places}</span>
-                    <span>${carbu}</span>
-                </div>
-                <p class="prix">${formatPrix(v.prix_base)} Ar / jour</p>
-                <button onclick="selectionnerVoiture('${v.id}', '${v.nom}', ${v.prix_base}, '${v.ref_id}', \`${v.description || ''}\`)">Réserver</button>
-            `;
-            container.appendChild(div);
-        });
-    } else { container.innerHTML = "<p>Impossible de charger les voitures.</p>"; }
-    
-    chargerMedia('radios'); 
-    chargerAvis(); 
-    chargerPublicites();
+    // On ne charge les voitures que si le conteneur existe (donc page index.html)
+    if (container) {
+        const { data: voitures } = await sb.from('voitures').select('*').order('prix_base', { ascending: true });
+        
+        if(voitures) {
+            container.innerHTML = ''; 
+            voitures.forEach(v => {
+                const div = document.createElement('div');
+                div.className = 'carte-voiture';
+                
+                // Infos dynamiques
+                const places = v.places ? `<i class="fas fa-user-friends"></i> ${v.places} places` : '';
+                const carbu = v.carburant ? `<i class="fas fa-gas-pump"></i> ${v.carburant}` : '';
+                
+                // On passe 'reservable' (v.reservable) à la fonction de sélection
+                // Si la colonne n'existe pas encore dans DB, on considère true par défaut, sinon on prend la valeur
+                const isReservable = (v.reservable !== false); // par défaut true si undefined
+
+                div.innerHTML = `
+                    <img src="${v.image_url}" alt="${v.nom}">
+                    <h3>${v.nom}</h3>
+                    <div style="padding: 0 20px; color: #555; font-size: 0.9rem; display: flex; gap: 10px; justify-content: center;">
+                        <span><i class="fas fa-cogs"></i> ${v.transmission}</span>
+                        <span>${places}</span>
+                        <span>${carbu}</span>
+                    </div>
+                    <p class="prix">${formatPrix(v.prix_base)} Ar / jour</p>
+                    <button onclick='selectionnerVoiture("${v.id}", "${v.nom}", ${v.prix_base}, "${v.ref_id}", ${JSON.stringify(v.description || "")}, ${isReservable})'>Réserver</button>
+                `;
+                container.appendChild(div);
+            });
+        } else { container.innerHTML = "<p>Impossible de charger les voitures.</p>"; }
+        
+        chargerMedia('radios'); 
+        chargerAvis(); 
+        chargerPublicites();
+    }
 });
 
 function formatPrix(prix) { return prix.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
 
 // --- SELECTION VOITURE ---
-function selectionnerVoiture(id, nom, prix, ref, description) {
+function selectionnerVoiture(id, nom, prix, ref, description, isReservable) {
+    
+    // Check si réservable
+    if (isReservable === false) {
+        // Afficher Modal Contact
+        document.getElementById('contact-car-name').innerText = nom;
+        // Mettre à jour les liens de la modale avec les infos du JSON chargé
+        if(siteConfigGlobal && siteConfigGlobal.contact) {
+            document.getElementById('btn-modal-call').href = `tel:${siteConfigGlobal.contact.phoneCall}`;
+            document.getElementById('btn-modal-wa').href = `https://wa.me/${siteConfigGlobal.contact.whatsapp}?text=${encodeURIComponent("Bonjour, je suis intéressé par la voiture : " + nom)}`;
+            document.getElementById('txt-modal-phone').innerText = siteConfigGlobal.contact.phoneDisplay;
+        }
+        document.getElementById('modal-contact-only').style.display = 'flex';
+        return;
+    }
+
+    // Processus normal
     voitureSelectionnee = { id, nom, prix, ref };
     naviguerVers('reservation');
     
     document.getElementById('nom-voiture-selectionnee').innerText = nom;
-    document.getElementById('desc-voiture-selectionnee').innerText = description || ""; // Affiche la description
+    document.getElementById('desc-voiture-selectionnee').innerText = description || ""; 
     document.getElementById('id-voiture-input').value = id;
     document.getElementById('ref-voiture-input').value = ref;
     document.getElementById('prix-base-input').value = prix;
@@ -352,6 +413,9 @@ async function lancerReservationWhatsApp() {
     currentReservationId = data[0].id;
     window.currentResaData = data[0]; 
 
+    // Utilisation du numéro WhatsApp global (centralisé)
+    const waNumber = siteConfigGlobal?.contact?.whatsapp || "261388552432";
+
     let msg = `Bonjour Rija, Réservation *${document.getElementById("nom-voiture-selectionnee").innerText}* (#${currentReservationId}).\n`;
     msg += `📅 Du ${reservationData.date_debut} au ${reservationData.date_fin}\n`;
     msg += `📍 Liv: ${livraison.lieu || 'Agence'} (${livraison.heure})\n`;
@@ -359,7 +423,7 @@ async function lancerReservationWhatsApp() {
     msg += `🛣️ Trajet: ${trajet || 'Local'}\n`;
     msg += `💰 Total: ${formatPrix(calcul.total)} Ar\n👤 ${client.nom} ${client.prenom}\n📞 ${client.tel}`;
 
-    window.open(`https://wa.me/261388552432?text=${encodeURIComponent(msg)}`, '_blank');
+    window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`, '_blank');
 
     document.getElementById('step-1-actions').style.display = 'none';
     document.getElementById('step-2-paiement').style.display = 'block';
@@ -420,7 +484,8 @@ function genererPDF(resa) {
     doc.text("RIJA NIAINA CAR SERVICES", 105, 15, { align: "center" });
     doc.setFontSize(10); 
     doc.text("Siae 33 Ambodifilao, Analakely, Antananarivo 101", 105, 25, { align: "center" });
-    doc.text("Tel: +261 38 85 524 32", 105, 32, { align: "center" });
+    const contactPhone = siteConfigGlobal?.contact?.phoneDisplay || "+261 38 85 524 32";
+    doc.text("Tel: " + contactPhone, 105, 32, { align: "center" });
 
     doc.setTextColor(0, 0, 0); doc.setFontSize(11);
     doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 195, 50, { align: "right" });
@@ -478,14 +543,17 @@ function genererPDF(resa) {
 // Helpers
 async function chargerAvis() {
     const d = document.getElementById('liste-avis');
+    if(!d) return;
     const { data } = await sb.from('avis').select('*').eq('visible', true).limit(3);
     if(data) d.innerHTML = data.map(a => `<div style="background:#f9f9f9; padding:10px; margin-bottom:5px;"><strong>${'⭐'.repeat(a.note)} ${a.nom}</strong><p>${a.commentaire}</p></div>`).join('');
 }
 function envoyerContactWhatsApp() {
-    window.open(`https://wa.me/261388552432?text=${encodeURIComponent(`[${document.getElementById('contact-sujet').value}] ${document.getElementById('contact-message').value}`)}`, '_blank');
+    const waNumber = siteConfigGlobal?.contact?.whatsapp || "261388552432";
+    window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(`[${document.getElementById('contact-sujet').value}] ${document.getElementById('contact-message').value}`)}`, '_blank');
 }
 async function chargerMedia(t) {
     const c = document.getElementById('conteneur-media');
+    if(!c) return;
     const { data } = await sb.from(t).select('*').eq('actif', true);
     c.innerHTML = data ? data.map(i => t==='radios' ? `<div class="carte-voiture" style="padding:10px; text-align:center;"><img src="${i.image_url}" style="width:50px;"><br>${i.nom}<br><audio controls src="${i.url_flux}" style="width:100%"></audio></div>` : `<div class="carte-voiture"><iframe src="${i.url_embed}" width="100%" height="200"></iframe></div>`).join('') : '';
 }
@@ -493,3 +561,4 @@ async function chargerPublicites() { /* Code pub existant */ }
 async function envoyerAvis() { /* Code avis existant */ }
 function ouvrirModalConditions() { document.getElementById('modal-conditions').style.display = 'flex'; }
 function fermerModalConditions() { document.getElementById('modal-conditions').style.display = 'none'; }
+function fermerModalContactOnly() { document.getElementById('modal-contact-only').style.display = 'none'; }

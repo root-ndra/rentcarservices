@@ -1,18 +1,44 @@
 {
     "header": {
-        "siteName": "RIJA NIAINA CAR SERVICES",
+        "siteName": "RENT CAR SERVICES",
         "logoUrl": "https://i.ibb.co/dw8gxWXL/1765001359376.png"
+    },
+    "contact": {
+        "phoneDisplay": "+261 34 91 207 26",
+        "phoneCall": "+261349120726",
+        "whatsapp": "+261325264535"
     },
     "footer": {
         "address": "Siae 33 Ambodifilao, Analakely, Antananarivo 101",
         "nif": "5012357932",
         "stat": "70209 11 2025 0 06328",
-        "phone": "+261 38 85 524 32",
         "socials": {
             "facebook": "https://www.facebook.com/share/1HBzQMGGN7/",
             "tiktok": "#",
             "instagram": "#"
         },
         "mapUrl": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3774.249783637172!2d47.52187337599661!3d-18.91715428225528!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x21f07e0000000001%3A0x123456789abcdef!2sAnalakely!5e0!3m2!1sfr!2smg!4v1700000000000"
-    }
+    },
+    "features": [
+        {
+            "emoji": "👨 👩 👧 👦",
+            "title": "Famille",
+            "text": "Des véhicules spacieux pour le confort de toute votre famille lors de vos vacances."
+        },
+        {
+            "emoji": "💼",
+            "title": "Affaires",
+            "text": "Berlines élégantes et discrètes pour vos rendez-vous professionnels."
+        },
+        {
+            "emoji": "🌴",
+            "title": "Évasion",
+            "text": "4x4 robustes prêts à affronter toutes les routes de Madagascar."
+        },
+        {
+            "emoji": "↔️",
+            "title": "Flexibilité",
+            "text": "Horaires adaptés, options modulables et service sur mesure."
+        }
+    ]
 }

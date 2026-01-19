@@ -15,7 +15,7 @@
 </head>
 <body style="display: flex; flex-direction: column; min-height: 100vh;">
 
-<a href="tel:+261388552432" class="floating-call-btn" id="call-btn-link">
+<a href="#" class="floating-call-btn" id="call-btn-link">
     <i class="fas fa-phone-alt"></i>
     <span>Appeler</span>
 </a>
@@ -53,58 +53,8 @@
         <div id="pub-home_top" class="ad-container"></div>
         
         <h2 style="text-align:center; color:white; margin-bottom:30px;">Pourquoi nous choisir ?</h2>
-        <div class="features-container">
-            <div class="flip-card" onclick="this.classList.toggle('flipped')">
-                <div class="flip-card-inner">
-                    <div class="flip-card-front">
-                        <span class="feature-emoji">👨‍👩‍👧‍👦</span>
-                        <h3>Famille</h3>
-                        <small>(Cliquez ici)</small>
-                    </div>
-                    <div class="flip-card-back">
-                        <p>Des véhicules spacieux pour le confort de toute votre famille lors de vos vacances.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flip-card" onclick="this.classList.toggle('flipped')">
-                <div class="flip-card-inner">
-                    <div class="flip-card-front">
-                        <span class="feature-emoji">💼</span>
-                        <h3>Affaires</h3>
-                        <small>(Cliquez ici)</small>
-                    </div>
-                    <div class="flip-card-back">
-                        <p>Berlines élégantes et discrètes pour vos rendez-vous professionnels.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flip-card" onclick="this.classList.toggle('flipped')">
-                <div class="flip-card-inner">
-                    <div class="flip-card-front">
-                        <span class="feature-emoji">🌴</span>
-                        <h3>Évasion</h3>
-                        <small>(Cliquez ici)</small>
-                    </div>
-                    <div class="flip-card-back">
-                        <p>4x4 robustes prêts à affronter toutes les routes de Madagascar.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flip-card" onclick="this.classList.toggle('flipped')">
-                <div class="flip-card-inner">
-                    <div class="flip-card-front">
-                        <span class="feature-emoji">↔️</span>
-                        <h3>Flexibilité</h3>
-                        <small>(Cliquez ici)</small>
-                    </div>
-                    <div class="flip-card-back">
-                        <p>Horaires adaptés, options modulables et service sur mesure.</p>
-                    </div>
-                </div>
-            </div>
+        <div class="features-container" id="features-container-dynamic">
+            <p style="color:white; text-align:center;">Chargement des avantages...</p>
         </div>
 
         <div id="pub-home_bot" class="ad-container"></div>
@@ -350,10 +300,28 @@
         <h3><i class="fas fa-file-contract"></i> Conditions Générales</h3>
         <p style="text-align:center; margin-bottom:20px;">Cliquez sur une carte pour voir les détails</p>
         
-        <div id="container-conditions-cards" class="conditions-grid">
-            </div>
+        <div id="container-conditions-cards" class="conditions-grid"></div>
 
         <button onclick="fermerModalConditions()" class="btn-dark" style="width:100%;">Fermer</button>
+    </div>
+</div>
+
+<div id="modal-contact-only" class="modal-overlay" style="display: none;">
+    <div class="modal-content modern-contact-box">
+        <span class="close-modal" onclick="fermerModalContactOnly()">×</span>
+        <i class="fas fa-headset contact-icon-large"></i>
+        <h3>Réservation sur mesure</h3>
+        <p>Pour réserver le véhicule <strong id="contact-car-name"></strong>, une vérification de disponibilité spécifique est nécessaire.</p>
+        <p>Merci de nous contacter directement :</p>
+        
+        <div class="contact-actions-row">
+            <a href="#" id="btn-modal-call" class="btn-contact-action btn-call-action">
+                <i class="fas fa-phone-alt"></i> <span id="txt-modal-phone">...</span>
+            </a>
+            <a href="#" id="btn-modal-wa" class="btn-contact-action btn-wa-action" target="_blank">
+                <i class="fab fa-whatsapp"></i> WhatsApp
+            </a>
+        </div>
     </div>
 </div>
 
