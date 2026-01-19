@@ -13,65 +13,28 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="script.js" defer></script>
 </head>
-<body style="display: flex; flex-direction: column; min-height: 100vh;">
+<body>
+<header class="site-header">
+    <h1>Rija NIAINA Car Services</h1>
+    <!-- menu simplified -->
+    <nav id="nav-menu">
+        <a href="#" onclick="naviguerVers('accueil')">Accueil</a>
+        <a href="#" onclick="naviguerVers('flotte')">Flotte</a>
+        <a href="#" onclick="naviguerVers('reservation')">Réservation</a>
+    </nav>
+</header>
 
-<a href="tel:+261388552432" class="floating-call-btn">
-    <i class="fas fa-phone-alt"></i>
-    <span>Appeler</span>
-</a>
-
-<nav class="navbar">
-    <div class="logo-container">
-        <img src="https://i.ibb.co/dw8gxWXL/1765001359376.png" alt="Logo" class="nav-logo">
-        <span>RIJA NIAINA CAR SERVICES</span>
-    </div>
-    
-    <button class="menu-toggle" onclick="toggleMenu()">
-        <i class="fas fa-bars"></i>
-    </button>
-
-    <ul class="nav-links" id="nav-menu">
-        <li><a href="#" onclick="naviguerVers('home')" class="active">Accueil</a></li>
-        <li><a href="#" onclick="naviguerVers('flotte')">Nos Voitures</a></li>
-        <li><a href="#" onclick="naviguerVers('divertissement')">Divertissement</a></li>
-        <li><a href="#" onclick="naviguerVers('contact')">Contact & Avis</a></li>
-    </ul>
-</nav>
-
-<main style="flex: 1;">
-    
-    <section id="home" class="page-section">
-        <div class="hero-banner">
-            <h1>Rija NIAINA Car Services</h1>
-            <p class="hero-description">
-                Chaque déplacement est pensé avec exigence et attention.
-				À Antananarivo, nous vous proposons des solutions de location de véhicules alliant confort, fiabilité et discrétion.
-				Notre engagement repose sur un service soigné, des véhicules rigoureusement entretenus et une expérience fluide, dédiée à votre sérénité.
-				Qu’il s’agisse de déplacements professionnels ou personnels, nous vous accompagnons avec ponctualité et professionnalisme..
-            </p>
-            <button onclick="naviguerVers('flotte')" class="btn-hero">Découvrir notre flotte <i class="fas fa-arrow-right"></i></button>
-        </div>
-
-        <div id="pub-home_top" class="ad-container"></div>
-        
-        <div class="features">
-            <div class="feature-box"><span class="feature-emoji">👨‍👩‍👧‍👦</span><h3>Famille</h3></div>
-            <div class="feature-box"><span class="feature-emoji">💼</span><h3>Affaires</h3></div>
-            <div class="feature-box"><span class="feature-emoji">🌴</span><h3>Évasion</h3></div>
-            <div class="feature-box"><span class="feature-emoji">🕊️</span><h3>Liberté</h3></div>
-            <div class="feature-box"><span class="feature-emoji">↔️</span><h3>Flexibilité</h3></div>
-        </div>
-
-        <div id="pub-home_bot" class="ad-container"></div>
+<main>
+    <section id="accueil" class="page-section">
+        <h2>Bienvenue</h2>
+        <p>Location de voitures Antananarivo</p>
     </section>
 
     <section id="flotte" class="page-section" style="display:none;">
         <h2 class="section-title">Notre Collection</h2>
-        <div id="pub-flotte_top" class="ad-container"></div>
         <div class="grid-voitures" id="container-voitures">
             <p>Chargement du catalogue...</p>
         </div>
-        <div id="pub-flotte_bot" class="ad-container"></div>
     </section>
 
     <section id="reservation" class="page-section" style="display:none;">
@@ -81,76 +44,52 @@
             <h2>Réservation : <span id="nom-voiture-selectionnee" class="highlight-text"></span></h2>
             <input type="hidden" id="id-voiture-input">
             <input type="hidden" id="ref-voiture-input">
-            <input type="hidden" id="prix-base-input">
-
-            <div class="bloc-calendrier">
-                <h3><i class="far fa-calendar-alt"></i> 1. Choisissez vos dates</h3>
-                <div id="calendrier-dispo"></div>
-                <div class="dates-inputs" style="margin-top:15px; display:flex; gap:10px;">
-                    <div style="flex:1;"><label>Du :</label><input type="date" id="date-debut" onchange="calculerPrix()"></div>
-                    <div style="flex:1;"><label>Au :</label><input type="date" id="date-fin" onchange="calculerPrix()"></div>
-                </div>
-            </div>
-
-            <hr style="margin: 30px 0; border:0; border-top:1px solid #eee;">
-
-            <div class="section-offres">
-                <h3><i class="fas fa-sliders-h"></i> 2. Options de Location</h3>
-                <div class="options-grid">
-                    <label><input type="radio" name="offre" value="jour" class="hidden-input" checked onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-sun"></i><span>Journée</span><span class="option-price">7h - 19h</span></div></label>
-                    <label><input type="radio" name="offre" value="nuit" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-moon"></i><span>Nuit</span><span class="option-price">19h - 7h</span></div></label>
-                    <label><input type="radio" name="offre" value="24h" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-clock"></i><span>24H</span><span class="option-price">Jour + Nuit</span></div></label>
-                </div>
-                <div class="options-grid">
-                    <label><input type="checkbox" id="opt-livraison" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-truck"></i><span>Livraison</span><span class="option-price">+15.000 Ar</span></div></label>
-                    <label><input type="checkbox" id="opt-recuperation" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-undo"></i><span>Récupération</span><span class="option-price">+15.000 Ar</span></div></label>
-                </div>
-                <label style="font-weight:600; color:#555;">Code promo ?</label>
-                <div class="promo-container">
-                    <input type="text" id="code-promo" placeholder="Code">
-                    <button onclick="verifierPromo()" class="btn-dark" style="padding:10px 20px;">OK</button>
-                </div>
-                <span id="msg-promo" style="font-size:0.9rem; font-weight:bold; margin-top:5px; display:block;"></span>
-            </div>
-
-            <hr style="margin: 30px 0; border:0; border-top:1px solid #eee;">
 
             <div class="grid-form">
                 <div class="col-form">
-                    <h3><i class="fas fa-user"></i> 3. Vos Coordonnées</h3>
+                    <h3><i class="fas fa-calendar"></i> 1. Dates</h3>
+                    <label>Début</label>
+                    <input type="date" id="date-debut">
+                    <label>Fin</label>
+                    <input type="date" id="date-fin">
+                    <label>Code promo</label>
+                    <input type="text" id="code-promo" placeholder="CODE">
+                    <span id="msg-promo" style="font-size:0.9rem; font-weight:bold; margin-top:5px; display:block;"></span>
+                </div>
+
+                <div class="col-form">
+                    <h3><i class="fas fa-user"></i> 2. Vos Coordonnées</h3>
                     <input type="text" id="loueur-nom" placeholder="Nom complet">
                     <input type="text" id="loueur-prenom" placeholder="Prénom">
                     <input type="text" id="loueur-adresse" placeholder="Adresse de résidence">
                     <input type="tel" id="loueur-tel" placeholder="Téléphone / WhatsApp">
                     <input type="text" id="loueur-cin" placeholder="N° CIN / Passeport / Permis">
                 </div>
+
+                <!-- Livraison & Récupération -->
                 <div class="col-form">
-                    <h3><i class="fas fa-phone-alt"></i> Contact d'Urgence</h3>
-                    <input type="text" id="urgence-nom" placeholder="Nom du contact">
-                    <input type="text" id="urgence-adresse" placeholder="Adresse du contact">
-                    <input type="tel" id="urgence-tel" placeholder="Téléphone du contact">
+                    <h3><i class="fas fa-truck"></i> Livraison & Récupération</h3>
+                    <input type="text" id="livraison-lieu" placeholder="Lieu de livraison (ex: Hôtel, Adresse...)">
+                    <input type="time" id="livraison-heure" placeholder="Heure de livraison">
+                    <input type="text" id="recuperation-lieu" placeholder="Lieu de récupération (ex: Aéroport...)">
+                    <input type="time" id="recuperation-heure" placeholder="Heure de récupération">
+                </div>
+
+                <!-- Trajet prévisionnel -->
+                <div class="col-form">
+                    <h3><i class="fas fa-route"></i> Trajet prévisionnel</h3>
+                    <input type="text" id="trajet-1" placeholder="Étape 1 (ex: Antananarivo → Antsirabe)">
+                    <input type="text" id="trajet-2" placeholder="Étape 2 (optionnel)">
+                    <input type="text" id="trajet-3" placeholder="Étape 3 (optionnel)">
+                    <input type="text" id="trajet-4" placeholder="Étape 4 (optionnel)">
                 </div>
             </div>
 
-            <div id="resume-prix" class="resume-box">
-                <h3 style="margin-top:0; color:white; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:10px;">Récapitulatif Financier</h3>
-                <p>Durée : <span id="txt-jours" style="font-weight:bold;">0</span> jours</p>
-                <p>Formule : <span id="txt-formule" style="font-weight:bold;">JOUR</span></p>
-                <p style="font-size:1.4rem; font-weight:bold; margin:10px 0;">Total : <span id="prix-total">0</span> Ar</p>
-                <p style="color:#3498db; font-weight:bold;">Acompte requis (50%) : <span id="prix-acompte">0</span> Ar</p>
+            <div style="margin-top:20px;">
+                <label><input type="checkbox" id="check-conditions-step1"> J'accepte les conditions générales</label>
             </div>
 
-            <div class="conditions-box" style="margin: 20px 0; background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba;">
-                <label class="checkbox-container">
-                    <input type="checkbox" id="check-conditions-step1">
-                    J'ai lu et j'accepte les conditions générales de location.
-                </label>
-                <div style="margin-left: 35px;">
-                    <a href="#" onclick="ouvrirModalConditions()" style="text-decoration: underline; color: #333;">Lire les conditions</a>
-                </div>
-            </div>
-
-            <div id="step-1-actions" class="actions">
+            <div id="step-1-actions" style="margin-top:20px;">
                 <button id="btn-pre-resa" onclick="lancerReservationWhatsApp()" class="btn-whatsapp">
                     <i class="fab fa-whatsapp"></i> 1. Réserver & Envoyer preuve
                 </button>
@@ -164,47 +103,20 @@
                 
                 <div class="payment-section" style="background:#f8f9fa; padding:25px; border-radius:12px; border:1px solid #ddd;">
                     <label style="font-weight:bold;">Mode de paiement</label>
-                    <select id="pay-method" onchange="togglePaymentFields()" style="background:white;">
+                    <select id="pay-method">
                         <option value="">-- Choisir --</option>
                         <option value="mvola">Mobile Money (Mvola)</option>
-                        <option value="espece">Espèces (Agence)</option>
+                        <option value="cash">Espèces</option>
                     </select>
-
-                    <div id="fields-mvola" style="display:none; margin-top:10px;">
-                        <input type="text" id="pay-mvola-nom" placeholder="Nom du titulaire Mvola">
-                        <input type="tel" id="pay-mvola-num" placeholder="034 XX XXX XX">
-                        <input type="text" id="pay-mvola-ref" placeholder="Référence Transaction (SMS)">
-                    </div>
-                    <div id="fields-espece" style="display:none; margin-top:10px;">
-                        <input type="text" id="pay-cash-nom" placeholder="Nom du déposant">
-                    </div>
-                    
-                    <div id="fields-montant" style="display:none; margin-top:10px;">
-                        <label>Montant payé :</label>
-                        <select id="pay-choix-montant" onchange="toggleAutreMontant()">
-                            <option value="50">Acompte (50%)</option>
-                            <option value="100">Totalité (100%)</option>
-                            <option value="autre">Autre montant</option>
-                        </select>
-                        <div id="field-autre-montant" style="display:none; margin-top:10px;">
-                            <input type="number" id="pay-valeur-autre" placeholder="Montant en Ar">
-                        </div>
-                    </div>
-
-                    <button onclick="envoyerInfosPaiement()" class="btn-dark" style="width:100%; margin-top:15px; background:#27ae60;">
-                        <i class="fas fa-check-circle"></i> Paiement Effectué
-                    </button>
+                    <!-- sections payment dynamic in script.js -->
                 </div>
             </div>
 
-            <div id="step-3-download" style="display:none; text-align:center; margin-top:30px; background:#eafaf1; padding:20px; border-radius:10px;">
-                <h3 style="color:#27ae60;">Dossier en cours de validation...</h3>
-                <p>L'administrateur vérifie votre paiement. Cette page se mettra à jour automatiquement.</p>
-                
+            <div id="step-3-download" style="display:none; margin-top:20px;">
+                <h3>Télécharger la facture</h3>
                 <div class="otp-loader">
                     <div class="spinner"></div> En attente du code OTP Admin...
                 </div>
-
                 <div style="margin-top:20px;">
                     <input type="text" id="input-otp-auto" placeholder="Code OTP..." readonly 
                            style="text-align:center; font-size:1.5rem; letter-spacing:5px; width:200px; background:#eee;">
@@ -215,83 +127,261 @@
                     </button>
                 </div>
             </div>
-
         </div>
     </section>
-
-    <section id="divertissement" class="page-section" style="display:none;">
-        <h2 class="section-title">Ambiance à bord</h2>
-        <div id="pub-media_top" class="ad-container"></div>
-        <div class="media-tabs">
-            <button onclick="chargerMedia('radios')" class="active-tab">📻 Radios FM</button>
-            <button onclick="chargerMedia('playlists')">🎵 Playlists</button>
-        </div>
-        <div id="conteneur-media" class="grid-voitures"></div>
-        <div id="pub-media_bot" class="ad-container"></div>
-    </section>
-
-    <section id="contact" class="page-section" style="display:none;">
-        <h2 class="section-title">Contact & Avis</h2>
-        <div class="contact-layout">
-            <div class="form-contact-box">
-                <h3>Envoyez-nous un message</h3>
-                <select id="contact-sujet"><option value="Suggestion">Suggestion</option><option value="Partenariat">Partenariat</option><option value="Devis">Devis</option><option value="Autre">Autre</option></select>
-                <input type="text" id="contact-nom" placeholder="Votre Nom">
-                <textarea id="contact-message" rows="5" placeholder="Votre message..."></textarea>
-                <button onclick="envoyerContactWhatsApp()" class="btn-whatsapp"><i class="fab fa-whatsapp"></i> Discuter sur WhatsApp</button>
-            </div>
-            <div class="avis-box">
-                <h3>Avis Clients</h3>
-                <div id="liste-avis" style="margin-bottom:20px;"></div>
-                <hr>
-                <h3>Votre avis compte</h3>
-                <input type="text" id="avis-nom" placeholder="Votre Nom">
-                <select id="avis-note"><option value="5">⭐⭐⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="3">⭐⭐⭐</option><option value="2">⭐⭐</option><option value="1">⭐</option></select>
-                <textarea id="avis-commentaire" placeholder="Votre expérience..."></textarea>
-                <button onclick="envoyerAvis()" class="btn-dark">Publier</button>
-            </div>
-        </div>
-    </section>
-
 </main>
 
 <footer class="site-footer">
     <div class="footer-content">
         <h3>Rija NIAINA Car Services</h3>
         <p><i class="fas fa-map-marker-alt"></i> Siae 33 Ambodifilao, Analakely, Antananarivo 101</p>
-        <p class="footer-legal">NIF: 5012357932 | STAT: 70209 11 2025 0 06328</p>
-        <p class="footer-phone"><i class="fas fa-phone"></i> +261 38 85 524 32</p>
-        <div style="margin-top: 15px;">
-            <a href="https://www.facebook.com/share/1HBzQMGGN7/" target="_blank" style="color: white; text-decoration: none; font-weight: bold; font-size: 1.1rem;">
-                <i class="fab fa-facebook" style="color: #1877F2; margin-right: 8px;"></i> Suivez-nous sur Facebook
-            </a>
-        </div>
     </div>
 </footer>
+</body>
+</html>
+```
 
-<div id="modal-conditions" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-        <span class="close-modal" onclick="fermerModalConditions()">&times;</span>
-        <h3><i class="fas fa-file-contract"></i> Conditions Générales</h3>
-        
-        <div class="conditions-scroll-box">
-            <h4>1. Conducteur</h4>
-            <p>Le locataire doit avoir plus de 23 ans et un permis valide (+2 ans).</p>
-            <h4>2. Paiement & Caution</h4>
-            <p>L'acompte de 50% est requis pour bloquer le véhicule. Aucune caution n'est exigée avant le départ.</p>
-            <h4>3. Utilisation</h4>
-            <p>Usage en "bon père de famille". Sous-location interdite.</p>
-            <p>Le véhicule est destiné à un usage personnel et non-commercial sur routes carrossables uniquement.</p>
-            <p>Le locataire s'engage à signaler immédiatement tout incident ou dysfonctionnement au loueur.</p>
-            <h4>4. Carburant</h4>
-            <p>Le carburant est à la charge du locataire. Le véhicule doit être restitué avec le même niveau qu'au départ.</p>
-            <h4>5. Dommage</h4>
-            <p>En cas de casse, détérioration ou vandalisme constaté au retour (incluant mais non limité à: bris de glace, optiques cassés, pneus déchirés ou crevés, rayures profondes...) les frais de remise en état sont à la charge exclusive et immédiate du locataire.</p>
-            <p>Toute immobilisation du véhicule due à un dommage causé par le locataire n’interrompt pas la location ; les frais correspondants restent à sa charge.</p>
+
+```html name=admin.html url=https://github.com/root-ndra/rentcarservices/blob/64ebbc6554a23d2ade723eaa2cc1b9bf9679c7f8/admin.html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Rija Cars</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        /* Styles admin minimal */
+        .modal-overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); }
+        .modal-content { background:white; padding:20px; border-radius:8px; width:520px; max-width:95%; }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>Admin - Rija Cars</h2>
+        <div id="header-user-name"></div>
+    </header>
+
+    <main>
+        <!-- Nav simplified -->
+        <nav>
+            <button onclick="switchTab('voitures')">Voitures</button>
+            <button onclick="switchTab('reservations')">Réservations</button>
+        </nav>
+
+        <section id="view-voitures" style="display:block;">
+            <h3>Liste des voitures</h3>
+            <div id="container-voitures-admin">Chargement...</div>
+        </section>
+
+        <section id="view-reservations" style="display:none;">
+            <button onclick="toggleNewResaForm()" style="margin-bottom:15px; background:#2ecc71; color:white; border:none; padding:10px 15px; border-radius:5px; cursor:pointer;"><i class="fas fa-plus-circle"></i> Nouvelle Réservation (Comptoir)</button>
+            <div id="form-new-resa" class="form-box" style="display:none; background:#e8f8f5;">
+                <h3 class="section-title-admin" style="margin-top:0;">Création Réservation Directe</h3>
+                <div class="form-grid">
+                    <div><label>Voiture</label><select id="new-resa-voiture" onchange="calculerPrixAdmin()"></select></div>
+                    <div><label>Client (Nom)</label><input type="text" id="new-resa-nom"></div>
+                    <div><label>Client (Tel)</label><input type="text" id="new-resa-tel"></div>
+                    <div><label>Début</label><input type="date" id="new-resa-debut" onchange="calculerPrixAdmin()"></div>
+                    <div><label>Fin</label><input type="date" id="new-resa-fin" onchange="calculerPrixAdmin()"></div>
+                    <div><label>Montant (Ar)</label><input type="number" id="new-resa-montant" onchange="updateResteAdmin()"></div>
+                    <div><label>Déjà Payé</label><input type="number" id="new-resa-paye" value="0" onchange="updateResteAdmin()"></div>
+                    <div><label>Reste</label><input type="number" id="new-resa-reste" readonly style="background:#ddd;"></div>
+                </div>
+                <button id="btn-creer-resa" onclick="creerReservationAdmin()" class="btn-publish" style="width:100%; margin-top:15px; padding:10px;">Créer</button>
+            </div>
+
+            <div class="table-container">
+                <table id="table-resa-full">
+                    <thead><tr><th>#ID</th><th>Client</th><th>Voiture</th><th>Paiement</th><th>Finances</th><th>OTP / Validation</th><th>Actions</th></tr></thead>
+                    <tbody id="tbody-resa-full"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal modification réservation étendu -->
+    <div id="modal-edit-resa" class="modal-overlay" style="display:none;">
+      <div class="modal-content">
+        <span class="close-modal" onclick="fermerModal('modal-edit-resa')">×</span>
+        <h3>Modifier Resa</h3>
+        <input type="hidden" id="edit-resa-id">
+        <p id="edit-resa-client"></p>
+
+        <div style="margin-top:8px;">
+          <strong>Livraison :</strong>
+          <p id="edit-resa-livraison" style="margin:4px 0; color:#333;"></p>
+          <strong>Récupération :</strong>
+          <p id="edit-resa-recuperation" style="margin:4px 0; color:#333;"></p>
+          <strong>Trajet prévisionnel :</strong>
+          <p id="edit-resa-trajet" style="margin:4px 0; color:#333;"></p>
         </div>
-        <button onclick="fermerModalConditions()" class="btn-dark" style="width:100%;">Fermer</button>
-    </div>
-</div>
 
+        <input type="date" id="edit-resa-debut">
+        <input type="date" id="edit-resa-fin">
+        <input type="number" id="edit-resa-montant">
+        <select id="edit-resa-statut"><option value="valide">Validé</option><option value="en_attente">Attente</option><option value="annulee">Annulée</option></select>
+        <button onclick="sauvegarderModificationResa()" class="btn-publish" style="width:100%; margin-top:10px;">MAJ</button>
+      </div>
+    </div>
+
+<script>
+    const SUPABASE_URL = 'https://ctijwjcjmbfmfhzwbguk.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let globalVoitures = [];
+
+    async function toutRecharger() {
+        await chargerVoitures();
+        await chargerTableReservations();
+    }
+
+    async function chargerVoitures() {
+        const container = document.getElementById('container-voitures-admin');
+        const { data: voitures } = await sb.from('voitures').select('*').order('id');
+        const { data: resas } = await sb.from('reservations').select('*');
+        const { data: maints } = await sb.from('maintenances').select('*');
+        globalVoitures = voitures || [];
+
+        container.innerHTML = '';
+        if(!voitures || voitures.length === 0) { container.innerHTML = '<p>Aucune voiture.</p>'; return; }
+
+        voitures.forEach(v => {
+            // statut simplifié
+            let today = new Date().toISOString().split('T')[0];
+            let isLoc = resas ? resas.find(r => r.id_voiture === v.id && today >= r.date_debut && today <= r.date_fin && r.statut === 'valide') : false;
+            let card = document.createElement('div');
+            card.className = 'card-voiture';
+            card.innerHTML = `
+                <h4>${v.nom || '—'}</h4>
+                <p>Prix: ${v.prix_base || '-'} Ar</p>
+                <label style="display:block; margin-top:8px; font-size:0.9rem;">
+                  <input type="checkbox" ${v.afficher_calendrier ? 'checked' : ''} onchange="toggleCalendrierVoiture(${v.id}, this.checked)">
+                  Afficher calendrier
+                </label>
+                <div id="mini-cal-${v.id}"></div>
+            `;
+            container.appendChild(card);
+
+            // afficher mini calendar si activé
+            if(v.afficher_calendrier) {
+                // build mini calendar (simple list for perf)
+                const mini = card.querySelector(`#mini-cal-${v.id}`);
+                const events = [];
+                if(resas) resas.filter(r => r.id_voiture === v.id && r.statut === 'valide').forEach(r => {
+                    events.push(`<div style="font-size:0.85rem; color:#c0392b;">${r.date_debut} → ${r.date_fin} (${r.nom || 'client'})</div>`);
+                });
+                if(maints) maints.filter(m => m.id_voiture === v.id).forEach(m => {
+                    events.push(`<div style="font-size:0.85rem; color:#f39c12;">${m.date_debut} → ${m.date_fin} (Maintenance)</div>`);
+                });
+                mini.innerHTML = events.length ? events.join('') : '<div style="font-size:0.85rem; color:#27ae60;">Aucune réservation</div>';
+            } else {
+                const mini = card.querySelector(`#mini-cal-${v.id}`);
+                mini.innerHTML = `<div style="font-size:0.85rem; color:#888;">Calendrier masqué</div>`;
+            }
+        });
+    }
+
+    async function toggleCalendrierVoiture(id, value) {
+        try {
+            await sb.from('voitures').update({ afficher_calendrier: value }).eq('id', id);
+            await chargerVoitures();
+        } catch (e) {
+            console.error(e);
+            alert("Erreur sauvegarde affichage calendrier");
+        }
+    }
+
+    async function chargerTableReservations() { 
+        const tbody = document.getElementById('tbody-resa-full');
+        const { data } = await sb.from('reservations').select('*, voitures(nom)').order('id', {ascending:false});
+        
+        tbody.innerHTML = '';
+        if(data) data.forEach(r => {
+            let actions = '';
+            let otpDisplay = '';
+            if (r.statut === 'valide') {
+                otpDisplay = `<strong style="color:green; font-size:1.1rem;">${r.code_otp || '-'}</strong>`;
+                actions = `<button class="btn-action-small" style="background:#ccc; cursor:not-allowed;">Déjà Validé</button>`;
+            } else {
+                otpDisplay = `<input type="text" id="otp-${r.id}" placeholder="Code" style="width:70px; padding:5px; text-align:center;">`;
+                actions = `<button class="btn-action-small btn-publish" onclick="validerResa(${r.id})"><i class="fas fa-check"></i> Valider</button>`;
+            }
+
+            actions += `
+                <button class="btn-action-small" style="background:#8e44ad;" onclick="genererPDFAdmin(${r.id})" title="Télécharger PDF"><i class="fas fa-file-pdf"></i></button>
+                <button class="btn-action-small btn-edit" onclick="ouvrirModifResa(${r.id})"><i class="fas fa-edit"></i></button>
+                <button class="btn-action-small btn-delete" onclick="annulerResa(${r.id})"><i class="fas fa-trash"></i></button>
+            `;
+
+            tbody.innerHTML += `<tr>
+                <td>${r.id}</td>
+                <td>${r.nom || '-'} (${r.tel || '-'})</td>
+                <td>${r.voitures ? r.voitures.nom : '-'}</td>
+                <td>${r.paiement_methode || '-'}</td>
+                <td>${formatPrix(r.montant_total || 0)}</td>
+                <td>${otpDisplay}</td>
+                <td>${actions}</td>
+            </tr>`;
+        });
+    }
+
+    async function ouvrirModifResa(id) {
+        const { data: resa } = await sb.from('reservations').select('*').eq('id', id).single();
+        if(resa) {
+            document.getElementById('edit-resa-id').value = resa.id;
+            document.getElementById('edit-resa-client').innerText = `${resa.nom} (${resa.tel})`;
+            document.getElementById('edit-resa-debut').value = resa.date_debut;
+            document.getElementById('edit-resa-fin').value = resa.date_fin;
+            document.getElementById('edit-resa-montant').value = resa.montant_total || 0;
+            document.getElementById('edit-resa-statut').value = resa.statut || 'en_attente';
+
+            document.getElementById('edit-resa-livraison').innerText = `${resa.livraison_lieu || '-'} à ${resa.livraison_heure || '-'}`;
+            document.getElementById('edit-resa-recuperation').innerText = `${resa.recuperation_lieu || '-'} à ${resa.recuperation_heure || '-'}`;
+            const trajets = [resa.trajet_1, resa.trajet_2, resa.trajet_3, resa.trajet_4].filter(Boolean);
+            document.getElementById('edit-resa-trajet').innerText = trajets.length ? trajets.join(' → ') : '-';
+
+            document.getElementById('modal-edit-resa').style.display = 'block';
+        } else {
+            alert("Réservation introuvable");
+        }
+    }
+
+    async function sauvegarderModificationResa() {
+        const id = document.getElementById('edit-resa-id').value;
+        const debut = document.getElementById('edit-resa-debut').value;
+        const fin = document.getElementById('edit-resa-fin').value;
+        const montant = parseFloat(document.getElementById('edit-resa-montant').value) || 0;
+        const statut = document.getElementById('edit-resa-statut').value;
+        try {
+            await sb.from('reservations').update({ date_debut: debut, date_fin: fin, montant_total: montant, statut }).eq('id', id);
+            fermerModal('modal-edit-resa');
+            toutRecharger();
+            alert("Mise à jour enregistrée.");
+        } catch (e) {
+            console.error(e);
+            alert("Erreur mise à jour");
+        }
+    }
+
+    function fermerModal(id) { document.getElementById(id).style.display='none'; }
+
+    // Helpers
+    function formatPrix(v) { return (v || 0).toLocaleString('fr-FR') + ' Ar'; }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+        toutRecharger();
+    });
+</script>
 </body>
 </html>
