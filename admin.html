@@ -19,452 +19,766 @@
         
         .admin-header { 
             background: white; padding: 15px 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
-            display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center; 
+            position: sticky; top: 0; z-index: 100;
         }
-
-        .user-badge { display: flex; align-items: center; gap: 10px; }
-        .role-indicator { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; color: white; text-transform: uppercase; }
-        .role-admin { background: #e74c3c; }
-        .role-partner { background: #3498db; }
-
-        .admin-container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
+        .user-profile-corner { display: flex; align-items: center; gap: 15px; }
+        .user-name-display { font-weight: bold; color: #2c3e50; text-align: right; line-height: 1.2; }
+        .user-role-badge { font-size: 0.75rem; color: #7f8c8d; font-weight: normal; }
         
-        .admin-tabs { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; background: white; padding: 10px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .tab-btn { padding: 12px 20px; border: none; background: none; font-weight: 600; color: #666; cursor: pointer; border-radius: 8px; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
-        .tab-btn:hover { background: #f0f2f5; }
+        .admin-container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+        
+        /* Onglets */
+        .admin-tabs { 
+            display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+            background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .tab-btn { 
+            padding: 12px 20px; background: transparent; border: none; font-size: 0.95rem; 
+            font-weight: 600; color: #555; cursor: pointer; border-radius: 6px; transition: 0.3s; 
+            display: flex; align-items: center; gap: 8px; white-space: nowrap;
+        }
+        .tab-btn:hover { background: #f0f0f0; color: #2c3e50; }
         .tab-btn.active { background: #2c3e50; color: white; }
 
-        /* Visibilité conditionnelle */
-        .super-admin-only { display: none !important; }
-        body.is-super-admin .super-admin-only { display: flex !important; }
-        body.is-super-admin tr.super-admin-only { display: table-row !important; }
+        /* Dashboard Grid */
+        .grid-dashboard { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 20px; 
+        }
+        .car-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; position: relative; border-top: 5px solid transparent; }
+        
+        /* Status Colors */
+        .status-dispo { border-top-color: #2ecc71; } .status-louee { border-top-color: #e74c3c; } .status-maintenance { border-top-color: #f39c12; }
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; color: white; text-transform: uppercase; }
+        .bg-green { background: #2ecc71; } .bg-red { background: #e74c3c; } .bg-orange { background: #f39c12; } .bg-blue { background: #3498db; } .bg-gray { background: #95a5a6; } .bg-black { background: #333; }
 
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .card-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
+        .card-body { padding: 15px; }
+        .kpi-row { display: flex; justify-content: space-between; margin-bottom: 10px; background: #f8f9fa; padding: 8px; border-radius: 8px; }
+        .kpi-item { text-align: center; flex: 1; }
+        .kpi-val { font-weight: bold; font-size: 1rem; color: #2c3e50; }
+        .km-box { font-size: 0.85rem; color: #555; margin-bottom: 10px; display: flex; justify-content: space-between; }
         
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; margin-top: 10px; }
-        th { background: #2c3e50; color: white; padding: 15px; text-align: left; }
-        td { padding: 15px; border-bottom: 1px solid #eee; }
+        .mini-cal-container { margin-top: 10px; overflow-x: auto; overflow-y: hidden; }
+        .fc { font-size: 0.65rem !important; min-width: 100%; }
+        .fc table { width: 100% !important; font-size: 0.65rem !important; }
+        .fc-toolbar-title { font-size: 0.8rem !important; }
+        .fc-button { padding: 2px 4px !important; font-size: 0.65rem !important; }
+
+        .card-actions { padding: 10px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; gap: 5px; }
+        .btn-action { flex: 1; padding: 8px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; text-align:center; }
+        .btn-maint { background: #f39c12; color: white; } .btn-km { background: #34495e; color: white; } .btn-hist { background: #95a5a6; color: white; }
+
+        /* Toggle Reservable */
+        .toggle-reservable { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; cursor: pointer; padding: 5px; border-radius: 4px; border: 1px solid transparent; }
+        .toggle-reservable:hover { background: #eee; border-color: #ddd; }
+        .toggle-on { color: #27ae60; }
+        .toggle-off { color: #e74c3c; }
+
+        /* Tableaux */
+        .table-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-x: auto; margin-bottom: 30px; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { background: #2c3e50; color: white; padding: 15px; text-align: left; font-weight: 600; font-size: 0.9rem; white-space: nowrap; }
+        td { padding: 12px 15px; border-bottom: 1px solid #eee; vertical-align: middle; color: #333; font-size: 0.9rem; }
+        tr:hover { background-color: #f9f9f9; }
         
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:none; justify-content:center; align-items:center; z-index:2000; }
-        .modal-content { background:white; padding:30px; border-radius:15px; width:90%; max-width:600px; max-height: 90vh; overflow-y: auto; }
+        .btn-action-small { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; color: white; font-size: 0.8rem; margin-right: 5px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 5px;}
+        .btn-publish { background: #2ecc71; } .btn-hide { background: #f39c12; } .btn-delete { background: #e74c3c; } .btn-edit { background: #3498db; } .btn-freeze { background: #9b59b6; }
+        .row-frozen { background-color: #f2f2f2; color: #999; }
+        .row-frozen td { color: #999; }
+
+        .form-box { background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ddd; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        .form-box input, .form-box select, .form-box textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 1rem; }
+        .form-box label { font-weight: 600; font-size: 0.9rem; color: #555; display: block; margin-bottom: 5px; }
+        .section-title-admin { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; color: #2c3e50; }
+
+        .login-wrapper { height: 100vh; display: flex; justify-content: center; align-items: center; background: #2c3e50; padding: 20px; }
+        .login-box { background: white; padding: 30px; border-radius: 10px; width: 100%; max-width: 400px; text-align: center; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: none; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 10px; width: 90%; max-width: 600px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: #777; }
         
-        #login-screen { position:fixed; top:0; left:0; width:100%; height:100%; background:#2c3e50; display:flex; justify-content:center; align-items:center; z-index:9999; }
-        .login-box { background:white; padding:40px; border-radius:15px; width:350px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        @media (max-width: 768px) {
+            .admin-header { flex-direction: column; gap: 15px; text-align: center; }
+            .admin-tabs { flex-wrap: nowrap; overflow-x: auto; padding: 10px 0; gap: 5px; -webkit-overflow-scrolling: touch; }
+            .tab-btn { flex: 0 0 auto; background: white; padding: 10px 15px; border: 1px solid #eee; }
+            .grid-dashboard { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
+    <div id="login-screen" class="login-wrapper">
         <div class="login-box">
-            <img src="https://i.ibb.co/dw8gxWXL/1765001359376.png" alt="Logo" style="width:100px; margin-bottom:20px;">
-            <h2>Administration</h2>
-            <input type="email" id="login-email" placeholder="Email" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px;">
-            <input type="password" id="login-pass" placeholder="Mot de passe" style="width:100%; padding:12px; margin-bottom:20px; border:1px solid #ddd; border-radius:8px;">
-            <button onclick="connexion()" style="width:100%; padding:12px; background:#3498db; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">Se connecter</button>
-            <p id="login-error" style="color:red; font-size:0.8rem; margin-top:10px; display:none;"></p>
+            <h2 id="login-title">Admin Access</h2>
+            <p style="color:#777; font-size:0.9rem; margin-bottom:20px;">Accès sécurisé</p>
+            
+            <input type="email" id="admin-email" placeholder="Email Administrateur" 
+                   style="width:100%; padding:15px; margin-bottom:10px; font-size:1rem; border:1px solid #ccc; border-radius:5px;">
+            
+            <input type="password" id="admin-pass" placeholder="Mot de passe" 
+                   style="width:100%; padding:15px; margin-bottom:20px; font-size:1rem; border:1px solid #ccc; border-radius:5px;">
+            
+            <button onclick="loginAdmin()" id="btn-login"
+                    style="width:100%; padding:15px; background:#3498db; color:white; border:none; border-radius:5px; font-size:1.1rem; cursor:pointer;">
+                Connexion
+            </button>
+            <p id="login-error" style="color:red; margin-top:15px; display:none; font-size:0.9rem;"></p>
         </div>
     </div>
 
-    <div class="admin-header">
-        <div>
-            <h1 style="margin:0; font-size:1.2rem;">PRO DASHBOARD</h1>
-        </div>
-        <div class="user-badge">
-            <div style="text-align:right">
-                <div id="user-email" style="font-weight:bold; font-size:0.9rem;">...</div>
-                <div id="user-role-tag" class="role-indicator">...</div>
+    <div id="admin-content" style="display:none;">
+        <div class="admin-header">
+            <div>
+                <h1 style="margin:0;">Administration</h1>
+                <small id="admin-header-subtext">Gestion...</small>
             </div>
-            <button onclick="deconnexion()" style="background:#eee; border:none; padding:10px; border-radius:50%; cursor:pointer;"><i class="fas fa-power-off"></i></button>
-        </div>
-    </div>
-
-    <div class="admin-container">
-        <div class="admin-tabs">
-            <button class="tab-btn active" onclick="switchTab('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</button>
-            <button class="tab-btn" onclick="switchTab('reservations')"><i class="fas fa-calendar-alt"></i> Réservations</button>
-            <button class="tab-btn" onclick="switchTab('voitures')"><i class="fas fa-car"></i> Mes Véhicules</button>
-            <button class="tab-btn" onclick="switchTab('media')"><i class="fas fa-photo-video"></i> Media & Pubs</button>
-            <button class="tab-btn super-admin-only" onclick="switchTab('users')"><i class="fas fa-users-cog"></i> Partenaires</button>
-        </div>
-
-        <div id="section-dashboard" class="admin-section">
-            <div class="dashboard-grid" id="stats-container">
+            
+            <div class="user-profile-corner">
+                <div class="user-name-display">
+                    <span id="header-user-name">Chargement...</span><br>
+                    <span id="header-user-role" class="user-role-badge">...</span>
                 </div>
-            <div class="card" style="margin-top:20px;">
-                <h3>Calendrier Global</h3>
-                <div id="calendar-admin"></div>
+                <button onclick="ouvrirModalProfil()" title="Mon Profil" style="background:#ecf0f1; border:none; border-radius:50%; width:40px; height:40px; cursor:pointer; color:#2c3e50; font-size:1.1rem;">
+                    <i class="fas fa-user-cog"></i>
+                </button>
+                <button onclick="logoutAdmin()" title="Déconnexion" style="background:#c0392b; color:white; border:none; border-radius:5px; padding:10px 15px; cursor:pointer;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
             </div>
         </div>
 
-        <div id="section-reservations" class="admin-section" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>Liste des Réservations</h2>
-                <button onclick="exportResasPDF()" class="btn-dark"><i class="fas fa-file-pdf"></i> Exporter PDF</button>
+        <div class="admin-container">
+            <div class="admin-tabs">
+                <button id="btn-tab-dashboard" class="tab-btn active" onclick="switchTab('dashboard')"><i class="fas fa-tachometer-alt"></i> Tableau de Bord</button>
+                <button id="btn-tab-reservations" class="tab-btn" onclick="switchTab('reservations')"><i class="fas fa-list-alt"></i> Réservations</button>
+                <button id="btn-tab-partenaires" class="tab-btn" onclick="switchTab('partenaires')"><i class="fas fa-users-cog"></i> Partenaires</button>
+                <button id="btn-tab-maintenances" class="tab-btn" onclick="switchTab('maintenances')"><i class="fas fa-tools"></i> Maintenances</button>
+                <button id="btn-tab-promos" class="tab-btn" onclick="switchTab('promos')"><i class="fas fa-tags"></i> Codes Promo</button>
+                <button id="btn-tab-avis" class="tab-btn" onclick="switchTab('avis')"><i class="fas fa-star"></i> Avis Clients</button>
+                <button id="btn-tab-pubs" class="tab-btn" onclick="switchTab('pubs')"><i class="fas fa-ad"></i> Publicités</button>
+                <button id="btn-tab-media" class="tab-btn" onclick="switchTab('media')"><i class="fas fa-music"></i> Divertissement</button>
+                <button id="btn-tab-config" class="tab-btn" onclick="switchTab('config')"><i class="fas fa-cogs"></i> Configuration Site</button>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Réf</th>
-                        <th>Client</th>
-                        <th>Véhicule</th>
-                        <th>Dates</th>
-                        <th>Total</th>
-                        <th>Statut</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="table-resas-body"></tbody>
-            </table>
-        </div>
 
-        <div id="section-voitures" class="admin-section" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>Ma Flotte</h2>
-                <button onclick="ouvrirModalVoiture()" class="btn-dark">+ Ajouter un véhicule</button>
-            </div>
-            <div class="dashboard-grid" id="cars-admin-container" style="margin-top:20px;"></div>
-        </div>
-
-        <div id="section-media" class="admin-section" style="display:none;">
-            <div class="dashboard-grid">
-                <div class="card">
-                    <h3>Publicités</h3>
-                    <input type="text" id="pub-societe" placeholder="Nom Société">
-                    <input type="text" id="pub-image" placeholder="URL Image">
-                    <input type="date" id="pub-debut" onchange="calculerFinPub()">
-                    <input type="number" id="pub-duree" placeholder="Nb Jours" onchange="calculerFinPub()">
-                    <input type="date" id="pub-fin" readonly>
-                    <button onclick="ajouterPub()" class="btn-dark" style="width:100%; margin-top:10px;">Ajouter Pub</button>
-                    <div id="list-pubs" style="margin-top:15px;"></div>
+            <div id="view-dashboard">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <button onclick="ouvrirModalVoiture()" class="btn-publish" style="padding:10px 15px;">
+                        <i class="fas fa-plus-car"></i> Ajouter une Voiture
+                    </button>
+                    <div>
+                        <span style="margin-right:10px; font-weight:bold;">Période :</span>
+                        <button class="btn-action-small active" style="background:#2c3e50;" onclick="setPeriode('mois')">Ce Mois</button>
+                        <button class="btn-action-small" style="background:#95a5a6;" onclick="setPeriode('annee')">Cette Année</button>
+                    </div>
                 </div>
-                <div class="card">
-                    <h3>Radios / Live</h3>
-                    <select id="media-type"><option value="radios">Radio</option><option value="lives">Live Video</option></select>
-                    <input type="text" id="media-nom" placeholder="Nom">
-                    <input type="text" id="media-url" placeholder="URL Flux / Embed">
-                    <input type="text" id="media-img" placeholder="URL Logo">
-                    <button onclick="ajouterMedia()" class="btn-dark" style="width:100%; margin-top:10px;">Ajouter Media</button>
+                <div id="grid-voitures" class="grid-dashboard"></div>
+            </div>
+
+            <div id="view-partenaires" style="display:none;">
+                <div class="form-box">
+                    <h3 class="section-title-admin"><i class="fas fa-user-plus"></i> Gestion / Création Partenaire</h3>
+                    <div class="form-grid">
+                        <div><label>Nom</label><input type="text" id="part-nom" placeholder="Nom de famille"></div>
+                        <div><label>Prénom</label><input type="text" id="part-prenom" placeholder="Prénom"></div>
+                        <div><label>Email (Connexion)</label><input type="email" id="part-email" placeholder="email@exemple.com"></div>
+                        <div><label>Téléphone</label><input type="text" id="part-tel" placeholder="034..."></div>
+                        <div><label>Durée Contrat</label>
+                            <select id="part-duree" onchange="calculerFinContrat()">
+                                <option value="7">7 jours</option>
+                                <option value="30">1 mois</option>
+                                <option value="90">3 mois</option>
+                                <option value="180">6 mois</option>
+                                <option value="365">1 an</option>
+                            </select>
+                        </div>
+                        <div><label>Fin Contrat (Calcul auto)</label><input type="date" id="part-fin" readonly style="background:#eee;"></div>
+                        <div><label>Royalties (%)</label>
+                            <select id="part-royalties">
+                                <option value="5">5%</option>
+                                <option value="7">7%</option>
+                                <option value="10">10%</option>
+                                <option value="15" selected>15% (Standard)</option>
+                                <option value="20">20%</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button onclick="upsertPartenaire()" class="btn-publish" style="width:100%; margin-top:10px; padding:10px;">Enregistrer Fiche Partenaire</button>
+                </div>
+                <div class="table-container">
+                    <table id="table-partenaires">
+                        <thead><tr><th>Partenaire</th><th>Contact</th><th>Contrat / Fin</th><th>Royalties</th><th>Statut</th><th>Actions</th></tr></thead>
+                        <tbody id="tbody-partenaires"></tbody>
+                    </table>
                 </div>
             </div>
-        </div>
 
-        <div id="section-users" class="admin-section super-admin-only">
-            <h2>Gestion des Partenaires & Rôles</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Email</th>
-                        <th>Nom</th>
-                        <th>Rôle</th>
-                        <th>Date Inscription</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="table-users-body"></tbody>
-            </table>
+            <div id="view-reservations" style="display:none;">
+                <button onclick="toggleNewResaForm()" style="margin-bottom:15px; background:#2ecc71; color:white; border:none; padding:10px 15px; border-radius:5px; cursor:pointer;"><i class="fas fa-plus-circle"></i> Nouvelle Réservation (Comptoir)</button>
+                <div id="form-new-resa" class="form-box" style="display:none; background:#e8f8f5;">
+                    <h3 class="section-title-admin" style="margin-top:0;">Création Réservation Directe</h3>
+                    <div class="form-grid">
+                        <div><label>Voiture</label><select id="new-resa-voiture" onchange="calculerPrixAdmin()"></select></div>
+                        <div><label>Client (Nom)</label><input type="text" id="new-resa-nom"></div>
+                        <div><label>Client (Tel)</label><input type="text" id="new-resa-tel"></div>
+                        <div><label>Début</label><input type="date" id="new-resa-debut" onchange="calculerPrixAdmin()"></div>
+                        <div><label>Fin</label><input type="date" id="new-resa-fin" onchange="calculerPrixAdmin()"></div>
+                        
+                         <div><label>Lieu Livraison</label><input type="text" id="new-resa-liv-lieu"></div>
+                        <div><label>Heure Livraison</label><input type="time" id="new-resa-liv-heure"></div>
+                        <div><label>Lieu Récup.</label><input type="text" id="new-resa-rec-lieu"></div>
+                        <div><label>Heure Récup.</label><input type="time" id="new-resa-rec-heure"></div>
+                        <div><label>Trajet</label><input type="text" id="new-resa-trajet"></div>
+
+                        <div><label>Montant (Ar)</label><input type="number" id="new-resa-montant" onchange="updateResteAdmin()"></div>
+                        <div><label>Statut</label><select id="new-resa-statut"><option value="valide">Validé</option><option value="en_attente">En attente</option></select></div>
+                        <div><label>Déjà Payé</label><input type="number" id="new-resa-paye" value="0" onchange="updateResteAdmin()"></div>
+                        <div><label>Reste</label><input type="number" id="new-resa-reste" readonly style="background:#ddd;"></div>
+                    </div>
+                    <button id="btn-creer-resa" onclick="creerReservationAdmin()" class="btn-publish" style="width:100%; margin-top:15px; padding:10px;">Créer</button>
+                </div>
+                <div class="table-container">
+                    <table id="table-resa-full">
+                        <thead><tr><th>#ID</th><th>Client</th><th>Voiture</th><th>Paiement</th><th>Finances</th><th>OTP / Validation</th><th>Actions</th></tr></thead>
+                        <tbody id="tbody-resa-full"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-maintenances" style="display:none;">
+                <div class="table-container">
+                    <table id="table-maint-global">
+                        <thead><tr><th>Date</th><th>Voiture</th><th>Type</th><th>Détails</th><th>Coût</th><th>Actions</th></tr></thead>
+                        <tbody id="tbody-maint-global"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-promos" style="display:none;">
+                <div class="form-box">
+                    <h3 class="section-title-admin"><i class="fas fa-tag"></i> Ajouter un Code Promo</h3>
+                    <div class="form-grid">
+                        <div><label>Code (ex: ETE2024)</label><input type="text" id="promo-code" placeholder="Code en majuscule"></div>
+                        <div><label>Réduction (%)</label><input type="number" id="promo-pourcent" placeholder="Ex: 10"></div>
+                        <div><label>Min. Jours</label><input type="number" id="promo-jours" placeholder="Ex: 3" value="1"></div>
+                        <div><label>Date Début</label><input type="date" id="promo-debut"></div>
+                        <div><label>Date Fin</label><input type="date" id="promo-fin"></div>
+                    </div>
+                    <button onclick="ajouterPromo()" class="btn-publish" style="width:100%; padding:12px; margin-top:10px;">Créer Code</button>
+                </div>
+                <div class="table-container">
+                    <table id="table-promos">
+                        <thead><tr><th>Code</th><th>Réduction</th><th>Conditions</th><th>Validité</th><th>Statut</th><th>Actions</th></tr></thead>
+                        <tbody id="tbody-promos"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-avis" style="display:none;">
+                <div class="table-container">
+                    <table id="table-avis">
+                        <thead><tr><th>Date</th><th>Client</th><th>Note</th><th>Commentaire</th><th>Statut</th><th>Action</th></tr></thead>
+                        <tbody id="tbody-avis"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-pubs" style="display:none;">
+                <div class="form-box">
+                    <h3 class="section-title-admin"><i class="fas fa-plus-circle"></i> Ajouter une Publicité</h3>
+                    <div class="form-grid">
+                        <div><label>Société</label><input type="text" id="pub-societe" placeholder="Nom de la société"></div>
+                        <div><label>Contact</label><input type="text" id="pub-contact" placeholder="Tél ou Email"></div>
+                        <div><label>Emplacement</label><select id="pub-emplacement"><option value="home_top">Accueil Haut</option><option value="home_bot">Accueil Bas</option><option value="flotte_top">Liste Voitures Haut</option></select></div>
+                        <div><label>Lien Image (URL)</label><input type="text" id="pub-image" placeholder="https://..."></div>
+                        <div><label>Lien Redirection</label><input type="text" id="pub-lien" placeholder="Site web"></div>
+                        <div><label>Date Début</label><input type="date" id="pub-debut" onchange="calculerFinPub()"></div>
+                        <div><label>Durée</label><select id="pub-duree" onchange="calculerFinPub()"><option value="7">7 jours</option><option value="15">15 jours</option><option value="30">1 mois</option><option value="90">3 mois</option><option value="365">1 an</option></select></div>
+                        <div><label>Fin (Calculée)</label><input type="date" id="pub-fin" readonly style="background:#eee;"></div>
+                    </div>
+                    <button onclick="ajouterPub()" class="btn-publish" style="margin-top:15px; padding:10px 20px; width:100%;">Enregistrer Pub</button>
+                </div>
+                <div class="table-container">
+                    <table id="table-pubs">
+                        <thead><tr><th>Société</th><th>Emplacement</th><th>Période</th><th>Image</th><th>Statut</th><th>Actions</th></tr></thead>
+                        <tbody id="tbody-pubs"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-media" style="display:none;">
+                <div class="form-box">
+                    <h3 class="section-title-admin"><i class="fas fa-broadcast-tower"></i> Ajouter une Radio</h3>
+                    <div class="form-grid">
+                        <div><label>Nom</label><input type="text" id="rad-nom" placeholder="Ex: RDJ"></div>
+                        <div><label>Flux</label><input type="text" id="rad-url" placeholder="http://stream..."></div>
+                        <div><label>Logo (URL)</label><input type="text" id="rad-logo" placeholder="https://image..."></div>
+                    </div>
+                    <button onclick="ajouterRadio()" class="btn-publish" style="margin-top:15px; padding:10px 20px; width:100%;">Ajouter Radio</button>
+                </div>
+                <div class="table-container"><table id="table-radios"><thead><tr><th>Logo</th><th>Nom</th><th>Flux</th><th>Statut</th><th>Action</th></tr></thead><tbody id="tbody-radios"></tbody></table></div>
+                
+                <div class="form-box" style="margin-top:40px;">
+                    <h3 class="section-title-admin"><i class="fas fa-music"></i> Gestion Playlist</h3>
+                    <input type="hidden" id="play-id-edit">
+                    <div class="form-grid">
+                        <div><label>Titre</label><input type="text" id="play-titre" placeholder="Ex: Top Hits"></div>
+                        <div><label>Plateforme</label><select id="play-plateforme"><option value="youtube">YouTube</option><option value="spotify">Spotify</option><option value="deezer">Deezer</option></select></div>
+                        <div><label>Lien</label><input type="text" id="play-url" placeholder="URL (Playlist ou Vidéo)"></div>
+                    </div>
+                    <button id="btn-save-playlist" onclick="ajouterPlaylist()" class="btn-publish" style="margin-top:15px; padding:10px 20px; width:100%;">Ajouter Playlist</button>
+                </div>
+                <div class="table-container"><table id="table-playlists"><thead><tr><th>Plateforme</th><th>Titre</th><th>Lien</th><th>Statut</th><th>Action</th></tr></thead><tbody id="tbody-playlists"></tbody></table></div>
+            </div>
+
+            <div id="view-config" style="display:none;">
+                <div class="form-box">
+                    <h3 class="section-title-admin"><i class="fas fa-cogs"></i> Paramètres Généraux</h3>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                        <div>
+                            <h4 style="margin: 0 0 5px 0;">Affichage du Calendrier (Client)</h4>
+                            <p style="margin: 0; color: #666; font-size: 0.9rem;">Masquer ou afficher le calendrier de disponibilité sur la page d'accueil (index.html).</p>
+                        </div>
+                        <div>
+                            <label class="switch" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <span id="status-calendar-text" style="font-weight: bold;">VISIBLE</span>
+                                <input type="checkbox" id="toggle-calendar-global" checked onchange="toggleGlobalCalendar()">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <div id="modal-voiture" class="modal-overlay">
-        <div class="modal-content">
-            <h3 id="modal-voiture-title">Nouveau Véhicule</h3>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-                <input type="text" id="car-nom" placeholder="Modèle (ex: Toyota V8)">
-                <input type="text" id="car-ref" placeholder="Immatriculation">
-                <input type="number" id="car-prix" placeholder="Prix/Jour (Ar)">
-                <select id="car-type">
-                    <option value="Berline">Berline</option>
-                    <option value="SUV / 4x4">SUV / 4x4</option>
-                    <option value="Citadine">Citadine</option>
-                </select>
-                <input type="text" id="car-img" placeholder="URL Image Principale">
-                <select id="car-reservable">
-                    <option value="true">Réservable en ligne</option>
-                    <option value="false">Sur devis (Contact uniquement)</option>
-                </select>
+    <div id="modal-voiture" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="max-width: 700px;">
+            <span class="close-modal" onclick="fermerModal('modal-voiture')">×</span>
+            <h3>Ajout / Edition Voiture</h3>
+            <div class="form-grid">
+                <div><label>Nom Modèle</label><input id="new-car-nom" placeholder="Ex: Chevrolet Cruze"></div>
+                <div><label>Prix (Ar/jour)</label><input id="new-car-prix" type="number" placeholder="Ex: 160000"></div>
+                <div><label>Places</label><input id="new-car-places" type="number" placeholder="Ex: 5" value="5"></div>
+                
+                <div><label>Transmission</label>
+                    <select id="new-car-trans">
+                        <option value="Manuelle">Manuelle</option>
+                        <option value="Automatique">Automatique</option>
+                    </select>
+                </div>
+                
+                <div><label>Carburant</label>
+                    <select id="new-car-carburant">
+                        <option value="Essence">Essence</option>
+                        <option value="Diesel">Diesel</option>
+                        <option value="Hybride">Hybride</option>
+                        <option value="Electrique">Electrique</option>
+                    </select>
+                </div>
+                
+                <div><label>Type</label>
+                    <select id="new-car-type">
+                        <option>Berline</option>
+                        <option>SUV</option>
+                        <option>4x4</option>
+                        <option>Minibus</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Réservable ?</label>
+                    <select id="new-car-reservable">
+                        <option value="true">OUI (Standard)</option>
+                        <option value="false">NON (Contact uniquement)</option>
+                    </select>
+                </div>
+                
+                <div style="grid-column: span 2;">
+                    <label>Description</label>
+                    <textarea id="new-car-desc" rows="2" placeholder="Berline de luxe, idéale pour..."></textarea>
+                </div>
+
+                <div style="grid-column: span 2;">
+                    <label>Image Principale (URL)</label>
+                    <input id="new-car-img" placeholder="https://.../cruze1.jpg">
+                </div>
+
+                <div style="grid-column: span 2;">
+                    <label>Autres Photos (URLs séparées par des virgules)</label>
+                    <textarea id="new-car-photos-array" rows="2" placeholder="images/cruze2.jpg, images/cruze3.jpg"></textarea>
+                </div>
+                
+                <div><label>Ref ID</label><input id="new-car-ref" placeholder="Ref ID"></div>
             </div>
-            <textarea id="car-desc" placeholder="Description courte..." style="width:100%; margin-top:15px; height:80px;"></textarea>
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button onclick="sauvegarderVoiture()" class="btn-dark" style="flex:1">Enregistrer</button>
-                <button onclick="fermerModal('modal-voiture')" style="flex:1; background:#ccc; border:none; border-radius:8px;">Annuler</button>
-            </div>
+            <button onclick="ajouterVoiture()" class="btn-publish" style="width:100%; margin-top:10px;">Enregistrer</button>
         </div>
     </div>
-
+    
+    <div id="modal-profil" class="modal-overlay" style="display:none;"><div class="modal-content"><span class="close-modal" onclick="fermerModal('modal-profil')">×</span><h3>Profil</h3><p>Vous êtes connecté en tant qu'administrateur.</p></div></div>
+    
+    <script src="script.js"></script>
     <script>
-        // CONFIG SUPABASE
-        const SUPABASE_URL = 'https://ctijwjcjmbfmfhzwbguk.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk';
-        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // --- LOGIQUE ADMIN SPÉCIFIQUE ---
+        // Les fonctions communes sont dans script.js
+        // Ici on redéfinit/complète les fonctions spécifiques à l'admin pour VOIR les données.
 
-        let userSession = null;
-        let userRole = 'partenaire';
+        let periodeAnalyse = 'mois';
+        let globalVoitures = [];
+        let currentUserRole = 'admin'; // Par défaut admin
 
-        // --- AUTHENTIFICATION ---
-        async function verifierSession() {
-            const { data: { session } } = await sb.auth.getSession();
-            if (session) {
-                userSession = session.user;
-                await recupererInfosPartenaire();
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('user-email').innerText = userSession.email;
-                initialiserDashboard();
-            } else {
-                document.getElementById('login-screen').style.display = 'flex';
-            }
-        }
+        // --- AUTH ADMIN ---
+        async function loginAdmin() {
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-pass').value;
+            const errorMsg = document.getElementById('login-error');
+            
+            errorMsg.style.display = 'none';
+            
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
-        async function connexion() {
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-pass').value;
-            const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
             if (error) {
-                const errEl = document.getElementById('login-error');
-                errEl.innerText = "Erreur : " + error.message;
-                errEl.style.display = 'block';
+                errorMsg.innerText = "Erreur de connexion : " + error.message;
+                errorMsg.style.display = 'block';
             } else {
-                window.location.reload();
+                verifierSession();
             }
         }
 
-        async function deconnexion() {
+        async function logoutAdmin() {
             await sb.auth.signOut();
             window.location.reload();
         }
 
-        async function recupererInfosPartenaire() {
-            // Chercher dans la table partenaire
-            let { data: partenaire, error } = await sb
-                .from('partenaires')
-                .select('*')
-                .eq('user_id', userSession.id)
-                .single();
+        async function verifierSession() {
+            const { data: { session } } = await sb.auth.getSession();
+            if (session) {
+                document.getElementById('login-screen').style.display = 'none'; 
+                document.getElementById('admin-content').style.display = 'block'; 
+                
+                const user = session.user;
+                document.getElementById('header-user-name').innerText = user.email;
+                document.getElementById('header-user-role').innerText = "ADMINISTRATEUR";
 
-            // Si n'existe pas encore, créer le profil par défaut
-            if (!partenaire && !error) {
-                const { data: nouveau } = await sb.from('partenaires').insert([{
-                    user_id: userSession.id,
-                    email: userSession.email,
-                    role: 'partenaire'
-                }]).select().single();
-                partenaire = nouveau;
+                chargerConfigAdmin();
+                chargerDashboard(); 
+            } else { 
+                document.getElementById('login-screen').style.display = 'flex'; 
+                document.getElementById('admin-content').style.display = 'none'; 
             }
+        }
 
-            userRole = partenaire ? partenaire.role : 'partenaire';
-            const tag = document.getElementById('user-role-tag');
-            tag.innerText = userRole === 'super_admin' ? 'Super Admin' : 'Partenaire';
-            tag.className = 'role-indicator ' + (userRole === 'super_admin' ? 'role-admin' : 'role-partner');
-
-            if (userRole === 'super_admin') {
-                document.body.classList.add('is-super-admin');
-            }
+        // --- CHARGEMENT CONFIG JSON (NOUVEAU) ---
+        async function chargerConfigAdmin() {
+            try {
+                const response = await fetch('site_config.json');
+                const config = await response.json();
+                
+                // Injection dynamique
+                document.getElementById('admin-header-subtext').innerText = "Gestion " + config.header.siteName;
+                document.title = "Admin - " + config.header.siteName;
+                
+                // Config Calendrier
+                const { data } = await sb.from('config_site').select('value').eq('key', 'calendar_visible').single();
+                const toggle = document.getElementById('toggle-calendar-global');
+                const txt = document.getElementById('status-calendar-text');
+                if (data) {
+                    let isVisible = (data.value === true || data.value === "true");
+                    toggle.checked = isVisible;
+                    txt.innerText = isVisible ? "VISIBLE" : "MASQUÉ";
+                    txt.style.color = isVisible ? "#2ecc71" : "#e74c3c";
+                }
+            } catch(e) { console.error("Erreur config admin", e); }
         }
 
         // --- NAVIGATION ---
-        function switchTab(id) {
-            document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
-            document.getElementById('section-' + id).style.display = 'block';
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.target.closest('.tab-btn').classList.add('active');
+        function switchTab(tabName) {
+            ['dashboard', 'reservations', 'maintenances', 'avis', 'pubs', 'media', 'promos', 'partenaires', 'config'].forEach(t => { 
+                const el = document.getElementById('view-'+t); if(el) el.style.display = 'none'; 
+            });
+            const target = document.getElementById('view-'+tabName);
+            if(target) target.style.display = 'block';
             
-            if(id === 'dashboard') chargerStats();
-            if(id === 'reservations') chargerReservations();
-            if(id === 'voitures') chargerFlotte();
-            if(id === 'users' && userRole === 'super_admin') chargerPartenaires();
-        }
-
-        // --- LOGIQUE METIER ---
-        async function initialiserDashboard() {
-            chargerStats();
-            initCalendar();
-            chargerTablePubs();
-        }
-
-        async function chargerStats() {
-            const container = document.getElementById('stats-container');
-            // Si admin, compte tout. Si partenaire, compte seulement ses voitures/résas
-            let queryResas = sb.from('reservations').select('*', { count: 'exact' });
-            let queryCars = sb.from('voitures').select('*', { count: 'exact' });
-
-            if (userRole !== 'super_admin') {
-                queryCars = queryCars.eq('proprietaire_id', userSession.id);
-                // Pour les résas partenaire, il faut filtrer par ses voitures
-                const { data: myCars } = await sb.from('voitures').select('id').eq('proprietaire_id', userSession.id);
-                const carIds = myCars.map(c => c.id);
-                queryResas = queryResas.in('id_voiture', carIds);
-            }
-
-            const { count: countResas } = await queryResas;
-            const { count: countCars } = await queryCars;
-
-            container.innerHTML = `
-                <div class="card" style="border-left: 5px solid #3498db;">
-                    <h3>${countResas || 0}</h3>
-                    <p>Réservations totales</p>
-                </div>
-                <div class="card" style="border-left: 5px solid #2ecc71;">
-                    <h3>${countCars || 0}</h3>
-                    <p>Véhicules en ligne</p>
-                </div>
-            `;
-        }
-
-        async function chargerReservations() {
-            const tbody = document.getElementById('table-resas-body');
-            let query = sb.from('reservations').select('*, voitures(nom)').order('created_at', { ascending: false });
-
-            if (userRole !== 'super_admin') {
-                const { data: myCars } = await sb.from('voitures').select('id').eq('proprietaire_id', userSession.id);
-                query = query.in('id_voiture', myCars.map(c => c.id));
-            }
-
-            const { data: resas } = await query;
-            tbody.innerHTML = resas.map(r => `
-                <tr>
-                    <td>#${r.id}</td>
-                    <td>${r.nom}</td>
-                    <td>${r.voitures ? r.voitures.nom : 'Supprimé'}</td>
-                    <td>${r.date_debut} au ${r.date_fin}</td>
-                    <td>${r.montant_total} Ar</td>
-                    <td><span class="status-badge">${r.statut}</span></td>
-                    <td><button onclick="supprimerResa(${r.id})" style="color:red; background:none; border:none; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
-                </tr>
-            `).join('');
-        }
-
-        async function chargerFlotte() {
-            const container = document.getElementById('cars-admin-container');
-            let query = sb.from('voitures').select('*');
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active')); event.currentTarget.classList.add('active');
             
-            if (userRole !== 'super_admin') {
-                query = query.eq('proprietaire_id', userSession.id);
-            }
+            // Chargement des données spécifiques à l'onglet
+            if(tabName==='reservations') { chargerVoituresPourSelect(); chargerTableReservations(); }
+            if(tabName==='maintenances') chargerTableMaintenances();
+            if(tabName==='promos') chargerTablePromos();
+            if(tabName==='partenaires') chargerTablePartenaires();
+            if(tabName==='avis') chargerTableAvis();
+            if(tabName==='pubs') chargerTablePubs();
+            if(tabName==='media') chargerTableMedia();
+            if(tabName==='config') chargerConfigAdmin();
+        }
 
-            const { data: cars } = await query;
-            container.innerHTML = cars.map(c => `
-                <div class="card">
-                    <img src="${c.image_url}" style="width:100%; height:150px; object-fit:cover; border-radius:8px;">
-                    <h4 style="margin:10px 0;">${c.nom}</h4>
-                    <p><strong>Prix :</strong> ${c.prix_base} Ar/j</p>
-                    <p><small>${c.reservable ? '✅ En ligne' : '📞 Contact'}</small></p>
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <button onclick="supprimerVoiture(${c.id})" class="btn-dark" style="background:#e74c3c; flex:1">Supprimer</button>
+        // --- DASHBOARD (VUE GLOBALE) ---
+        async function chargerDashboard() {
+            const grid = document.getElementById('grid-voitures');
+            grid.innerHTML = '<p>Chargement...</p>';
+            
+            // Récupère TOUTES les voitures (sans filtre user)
+            const { data: voitures } = await sb.from('voitures').select('*').order('created_at', { ascending: false });
+            globalVoitures = voitures || [];
+            
+            grid.innerHTML = '';
+            
+            if(!globalVoitures.length) { grid.innerHTML = "<p>Aucune voiture.</p>"; return; }
+
+            globalVoitures.forEach(v => {
+                const card = document.createElement('div');
+                card.className = 'car-card status-dispo'; 
+                
+                const isReservable = (v.reservable !== false);
+                const reservableClass = isReservable ? 'toggle-on' : 'toggle-off';
+                const reservableText = isReservable ? 'Réservable' : 'Contact Seul';
+                const reservableIcon = isReservable ? 'fa-check-circle' : 'fa-ban';
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <strong style="font-size:1.1rem;">${v.nom}</strong>
+                        <span class="badge bg-green">DISPO</span>
                     </div>
-                </div>
-            `).join('');
+                    <div class="card-body">
+                        <div class="km-box">
+                            <span><i class="fas fa-hashtag"></i> ${v.ref_id}</span>
+                            <div class="toggle-reservable ${reservableClass}" onclick="toggleReservable('${v.id}', ${isReservable})">
+                                <i class="fas ${reservableIcon}"></i> ${reservableText}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-action btn-edit" onclick="alert('TODO: Edit')"><i class="fas fa-edit"></i></button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
         }
 
-        // --- GESTION PARTENAIRES (SUPER ADMIN) ---
-        async function chargerPartenaires() {
-            const tbody = document.getElementById('table-users-body');
-            const { data: users } = await sb.from('partenaires').select('*').order('created_at', { ascending: false });
-            
-            tbody.innerHTML = users.map(u => `
-                <tr>
-                    <td>${u.email}</td>
-                    <td>${u.nom || '-'}</td>
-                    <td><span class="role-indicator ${u.role === 'super_admin' ? 'role-admin' : 'role-partner'}">${u.role}</span></td>
-                    <td>${new Date(u.created_at).toLocaleDateString()}</td>
-                    <td>
-                        <button onclick="changerRole(${u.id}, '${u.role === 'super_admin' ? 'partenaire' : 'super_admin'}')" class="btn-dark" style="font-size:0.7rem">
-                            Switcher Rôle
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+        async function toggleReservable(id, currentVal) {
+            const newVal = !currentVal;
+            if(!confirm(`Changer le statut en ${newVal ? 'RÉSERVABLE' : 'CONTACT UNIQUEMENT'} ?`)) return;
+            const { error } = await sb.from('voitures').update({ reservable: newVal }).eq('id', id);
+            if(error) alert("Erreur: " + error.message);
+            else chargerDashboard();
         }
 
-        async function changerRole(id, newRole) {
-            if (!confirm("Changer le rôle de cet utilisateur ?")) return;
-            await sb.from('partenaires').update({ role: newRole }).eq('id', id);
-            chargerPartenaires();
-        }
+        function ouvrirModalVoiture() { document.getElementById('modal-voiture').style.display = 'flex'; }
+        function fermerModal(id) { document.getElementById(id).style.display='none'; }
 
-        // --- FONCTIONS ACTIONS ---
-        async function sauvegarderVoiture() {
-            const voiture = {
-                nom: document.getElementById('car-nom').value,
-                ref_id: document.getElementById('car-ref').value,
-                prix_base: parseInt(document.getElementById('car-prix').value),
-                type: document.getElementById('car-type').value,
-                image_url: document.getElementById('car-img').value,
-                reservable: document.getElementById('car-reservable').value === 'true',
-                description: document.getElementById('car-desc').value,
-                proprietaire_id: userSession.id // Indispensable pour filtrer par la suite
+        async function ajouterVoiture() {
+            const { data: { user } } = await sb.auth.getUser();
+            const nom = document.getElementById('new-car-nom').value;
+            const prix = document.getElementById('new-car-prix').value;
+            const places = document.getElementById('new-car-places').value;
+            const transmission = document.getElementById('new-car-trans').value;
+            const carburant = document.getElementById('new-car-carburant').value;
+            const type = document.getElementById('new-car-type').value;
+            const description = document.getElementById('new-car-desc').value;
+            const imageMain = document.getElementById('new-car-img').value;
+            const ref = document.getElementById('new-car-ref').value;
+            const isReservable = document.getElementById('new-car-reservable').value === 'true';
+
+            if(!nom || !prix) return alert("Nom et Prix requis");
+
+            const voiture = { 
+                nom, type, transmission, prix_base: parseInt(prix), 
+                image_url: imageMain, ref_id: ref, kilometrage: 0, proprietaire_id: user.id,
+                places: parseInt(places), carburant, description, reservable: isReservable
             };
 
             const { error } = await sb.from('voitures').insert([voiture]);
-            if(error) alert(error.message);
-            else { alert("Ajouté !"); fermerModal('modal-voiture'); chargerFlotte(); }
+            if(error) alert("Erreur: " + error.message);
+            else { alert("Voiture ajoutée !"); fermerModal('modal-voiture'); chargerDashboard(); }
         }
 
-        async function supprimerVoiture(id) {
-            if(!confirm("Supprimer ce véhicule définitivement ?")) return;
-            await sb.from('voitures').delete().eq('id', id);
-            chargerFlotte();
-        }
-
-        async function supprimerResa(id) {
-            if(!confirm("Supprimer cette réservation ?")) return;
-            await sb.from('reservations').delete().eq('id', id);
-            chargerReservations();
-        }
-
-        // --- CALENDRIER & MISC ---
-        function initCalendar() {
-            const calendarEl = document.getElementById('calendar-admin');
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                locale: 'fr',
-                events: async function(info, successCallback) {
-                    let query = sb.from('reservations').select('*, voitures(nom)');
-                    if (userRole !== 'super_admin') {
-                        const { data: myCars } = await sb.from('voitures').select('id').eq('proprietaire_id', userSession.id);
-                        query = query.in('id_voiture', myCars.map(c => c.id));
-                    }
-                    const { data } = await query;
-                    successCallback(data.map(r => ({
-                        title: (r.voitures ? r.voitures.nom : 'Auto') + ' - ' + r.nom,
-                        start: r.date_debut,
-                        end: r.date_fin,
-                        color: userRole === 'super_admin' ? '#2c3e50' : '#3498db'
-                    })));
-                }
+        // --- RESERVATIONS (FULL ADMIN VIEW) ---
+        async function chargerVoituresPourSelect() {
+            const sel = document.getElementById('new-resa-voiture');
+            sel.innerHTML = '<option>Chargement...</option>';
+            const { data } = await sb.from('voitures').select('id, nom, prix_base');
+            sel.innerHTML = '';
+            if(data) data.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.text = v.nom;
+                opt.dataset.prix = v.prix_base;
+                sel.appendChild(opt);
             });
-            calendar.render();
         }
 
+        async function chargerTableReservations() {
+            const tbody = document.getElementById('tbody-resa-full');
+            tbody.innerHTML = '<tr><td colspan="7">Chargement...</td></tr>';
+            
+            // On récupère TOUTES les réservations + info voiture
+            const { data: resas, error } = await sb.from('reservations')
+                .select('*, voitures(nom)')
+                .order('created_at', { ascending: false });
+
+            if(error) { tbody.innerHTML = `<tr><td colspan="7">Erreur: ${error.message}</td></tr>`; return; }
+            
+            tbody.innerHTML = '';
+            if(!resas || resas.length === 0) { tbody.innerHTML = '<tr><td colspan="7">Aucune réservation.</td></tr>'; return; }
+
+            resas.forEach(r => {
+                const tr = document.createElement('tr');
+                const reste = r.montant_total - (r.paiement_montant_declare || 0);
+                const statusColor = r.statut === 'valide' ? 'green' : (r.statut === 'annulee' ? 'red' : 'orange');
+                
+                tr.innerHTML = `
+                    <td>#${r.id}</td>
+                    <td>${r.nom}<br><small>${r.tel}</small></td>
+                    <td>${r.voitures ? r.voitures.nom : 'Inconnu'}<br><small>${r.date_debut} au ${r.date_fin}</small></td>
+                    <td>${r.paiement_methode || '-'}<br><small>${r.paiement_ref || ''}</small></td>
+                    <td>Total: ${r.montant_total}<br>Payé: ${r.paiement_montant_declare || 0}<br><strong style="color:${reste>0?'red':'green'}">Reste: ${reste}</strong></td>
+                    <td>
+                        Code OTP: <strong>${r.code_otp || '-'}</strong>
+                        <br>
+                        <select onchange="updateStatutResa('${r.id}', this.value)" style="padding:2px; font-size:0.8rem;">
+                            <option value="en_attente" ${r.statut==='en_attente'?'selected':''}>Attente</option>
+                            <option value="valide" ${r.statut==='valide'?'selected':''}>Validé</option>
+                            <option value="annulee" ${r.statut==='annulee'?'selected':''}>Annulé</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn-action-small btn-publish" onclick="genererOTP('${r.id}')">Générer OTP</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Mise à jour rapide du statut
+        async function updateStatutResa(id, val) {
+            await sb.from('reservations').update({ statut: val }).eq('id', id);
+        }
+
+        async function genererOTP(id) {
+            const code = Math.floor(1000 + Math.random() * 9000);
+            const { error } = await sb.from('reservations').update({ code_otp: code, statut: 'valide' }).eq('id', id);
+            if(!error) { alert("OTP Généré: " + code); chargerTableReservations(); }
+        }
+        
+        // Logique Formulaire Nouvelle Resa (Admin)
+        function toggleNewResaForm() { 
+            const f = document.getElementById('form-new-resa'); 
+            f.style.display = (f.style.display === 'none') ? 'block' : 'none'; 
+        }
+        function calculerPrixAdmin() { /* Logique simplifiée possible ici */ }
+        function updateResteAdmin() { /* Logique simplifiée possible ici */ }
+        async function creerReservationAdmin() {
+            // Implémentation basique de création
+            const vid = document.getElementById('new-resa-voiture').value;
+            const nom = document.getElementById('new-resa-nom').value;
+            const deb = document.getElementById('new-resa-debut').value;
+            const fin = document.getElementById('new-resa-fin').value;
+            const montant = document.getElementById('new-resa-montant').value;
+            
+            if(!vid || !deb || !fin) return alert("Champs manquants");
+            
+            const { error } = await sb.from('reservations').insert([{
+                id_voiture: vid, nom: nom, date_debut: deb, date_fin: fin, montant_total: montant, statut: 'valide'
+            }]);
+            
+            if(error) alert("Erreur: "+error.message);
+            else { alert("Créé !"); chargerTableReservations(); toggleNewResaForm(); }
+        }
+
+        // --- MAINTENANCES ---
+        async function chargerTableMaintenances() {
+            const tbody = document.getElementById('tbody-maint-global');
+            tbody.innerHTML = '<tr><td colspan="6">Chargement...</td></tr>';
+            const { data } = await sb.from('maintenances').select('*, voitures(nom)').order('date_debut', {ascending:false});
+            tbody.innerHTML = '';
+            if(!data || !data.length) { tbody.innerHTML = '<tr><td colspan="6">Aucune maintenance.</td></tr>'; return; }
+            data.forEach(m => {
+                tbody.innerHTML += `<tr><td>${m.date_debut}</td><td>${m.voitures?.nom}</td><td>${m.type}</td><td>${m.details}</td><td>${m.cout}</td><td>-</td></tr>`;
+            });
+        }
+
+        // --- PARTENAIRES ---
+        async function chargerTablePartenaires() {
+            const tbody = document.getElementById('tbody-partenaires');
+            tbody.innerHTML = '<tr><td colspan="6">Chargement...</td></tr>';
+            const { data } = await sb.from('partenaires').select('*');
+            tbody.innerHTML = '';
+            if(!data || !data.length) { tbody.innerHTML = '<tr><td colspan="6">Aucun partenaire.</td></tr>'; return; }
+            data.forEach(p => {
+                tbody.innerHTML += `<tr><td>${p.nom} ${p.prenom}</td><td>${p.email}<br>${p.tel}</td><td>Fin: ${p.fin_contrat}</td><td>${p.royalties}%</td><td>Actif</td><td><button class="btn-action-small btn-delete">Suppr</button></td></tr>`;
+            });
+        }
+        
+        function calculerFinContrat() {
+            const days = parseInt(document.getElementById('part-duree').value);
+            const date = new Date(); date.setDate(date.getDate() + days);
+            document.getElementById('part-fin').value = date.toISOString().split('T')[0];
+        }
+
+        async function upsertPartenaire() {
+            const nom = document.getElementById('part-nom').value;
+            const email = document.getElementById('part-email').value;
+            if(!nom || !email) return alert("Nom et Email requis");
+            // Note: Normalement il faut créer le User Auth Supabase d'abord. Ici on insère juste en base.
+            const { error } = await sb.from('partenaires').insert([{ 
+                nom, email, 
+                tel: document.getElementById('part-tel').value,
+                prenom: document.getElementById('part-prenom').value,
+                fin_contrat: document.getElementById('part-fin').value,
+                royalties: document.getElementById('part-royalties').value
+            }]);
+            if(error) alert("Erreur: " + error.message);
+            else { alert("Partenaire ajouté"); chargerTablePartenaires(); }
+        }
+
+        // --- AUTRES TABLES (PROMOS, AVIS, PUBS) ---
+        async function chargerTablePromos() { /* Code similaire ... */ }
+        async function chargerTableAvis() { 
+            const tb = document.getElementById('tbody-avis');
+            const { data } = await sb.from('avis').select('*');
+            tb.innerHTML = data ? data.map(a => `<tr><td>${new Date(a.created_at).toLocaleDateString()}</td><td>${a.nom}</td><td>${a.note}/5</td><td>${a.commentaire}</td><td>${a.visible?'Visible':'Masqué'}</td><td><button onclick="toggleAvis(${a.id}, ${a.visible})" class="btn-action-small btn-edit">Toggle</button></td></tr>`).join('') : '';
+        }
+        async function toggleAvis(id, state) { await sb.from('avis').update({visible:!state}).eq('id', id); chargerTableAvis(); }
+
+        async function chargerTablePubs() {
+             const tb = document.getElementById('tbody-pubs');
+             const { data } = await sb.from('pubs').select('*');
+             tb.innerHTML = data ? data.map(p => `<tr><td>${p.societe}</td><td>${p.emplacement}</td><td>${p.date_fin}</td><td><img src="${p.image_url}" width="50"></td><td>Actif</td><td>-</td></tr>`).join('') : '';
+        }
+        
+        async function ajouterPub() {
+            const pub = {
+                societe: document.getElementById('pub-societe').value,
+                emplacement: document.getElementById('pub-emplacement').value,
+                image_url: document.getElementById('pub-image').value,
+                date_fin: document.getElementById('pub-fin').value
+            };
+            await sb.from('pubs').insert([pub]);
+            alert("Pub ajoutée"); chargerTablePubs();
+        }
+        
         function calculerFinPub() {
-             const days = parseInt(document.getElementById('pub-duree').value || 0);
+             const days = parseInt(document.getElementById('pub-duree').value);
              const deb = new Date(document.getElementById('pub-debut').value || new Date());
              deb.setDate(deb.getDate() + days);
              document.getElementById('pub-fin').value = deb.toISOString().split('T')[0];
         }
 
-        async function ajouterPub() {
-            const pub = {
-                societe: document.getElementById('pub-societe').value,
-                image_url: document.getElementById('pub-image').value,
-                date_fin: document.getElementById('pub-fin').value,
-                actif: true
-            };
-            await sb.from('pubs').insert([pub]);
-            alert("Pub ajoutée"); chargerTablePubs();
+        // --- CONFIG ---
+        async function toggleGlobalCalendar() {
+            const toggle = document.getElementById('toggle-calendar-global');
+            const isVisible = toggle.checked;
+            document.getElementById('status-calendar-text').innerText = isVisible ? "VISIBLE" : "MASQUÉ";
+            await sb.from('config_site').upsert({ key: 'calendar_visible', value: isVisible });
         }
 
-        async function chargerTablePubs() {
-            const list = document.getElementById('list-pubs');
-            const { data } = await sb.from('pubs').select('*');
-            if(list && data) {
-                list.innerHTML = data.map(p => `<div>• ${p.societe} (Fin: ${p.date_fin})</div>`).join('');
-            }
-        }
-
-        function ouvrirModalVoiture() { document.getElementById('modal-voiture').style.display = 'flex'; }
-        function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        // Initialisation au chargement
+        // Initialisation
         verifierSession();
 
     </script>
