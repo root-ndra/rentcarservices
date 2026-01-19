@@ -469,7 +469,7 @@
     
     <div id="modal-edit-resa" class="modal-overlay" style="display:none;"><div class="modal-content"><span class="close-modal" onclick="fermerModal('modal-edit-resa')">×</span><h3>Modifier Resa</h3><input type="hidden" id="edit-resa-id"><p id="edit-resa-client"></p><input type="date" id="edit-resa-debut"><input type="date" id="edit-resa-fin"><input type="number" id="edit-resa-montant"><select id="edit-resa-statut"><option value="valide">Validé</option><option value="en_attente">Attente</option><option value="annulee">Annulée</option></select><button onclick="sauvegarderModificationResa()" class="btn-publish" style="width:100%; margin-top:10px;">MAJ</button></div></div>
 
-    <script src="script.js"></script> <script>
+     <script>
     // --- AUTH & INIT (Idem Script.js mais spécifique Admin) ---
     // Note: Pour garder la cohérence, je remets le bloc script complet ici avec les MAJ.
     // Dans la réalité, vous devriez avoir un fichier admin.js séparé, mais ici je l'intègre pour être complet.
@@ -613,4 +613,5 @@
     verifierSession();
 </script>
 </body>
+
 </html>
