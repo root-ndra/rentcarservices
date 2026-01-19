@@ -1,558 +1,158 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Admin Dashboard - Rija Cars</title>
-
+    <meta charset="UTF-8">
+    <title>Admin - Rija Cars</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
+    
     <style>
-        /* --- STYLES ADMIN (minimal pour fonctionnement) --- */
-        body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:#f5f7fa; color:#222; }
-        header { background:#2c3e50; color:white; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
-        header h2 { margin:0; font-size:1.1rem; }
-        nav { padding:10px 20px; background:transparent; display:flex; gap:8px; }
-        button { cursor:pointer; border: none; background:#3498db; color:#fff; padding:8px 10px; border-radius:6px; }
-        main { padding:20px; max-width:1200px; margin:18px auto; }
-        .card-voiture { background:white; padding:12px; margin-bottom:12px; border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,0.04); }
-        .table-container { background:white; border-radius:10px; overflow:hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-x:auto; margin-bottom: 30px; }
-        table { width:100%; border-collapse: collapse; min-width:800px; }
-        th,td { padding:10px; border-bottom:1px solid #eee; text-align:left; font-size:0.95rem; }
-        .form-box { background:white; padding:14px; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,0.04); }
-        .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; }
-        .modal-overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.45); z-index:1200; }
-        .modal-content { background:white; padding:18px; border-radius:10px; width:600px; max-width:95%; max-height:90vh; overflow:auto; }
-        .close-modal { cursor:pointer; float:right; font-size:1.4rem; color:#666; }
-        .btn-action-small { padding:6px 8px; margin-left:6px; border-radius:6px; background:#bdc3c7; color:#fff; font-weight:600; }
-        .btn-publish { background:#2ecc71; color:white; padding:10px 14px; border-radius:8px; }
-        .btn-delete { background:#e74c3c; color:white; padding:6px 9px; border-radius:6px; }
-        label { display:block; font-size:0.9rem; margin-bottom:6px; color:#333; }
-        input[type="text"], input[type="tel"], input[type="date"], input[type="number"], select { width:100%; padding:8px 10px; border-radius:6px; border:1px solid #ddd; box-sizing:border-box; }
-        .section-title-admin { margin:0 0 10px 0; font-size:1.05rem; color:#2c3e50; }
+        /* Styles spécifiques Admin pour ne pas surcharger style.css */
+        .admin-body { background: #f0f2f5; color: #333; padding: 20px; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .admin-card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        /* Switch Toggle */
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #2196F3; }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        .car-admin-item { display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #eee; padding: 10px 0; }
+        .car-admin-item img { width: 80px; height: 50px; object-fit: cover; border-radius: 6px; }
+        .toggle-label { font-size: 0.85rem; color: #666; margin-left: 10px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-size: 0.9rem; }
+        th { background: #f8f9fa; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .badge-attente { background: #fff3cd; color: #856404; }
+        .badge-valide { background: #d4edda; color: #155724; }
     </style>
 </head>
-<body>
-<header>
-    <h2>Administration — RIJA NIAINA CAR SERVICES</h2>
-    <div style="display:flex; gap:10px; align-items:center;">
-        <div id="header-user-name" style="font-size:0.95rem;"></div>
-        <button onclick="logoutAdmin()" style="background:#e74c3c;">Déconnexion</button>
-    </div>
-</header>
+<body class="admin-body">
 
-<main>
-    <!-- Login screen -->
-    <div id="login-screen" style="display:none; align-items:center; justify-content:center; padding:20px; max-width:480px; margin:20px auto;">
-        <div class="form-box" style="display:flex; flex-direction:column; gap:10px;">
-            <h3 class="section-title-admin">Connexion Admin</h3>
-            <input id="admin-email" type="text" placeholder="Email admin">
-            <input id="admin-pass" type="password" placeholder="Mot de passe">
-            <div id="login-error" style="color:red; display:none;"></div>
-            <button id="btn-login" onclick="loginAdmin()">Connexion</button>
-        </div>
-    </div>
-
-    <!-- Admin content -->
-    <div id="admin-content" style="display:none;">
-        <nav>
-            <button id="btn-tab-voitures" onclick="switchTab('voitures')">Voitures</button>
-            <button id="btn-tab-reservations" onclick="switchTab('reservations')">Réservations</button>
-            <button id="btn-tab-maint" onclick="switchTab('maintenances')">Maintenances</button>
-            <button id="btn-tab-promos" onclick="switchTab('promos')">Promos</button>
-        </nav>
-
-        <section id="view-voitures" style="display:block; margin-top:14px;">
-            <h3 class="section-title-admin"><i class="fas fa-car"></i> Voitures</h3>
-            <div id="container-voitures"></div>
-        </section>
-
-        <section id="view-reservations" style="display:none; margin-top:14px;">
-            <h3 class="section-title-admin"><i class="fas fa-calendar-check"></i> Réservations</h3>
-            <button onclick="toggleNewResaForm()" style="margin-bottom:12px; background:#2ecc71;">Nouvelle Réservation (Comptoir)</button>
-
-            <div id="form-new-resa" class="form-box" style="display:none; margin-bottom:12px;">
-                <h4 style="margin-top:0;">Création Réservation Directe</h4>
-                <div class="form-grid">
-                    <div>
-                        <label>Voiture</label>
-                        <select id="new-resa-voiture" onchange="calculerPrixAdmin()"><option>--</option></select>
-                    </div>
-                    <div><label>Client (Nom)</label><input type="text" id="new-resa-nom"></div>
-                    <div><label>Client (Tel)</label><input type="text" id="new-resa-tel"></div>
-                    <div><label>Début</label><input type="date" id="new-resa-debut" onchange="calculerPrixAdmin()"></div>
-                    <div><label>Fin</label><input type="date" id="new-resa-fin" onchange="calculerPrixAdmin()"></div>
-                    <div><label>Montant (Ar)</label><input type="number" id="new-resa-montant" onchange="updateResteAdmin()"></div>
-                    <div><label>Déjà Payé</label><input type="number" id="new-resa-paye" value="0" onchange="updateResteAdmin()"></div>
-                    <div><label>Reste</label><input type="number" id="new-resa-reste" readonly style="background:#eee;"></div>
-                    <div><label>Statut</label><select id="new-resa-statut"><option value="valide">Validé</option><option value="en_attente">En attente</option></select></div>
-                </div>
-                <div style="margin-top:10px;">
-                    <button id="btn-creer-resa" onclick="creerReservationAdmin()" class="btn-publish" style="width:100%;">Créer</button>
-                </div>
-            </div>
-
-            <div class="table-container">
-                <table>
-                    <thead><tr><th>#ID</th><th>Client</th><th>Voiture</th><th>Paiement</th><th>Total</th><th>OTP</th><th>Actions</th></tr></thead>
-                    <tbody id="tbody-resa-full"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <section id="view-maintenances" style="display:none; margin-top:14px;">
-            <h3 class="section-title-admin"><i class="fas fa-wrench"></i> Maintenances</h3>
-            <div id="table-maints" class="table-container"></div>
-        </section>
-
-        <section id="view-promos" style="display:none; margin-top:14px;">
-            <h3 class="section-title-admin"><i class="fas fa-tags"></i> Codes Promo</h3>
-            <div id="table-promos" class="table-container"></div>
-        </section>
-    </div>
-
-</main>
-
-<!-- Modal modifier réservation (étendu pour livraison/récup/trajet) -->
-<div id="modal-edit-resa" class="modal-overlay">
-    <div class="modal-content">
-        <span class="close-modal" onclick="fermerModal('modal-edit-resa')">×</span>
-        <h3>Modifier Réservation</h3>
-        <input type="hidden" id="edit-resa-id">
-        <p id="edit-resa-client" style="font-weight:600;"></p>
-
-        <div style="margin:8px 0;">
-            <strong>Livraison :</strong>
-            <p id="edit-resa-livraison" style="margin:4px 0; color:#333;"></p>
-            <strong>Récupération :</strong>
-            <p id="edit-resa-recuperation" style="margin:4px 0; color:#333;"></p>
-            <strong>Trajet prévisionnel :</strong>
-            <p id="edit-resa-trajet" style="margin:4px 0; color:#333;"></p>
-        </div>
-
-        <div style="display:flex; gap:8px; margin-top:8px;">
-            <input type="date" id="edit-resa-debut">
-            <input type="date" id="edit-resa-fin">
-        </div>
-        <div style="margin-top:8px;">
-            <input type="number" id="edit-resa-montant" placeholder="Montant">
-            <select id="edit-resa-statut" style="margin-top:8px;">
-                <option value="valide">Validé</option>
-                <option value="en_attente">En attente</option>
-                <option value="annulee">Annulée</option>
-            </select>
-        </div>
-        <div style="margin-top:12px;">
-            <button onclick="sauvegarderModificationResa()" class="btn-publish" style="width:100%;">MAJ</button>
-        </div>
-    </div>
+<div class="admin-header">
+    <h1><i class="fas fa-cogs"></i> Administration</h1>
+    <a href="index.html" class="btn-primary-large" style="width:auto; padding: 10px 20px; margin:0;">Retour Site</a>
 </div>
 
+<section class="admin-card">
+    <h2><i class="fas fa-car"></i> Gestion Affichage Calendrier</h2>
+    <p style="font-size:0.9rem; color:#666; margin-bottom:15px;">Activez ou désactivez l'affichage du calendrier public pour chaque voiture.</p>
+    <div id="liste-voitures-admin">
+        Chargement...
+    </div>
+</section>
+
+<section class="admin-card">
+    <h2><i class="fas fa-list-alt"></i> Demandes de Réservation</h2>
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Véhicule</th>
+                    <th>Dates</th>
+                    <th>Logistique (Livr/Récup)</th>
+                    <th>Trajet Prévu</th>
+                    <th>Prix Total</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody id="table-reservations">
+                </tbody>
+        </table>
+    </div>
+</section>
+
 <script>
-/* --- ADMIN JAVASCRIPT (complet pour admin.html) --- */
-const SUPABASE_URL = 'https://ctijwjcjmbfmfhzwbguk.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // --- SUPABASE ADMIN ---
+    const sb = supabase.createClient(
+        'https://ctijwjcjmbfmfhzwbguk.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk'
+    );
 
-let globalVoitures = [];
-let realTimeSub = null;
-
-async function initAdmin() {
-    // check session
-    try {
-        const { data: { session } } = await sb.auth.getSession();
-        if (session) {
-            // load profile to determine role
-            const { data: profil } = await sb.from('profils').select('*').eq('id', session.user.id).single();
-            if(profil) {
-                document.getElementById('header-user-name').innerText = (profil.prenom || '') + ' ' + (profil.nom_complet || 'Utilisateur') + ' • ' + (profil.role === 'admin'? 'Super Admin' : 'Partenaire');
-                afficherDashboard(profil.role);
-            } else {
-                afficherDashboard('partenaire');
-            }
-        } else {
-            document.getElementById('login-screen').style.display = 'flex';
-            document.getElementById('admin-content').style.display = 'none';
-        }
-    } catch (e) {
-        console.error(e);
-        document.getElementById('login-screen').style.display = 'flex';
-        document.getElementById('admin-content').style.display = 'none';
+    async function initAdmin() {
+        chargerVoituresAdmin();
+        chargerReservations();
     }
-}
 
-function afficherDashboard(role) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('admin-content').style.display = 'block';
-    if (role !== 'admin') {
-        ['promos', 'pubs', 'avis', 'media'].forEach(id => {
-            const btn = document.getElementById('btn-tab-'+id);
-            if(btn) btn.style.display = 'none';
-        });
-    }
-    toutRecharger();
-}
+    // 1. VOITURES & TOGGLE
+    async function chargerVoituresAdmin() {
+        const { data: voitures } = await sb.from('voitures').select('*').order('id');
+        const container = document.getElementById('liste-voitures-admin');
+        container.innerHTML = '';
 
-function switchTab(tabName) {
-    ['voitures','reservations','maintenances','promos'].forEach(t => {
-        const el = document.getElementById('view-'+t);
-        if(el) el.style.display = (t === tabName) ? 'block' : 'none';
-    });
-}
-
-/* --- RECHARGER TOUT --- */
-async function toutRecharger() {
-    await chargerVoitures();
-    await chargerTableReservations();
-}
-
-/* --- CHARGER VOITURES (avec option afficher_calendrier) --- */
-async function chargerVoitures() {
-    const container = document.getElementById('container-voitures');
-    container.innerHTML = 'Chargement...';
-    const [{ data: voitures, error: errV }, { data: resas }, { data: maints }] = await Promise.all([
-        sb.from('voitures').select('*').order('id'),
-        sb.from('reservations').select('*'),
-        sb.from('maintenances').select('*')
-    ]);
-    if(errV) {
-        console.error(errV);
-        container.innerHTML = '<p>Erreur chargement voitures</p>';
-        return;
-    }
-    globalVoitures = voitures || [];
-    container.innerHTML = '';
-    if(!voitures || voitures.length === 0) { container.innerHTML = '<p>Aucune voiture enregistrée.</p>'; return; }
-
-    voitures.forEach(v => {
-        const card = document.createElement('div');
-        card.className = 'card-voiture';
-        const isBookedToday = (() => {
-            const today = new Date().toISOString().split('T')[0];
-            return (resas || []).some(r => r.id_voiture === v.id && r.statut === 'valide' && today >= r.date_debut && today <= r.date_fin);
-        })();
-
-        card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <h4 style="margin:0 0 6px 0;">${v.nom || '—'}</h4>
-                    <div style="font-size:0.95rem; color:#666;">Réf: ${v.ref_id || '-'} • Prix: ${v.prix_base ? (v.prix_base.toLocaleString('fr-FR') + ' Ar') : '-'}</div>
-                </div>
-                <div style="text-align:right;">
-                    <div style="margin-bottom:6px;">${isBookedToday ? '<span style="background:#e74c3c;color:white;padding:6px 8px;border-radius:6px;font-weight:700;">EN LOCATION AUJ.</span>' : '<span style="background:#2ecc71;color:white;padding:6px 8px;border-radius:6px;font-weight:700;">DISPONIBLE</span>'}</div>
-                    <div style="font-size:0.85rem;">
-                        <label style="display:flex; align-items:center; gap:8px; justify-content:flex-end;">
-                            <input type="checkbox" id="cb-cal-${v.id}" ${v.afficher_calendrier ? 'checked' : ''} onchange="toggleCalendrierVoiture(${v.id}, this.checked)">
-                            <span style="font-size:0.9rem;">Afficher calendrier</span>
+        voitures.forEach(v => {
+            container.innerHTML += `
+                <div class="car-admin-item">
+                    <img src="${v.image_url}" alt="car">
+                    <div style="flex:1;">
+                        <strong>${v.nom}</strong>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <label class="switch">
+                            <input type="checkbox" ${v.calendrier_public ? 'checked' : ''} onchange="updateCal(${v.id}, this.checked)">
+                            <span class="slider"></span>
                         </label>
+                        <span class="toggle-label">${v.calendrier_public ? 'Calendrier Visible' : 'Calendrier Caché'}</span>
                     </div>
                 </div>
-            </div>
-            <div id="mini-cal-${v.id}" style="margin-top:10px;"></div>
-        `;
-        container.appendChild(card);
-
-        // mini calendrier sous forme de liste (performant)
-        const mini = card.querySelector(`#mini-cal-${v.id}`);
-        if(v.afficher_calendrier) {
-            const events = [];
-            (resas || []).filter(r => r.id_voiture === v.id && r.statut === 'valide').forEach(r => {
-                events.push(`<div style="font-size:0.9rem; color:#c0392b; margin-bottom:4px;">📅 ${r.date_debut} → ${r.date_fin} — ${r.nom || 'Client'}</div>`);
-            });
-            (maints || []).filter(m => m.id_voiture === v.id).forEach(m => {
-                events.push(`<div style="font-size:0.9rem; color:#f39c12; margin-bottom:4px;">🔧 ${m.date_debut} → ${m.date_fin} — ${m.type_intervention || 'Maintenance'}</div>`);
-            });
-            mini.innerHTML = events.length ? events.join('') : '<div style="font-size:0.9rem; color:#27ae60;">Aucune réservation / maintenance</div>';
-        } else {
-            mini.innerHTML = `<div style="font-size:0.9rem; color:#888;">Calendrier masqué</div>`;
-        }
-    });
-}
-
-/* --- TOGGLE AFFICHAGE CALENDRIER PAR VOITURE --- */
-async function toggleCalendrierVoiture(id, value) {
-    try {
-        await sb.from('voitures').update({ afficher_calendrier: value }).eq('id', id);
-        chargerVoitures();
-    } catch (e) {
-        console.error(e);
-        alert('Erreur mise à jour affichage calendrier');
-    }
-}
-
-/* --- CHARGER RÉSERVATIONS (liste complète) --- */
-async function chargerTableReservations() {
-    const tbody = document.getElementById('tbody-resa-full');
-    tbody.innerHTML = '<tr><td colspan="7">Chargement...</td></tr>';
-    const { data, error } = await sb.from('reservations').select('*, voitures(nom,ref_id)').order('id', { ascending: false });
-    if(error) {
-        console.error(error);
-        tbody.innerHTML = '<tr><td colspan="7">Erreur chargement</td></tr>';
-        return;
-    }
-    tbody.innerHTML = '';
-    (data || []).forEach(r => {
-        const otpDisplay = (r.statut === 'valide') ? `<strong style="color:green;">${r.code_otp || '-'}</strong>` : `<input type="text" id="otp-${r.id}" placeholder="Code" style="width:70px; padding:6px; text-align:center;">`;
-        const actions = `
-            ${(r.statut !== 'valide') ? `<button class="btn-action-small" onclick="validerResa(${r.id})">Valider</button>` : ''}
-            <button class="btn-action-small" onclick="genererPDFAdmin(${r.id})" style="background:#8e44ad;">PDF</button>
-            <button class="btn-action-small" onclick="ouvrirModifResa(${r.id})">Modifier</button>
-            <button class="btn-action-small btn-delete" onclick="annulerResa(${r.id})">Annuler</button>
-        `;
-        tbody.innerHTML += `<tr>
-            <td>${r.id}</td>
-            <td>${r.nom || '-'} <div style="font-size:0.85rem; color:#666;">${r.tel || ''}</div></td>
-            <td>${r.voitures ? r.voitures.nom : '-'}</td>
-            <td>${r.paiement_methode || '-'}</td>
-            <td>${(r.montant_total || 0).toLocaleString('fr-FR')} Ar</td>
-            <td>${otpDisplay}</td>
-            <td>${actions}</td>
-        </tr>`;
-    });
-}
-
-/* --- CREER RÉSERVATION ADMIN (comptoir) --- */
-function toggleNewResaForm() {
-    const f = document.getElementById('form-new-resa');
-    f.style.display = (f.style.display === 'none' || f.style.display === '') ? 'block' : 'none';
-}
-
-function updateResteAdmin() {
-    const montant = parseFloat(document.getElementById('new-resa-montant').value || 0);
-    const paye = parseFloat(document.getElementById('new-resa-paye').value || 0);
-    document.getElementById('new-resa-reste').value = Math.max(0, montant - paye);
-}
-
-async function calculerPrixAdmin() {
-    const sel = document.getElementById('new-resa-voiture');
-    const voitureId = sel ? sel.value : null;
-    const v = (globalVoitures || []).find(x => `${x.id}` === `${voitureId}`);
-    const d1 = document.getElementById('new-resa-debut').value;
-    const d2 = document.getElementById('new-resa-fin').value;
-    if(v && d1 && d2) {
-        const jours = Math.ceil((new Date(d2) - new Date(d1)) / 86400000) + 1;
-        const total = (v.prix_base || 0) * Math.max(1, jours);
-        document.getElementById('new-resa-montant').value = total;
-        updateResteAdmin();
-    }
-}
-
-async function creerReservationAdmin() {
-    const btn = document.getElementById('btn-creer-resa');
-    btn.disabled = true;
-    btn.innerText = 'Vérification...';
-    try {
-        const voitureId = document.getElementById('new-resa-voiture').value;
-        const debut = document.getElementById('new-resa-debut').value;
-        const fin = document.getElementById('new-resa-fin').value;
-        const nom = document.getElementById('new-resa-nom').value;
-        const tel = document.getElementById('new-resa-tel').value;
-
-        // collision check
-        const { data: conflits } = await sb.from('reservations')
-            .select('id')
-            .eq('id_voiture', voitureId)
-            .eq('statut', 'valide')
-            .or(`and(date_debut.lte.${fin},date_fin.gte.${debut})`);
-
-        if(conflits && conflits.length > 0) {
-            alert('⛔ Impossible: Cette voiture est déjà réservée sur cette période.');
-            btn.disabled = false; btn.innerText = 'Créer';
-            return;
-        }
-
-        const r = {
-            id_voiture: voitureId,
-            date_debut: debut,
-            date_fin: fin,
-            nom: nom,
-            tel: tel,
-            montant_total: parseFloat(document.getElementById('new-resa-montant').value || 0),
-            statut: document.getElementById('new-resa-statut').value || 'en_attente',
-            paiement_montant_declare: parseFloat(document.getElementById('new-resa-paye').value || 0)
-        };
-        if(r.statut === 'valide') r.code_otp = 'MANUEL';
-        await sb.from('reservations').insert([r]);
-        alert('Réservation créée !');
-        toggleNewResaForm();
-        toutRecharger();
-    } catch (e) {
-        console.error(e);
-        alert('Erreur lors de la création');
-    } finally {
-        btn.disabled = false;
-        btn.innerText = 'Créer';
-    }
-}
-
-/* --- MODIFICATION RÉSERVATION (OUVRIR & SAUVER) --- */
-async function ouvrirModifResa(id) {
-    const { data: resa, error } = await sb.from('reservations').select('*').eq('id', id).single();
-    if(error || !resa) return alert('Réservation introuvable');
-    document.getElementById('edit-resa-id').value = resa.id;
-    document.getElementById('edit-resa-client').innerText = `${resa.nom || '-'} (${resa.tel || '-'})`;
-    document.getElementById('edit-resa-debut').value = resa.date_debut;
-    document.getElementById('edit-resa-fin').value = resa.date_fin;
-    document.getElementById('edit-resa-montant').value = resa.montant_total || 0;
-    document.getElementById('edit-resa-statut').value = resa.statut || 'en_attente';
-
-    document.getElementById('edit-resa-livraison').innerText = `${resa.livraison_lieu || '-'} à ${resa.livraison_heure || '-'}`;
-    document.getElementById('edit-resa-recuperation').innerText = `${resa.recuperation_lieu || '-'} à ${resa.recuperation_heure || '-'}`;
-    const trajets = [resa.trajet_1, resa.trajet_2, resa.trajet_3, resa.trajet_4].filter(Boolean);
-    document.getElementById('edit-resa-trajet').innerText = trajets.length ? trajets.join(' → ') : '-';
-
-    document.getElementById('modal-edit-resa').style.display = 'flex';
-}
-
-async function sauvegarderModificationResa() {
-    const id = document.getElementById('edit-resa-id').value;
-    const debut = document.getElementById('edit-resa-debut').value;
-    const fin = document.getElementById('edit-resa-fin').value;
-    const montant = parseFloat(document.getElementById('edit-resa-montant').value || 0);
-    const statut = document.getElementById('edit-resa-statut').value;
-    try {
-        await sb.from('reservations').update({ date_debut: debut, date_fin: fin, montant_total: montant, statut }).eq('id', id);
-        fermerModal('modal-edit-resa');
-        toutRecharger();
-        alert('Mise à jour enregistrée.');
-    } catch (e) {
-        console.error(e);
-        alert('Erreur mise à jour');
-    }
-}
-
-/* --- ANNULER RÉSERVATION --- */
-async function annulerResa(id) {
-    if(!confirm('Confirmer annulation ?')) return;
-    try {
-        await sb.from('reservations').update({ statut: 'annulee' }).eq('id', id);
-        toutRecharger();
-    } catch (e) {
-        console.error(e);
-        alert('Erreur annulation');
-    }
-}
-
-/* --- VALIDER RÉSERVATION (générer OTP) --- */
-async function validerResa(id) {
-    if(!confirm('Valider cette réservation (générera un code OTP) ?')) return;
-    const code = Math.random().toString(36).substring(2,8).toUpperCase();
-    try {
-        await sb.from('reservations').update({ statut: 'valide', code_otp: code }).eq('id', id);
-        alert('Réservation validée. OTP: ' + code);
-        toutRecharger();
-    } catch (e) {
-        console.error(e);
-        alert('Erreur validation');
-    }
-}
-
-/* --- GENERER PDF ADMIN (détails + nouvelles infos) --- */
-async function genererPDFAdmin(idResa) {
-    const { data: r, error } = await sb.from('reservations').select('*, voitures(nom, ref_id)').eq('id', idResa).single();
-    if(error || !r) return alert('Erreur données PDF');
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    // Header
-    doc.setFillColor(44, 62, 80); doc.rect(0, 0, 210, 40, 'F');
-    doc.setTextColor(255, 255, 255); doc.setFontSize(22);
-    doc.text("RIJA NIAINA CAR SERVICES", 105, 15, { align: "center" });
-    doc.setFontSize(10);
-    doc.text("Siae 33 Ambodifilao, Analakely, Antananarivo 101", 105, 25, { align: "center" });
-    doc.setTextColor(0); doc.setFontSize(11);
-    doc.text(`Facture n° ${r.id}`, 190, 50, { align: 'right' });
-
-    const d1 = new Date(r.date_debut); const d2 = new Date(r.date_fin);
-    const duree = Math.ceil(Math.abs(d2 - d1) / 86400000) + 1;
-
-    const clientContent = [
-        `Nom: ${r.nom || '-'}`,
-        `Tél: ${r.tel || '-'}`,
-        `Adresse: ${r.adresse || '-'}`,
-    ].join('\n');
-
-    const voitureContent = [
-        `Voiture: ${r.voitures ? r.voitures.nom : '-'}`,
-        `Dates: ${r.date_debut} → ${r.date_fin} (${duree} j)`,
-        `Total: ${(r.montant_total || 0).toLocaleString('fr-FR')} Ar`
-    ].join('\n');
-
-    const livraisonStr = `Livraison: ${r.livraison_lieu || '-'} à ${r.livraison_heure || '-'}`;
-    const recuperationStr = `Récup: ${r.recuperation_lieu || '-'} à ${r.recuperation_heure || '-'}`;
-    const trajetArray = [r.trajet_1, r.trajet_2, r.trajet_3, r.trajet_4].filter(Boolean);
-    const trajetStr = trajetArray.length ? `Trajet: ${trajetArray.join(' → ')}` : '';
-
-    const paiementContent = [
-        `Méthode: ${r.paiement_methode || '-'}`,
-        `Payé: ${(r.paiement_montant_declare || 0).toLocaleString('fr-FR')} Ar`,
-        `Reste: ${(((r.montant_total||0) - (r.paiement_montant_declare||0))||0).toLocaleString('fr-FR')} Ar`
-    ].join('\n');
-
-    doc.autoTable({
-        startY: 70,
-        head: [['CLIENT', 'VOITURE & TARIFS', 'PAIEMENT']],
-        body: [[clientContent + '\n\n' + livraisonStr + '\n' + recuperationStr, voitureContent + '\n\n' + trajetStr, paiementContent]],
-        theme: 'grid',
-        headStyles: { fillColor: [52, 152, 219], halign: 'center' },
-        styles: { cellPadding: 5, fontSize: 10, valign: 'top' },
-        columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 70 }, 2: { cellWidth: 60 } }
-    });
-
-    if(r.code_otp) {
-        doc.setFontSize(10); doc.setTextColor(39, 174, 96);
-        doc.text(`Validé par Admin - Code: ${r.code_otp}`, 14, doc.lastAutoTable.finalY + 10);
+            `;
+        });
     }
 
-    doc.save(`Facture_Admin_${r.id}.pdf`);
-}
-
-/* --- AUTH --- */
-async function loginAdmin() {
-    const email = document.getElementById('admin-email').value;
-    const password = document.getElementById('admin-pass').value;
-    const btn = document.getElementById('btn-login'); const err = document.getElementById('login-error');
-    btn.innerText = "Chargement..."; btn.disabled = true; err.style.display = 'none';
-    try {
-        const { error } = await sb.auth.signInWithPassword({ email, password });
-        if (error) {
-            btn.innerText = "Connexion"; btn.disabled = false; err.innerText = error.message; err.style.display = 'block';
-        } else location.reload();
-    } catch (e) {
-        console.error(e); btn.innerText = "Connexion"; btn.disabled = false; err.innerText = 'Erreur connexion'; err.style.display = 'block';
+    async function updateCal(id, etat) {
+        await sb.from('voitures').update({ calendrier_public: etat }).eq('id', id);
+        // Feedback visuel optionnel
     }
-}
 
-async function logoutAdmin() { await sb.auth.signOut(); location.reload(); }
+    // 2. RESERVATIONS
+    async function chargerReservations() {
+        const { data: resas } = await sb.from('reservations')
+            .select('*, voitures(nom)')
+            .order('created_at', { ascending: false });
+            
+        const tbody = document.getElementById('table-reservations');
+        tbody.innerHTML = '';
 
-/* --- UTIL / INIT --- */
-function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
-
-function formatPrix(v) { return (v || 0).toLocaleString('fr-FR') + ' Ar'; }
-
-/* --- BOOT --- */
-document.addEventListener('DOMContentLoaded', async () => {
-    // hide modal by default
-    document.getElementById('modal-edit-resa').style.display = 'none';
-    await initAdmin();
-
-    // remplir select voitures pour création admin resa
-    const sel = document.getElementById('new-resa-voiture');
-    if (sel) {
-        const { data: voitures } = await sb.from('voitures').select('id,nom,prix_base').order('id');
-        if(voitures) {
-            sel.innerHTML = '<option value="">--</option>';
-            voitures.forEach(v => sel.innerHTML += `<option value="${v.id}">${v.nom}</option>`);
-            globalVoitures = voitures;
-        }
+        resas.forEach(r => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>
+                        <strong>${r.nom}</strong><br>
+                        <i class="fas fa-phone"></i> ${r.tel}
+                    </td>
+                    <td>${r.voitures ? r.voitures.nom : '<i>Supprimé</i>'}</td>
+                    <td>
+                        Du ${new Date(r.date_debut).toLocaleDateString()}<br>
+                        Au ${new Date(r.date_fin).toLocaleDateString()}
+                    </td>
+                    <td>
+                        <small>
+                            <b>Livr:</b> ${r.lieu_livraison || '-'} (${r.heure_livraison || '-'})<br>
+                            <b>Recup:</b> ${r.lieu_recup || '-'} (${r.heure_recup || '-'})
+                        </small>
+                    </td>
+                    <td>
+                        <small>
+                            1. ${r.trajet_1 || '-'}<br>
+                            2. ${r.trajet_2 || '-'}
+                        </small>
+                    </td>
+                    <td>${r.montant_total ? r.montant_total.toLocaleString() : 0} Ar</td>
+                    <td><span class="badge badge-${r.statut}">${r.statut}</span></td>
+                </tr>
+            `;
+        });
     }
-});
+
+    window.onload = initAdmin;
 </script>
+
 </body>
 </html>
