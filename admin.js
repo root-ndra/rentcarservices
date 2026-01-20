@@ -12,6 +12,7 @@ const restrictedTabs = ['partenaires','promos','pubs','media','config'];
 let currentUser = null;
 let currentUserRole = ROLE_PARTENAIRE;
 let globalVoitures = [];
+let maintenanceOptions = [];
 let periodeAnalyse = 'mois';
 
 // -----------------------------------------------------------------------------
@@ -52,6 +53,7 @@ async function verifierSession() {
 
   await chargerRoleUtilisateur(currentUser.id);
   appliquerInterfaceSelonRole();
+  await chargerMaintenanceOptions();
   chargerConfigAdmin();
   chargerDashboard();
 }
@@ -93,8 +95,9 @@ function switchTab(tab, evt) {
   if (tab === 'media') chargerTableMedia();
   if (tab === 'config') chargerConfigAdmin();
 }
+
 // -----------------------------------------------------------------------------
-// CONFIGURATION ADMIN
+// CONFIGURATION GÉNÉRALE
 // -----------------------------------------------------------------------------
 async function chargerConfigAdmin() {
   try {
@@ -131,16 +134,67 @@ async function toggleGlobalCalendar() {
 }
 
 // -----------------------------------------------------------------------------
-// DASHBOARD VOITURES
+// MAINTENANCE OPTIONS (maintenances.json)
 // -----------------------------------------------------------------------------
-function formatPrix(val) {
-  if (val === null || val === undefined) return '0';
-  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+async function chargerMaintenanceOptions() {
+  try {
+    const response = await fetch('maintenances.json');
+    const data = await response.json();
+    maintenanceOptions = data.maintenanceCategories || [];
+    remplirSelectMaintenance();
+  } catch (err) {
+    console.error('Maintenances JSON', err);
+  }
 }
 
+function remplirSelectMaintenance() {
+  const cat = document.getElementById('maint-cat');
+  const sub = document.getElementById('maint-subcat');
+  const motif = document.getElementById('maint-motif');
+  if (!cat || !sub || !motif) return;
+
+  cat.innerHTML = '<option value="">-- Catégorie --</option>';
+  maintenanceOptions.forEach((c, idx) => {
+    const option = document.createElement('option');
+    option.value = idx;
+    option.textContent = c.label;
+    cat.appendChild(option);
+  });
+
+  cat.onchange = () => {
+    sub.innerHTML = '<option value="">-- Sous-catégorie --</option>';
+    motif.innerHTML = '<option value="">-- Motif --</option>';
+    if (cat.value === '') return;
+    maintenanceOptions[cat.value].subcategories.forEach((sc, scIdx) => {
+      const opt = document.createElement('option');
+      opt.value = scIdx;
+      opt.textContent = sc.label;
+      sub.appendChild(opt);
+    });
+  };
+
+  sub.onchange = () => {
+    motif.innerHTML = '<option value="">-- Motif --</option>';
+    if (cat.value === '' || sub.value === '') return;
+    maintenanceOptions[cat.value].subcategories[sub.value].motifs.forEach((m) => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      motif.appendChild(opt);
+    });
+  };
+}
+// -----------------------------------------------------------------------------
+// DASHBOARD VOITURES
+// -----------------------------------------------------------------------------
 function resumeDescription(text) {
   if (!text) return '<em>Aucune description</em>';
   return text.length > 160 ? `${text.slice(0, 160)}…` : text;
+}
+
+function formatPrix(val) {
+  if (val === null || val === undefined) return '0';
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
 async function chargerDashboard() {
@@ -188,6 +242,7 @@ async function chargerDashboard() {
           ${isReservable ? 'Désactiver' : 'Activer'}
         </button>
         <button class="btn-action btn-sec" onclick="ouvrirModalVoiture('${voiture.id}')">Modifier</button>
+        <button class="btn-action btn-sec" onclick="ouvrirModalMaintenance('${voiture.id}', '${voiture.nom || ''}')">+ Maintenance</button>
       </div>`;
     grid.appendChild(card);
   });
@@ -205,15 +260,14 @@ function ouvrirModalVoiture(id = null) {
   document.getElementById('modal-voiture').style.display = 'flex';
   document.getElementById('modal-voiture').dataset.editId = id || '';
 
-  if (!id) {
-    ['new-car-nom','new-car-prix','new-car-places','new-car-desc','new-car-img','new-car-ref']
-      .forEach((f) => document.getElementById(f).value = '');
-    document.getElementById('new-car-trans').value = 'Manuelle';
-    document.getElementById('new-car-carburant').value = 'Essence';
-    document.getElementById('new-car-type').value = 'Citadine';
-    document.getElementById('new-car-reservable').value = 'true';
-    return;
-  }
+  const fields = ['new-car-nom','new-car-prix','new-car-places','new-car-desc','new-car-img','new-car-ref'];
+  fields.forEach((f) => document.getElementById(f).value = '');
+  document.getElementById('new-car-trans').value = 'Manuelle';
+  document.getElementById('new-car-carburant').value = 'Essence';
+  document.getElementById('new-car-type').value = 'Citadine';
+  document.getElementById('new-car-reservable').value = 'true';
+
+  if (!id) return;
 
   const voiture = globalVoitures.find((v) => v.id === id);
   if (!voiture) return;
@@ -263,6 +317,61 @@ async function ajouterVoiture() {
     fermerModal('modal-voiture');
     chargerDashboard();
   }
+}
+
+// -----------------------------------------------------------------------------
+// MODAL MAINTENANCE
+// -----------------------------------------------------------------------------
+function ouvrirModalMaintenance(id, nom) {
+  document.getElementById('modal-maintenance').style.display = 'flex';
+  document.getElementById('maint-voiture-id').value = id;
+  document.getElementById('maint-voiture-nom').innerText = nom || '-';
+  remplirSelectMaintenance(); // reset des selects
+  document.getElementById('maint-cout').value = '';
+  document.getElementById('maint-debut').value = '';
+  document.getElementById('maint-fin').value = '';
+  document.getElementById('maint-commentaire').value = '';
+}
+
+async function ajouterMaintenance() {
+  const idVoiture = document.getElementById('maint-voiture-id').value;
+  const catIdx = document.getElementById('maint-cat').value;
+  const subIdx = document.getElementById('maint-subcat').value;
+  const motif = document.getElementById('maint-motif').value;
+  const custom = document.getElementById('maint-commentaire').value.trim();
+
+  if (!idVoiture || !catIdx || !subIdx || (!motif && !custom)) {
+    alert('Merci de remplir catégorie, sous-catégorie et motif/commentaire.');
+    return;
+  }
+
+  const cat = maintenanceOptions[catIdx].label;
+  const sub = maintenanceOptions[catIdx].subcategories[subIdx].label;
+  const type_intervention = `${cat} / ${sub}`;
+  const details = motif || custom;
+
+  const payload = {
+    id_voiture: idVoiture,
+    type_intervention,
+    details,
+    cout: parseInt(document.getElementById('maint-cout').value, 10) || 0,
+    date_debut: document.getElementById('maint-debut').value,
+    date_fin: document.getElementById('maint-fin').value || document.getElementById('maint-debut').value,
+  };
+
+  if (!payload.date_debut || !payload.date_fin) {
+    alert('Dates requises.');
+    return;
+  }
+
+  const { error } = await sb.from('maintenances').insert([payload]);
+  if (error) {
+    alert(error.message);
+    return;
+  }
+  fermerModal('modal-maintenance');
+  chargerTableMaintenances();
+  if (calendarInstance) initCalendar(idVoiture);
 }
 
 // -----------------------------------------------------------------------------
@@ -371,7 +480,8 @@ async function chargerTableReservations() {
         Total : ${formatPrix(resa.montant_total)} Ar<br>
         Payé : ${formatPrix(resa.paiement_montant_declare || 0)} Ar
       </td>
-      <td>${resa.code_otp ? `OTP ${resa.code_otp}` : (resa.statut || 'en_attente')}</td>
+      <td>${resa.code_otp ? `OTP ${resa.code_otp}` : (resa.statut || 'en_attente')}</td
+      >
       <td>
         <button class="btn-small btn-primaire" onclick="assignerOTP(${resa.id})">OTP</button>
         <button class="btn-small btn-sec" onclick="changerStatutResa(${resa.id})">Statut</button>
@@ -393,7 +503,7 @@ async function changerStatutResa(id) {
   chargerTableReservations();
 }
 // -----------------------------------------------------------------------------
-// AVIS
+// AVIS AVEC SWITCH
 // -----------------------------------------------------------------------------
 async function chargerTableAvis() {
   const tbody = document.getElementById('tbody-avis');
@@ -410,13 +520,19 @@ async function chargerTableAvis() {
       <td>${a.nom}</td>
       <td>${a.note}/5</td>
       <td>${a.commentaire}</td>
-      <td>${a.visible ? 'Visible' : 'Masqué'}</td>
-      <td><button class="btn-action btn-sec" onclick="toggleAvis(${a.id}, ${a.visible})">Basculer</button></td>
+      <td>
+        ${a.visible ? 'Visible' : 'Masqué'}
+        <label class="switch">
+          <input type="checkbox" ${a.visible ? 'checked' : ''} onchange="toggleAvis(${a.id}, this.checked)">
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td>-</td>
     </tr>`).join('');
 }
 
 async function toggleAvis(id, visible) {
-  await sb.from('avis').update({ visible: !visible }).eq('id', id);
+  await sb.from('avis').update({ visible }).eq('id', id);
   chargerTableAvis();
 }
 
@@ -477,8 +593,7 @@ async function chargerTablePartenaires() {
 }
 
 // -----------------------------------------------------------------------------
-// MAINTENANCES
-// -----------------------------------------------------------------------------
+// MAINTENANCES (TABLE)
 async function chargerTableMaintenances() {
   const tbody = document.getElementById('tbody-maint-global');
   tbody.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
@@ -503,8 +618,9 @@ async function chargerTableMaintenances() {
       <td>-</td>
     </tr>`).join('');
 }
+
 // -----------------------------------------------------------------------------
-// CODES PROMO
+// CODES PROMO (ON/OFF)
 // -----------------------------------------------------------------------------
 async function ajouterPromo() {
   const payload = {
@@ -543,12 +659,23 @@ async function chargerTablePromos() {
       <td>${p.reduction_pourcent}%</td>
       <td>${p.date_debut} → ${p.date_fin}</td>
       <td>${p.min_jours} jour(s) min</td>
-      <td>${p.actif ? 'Actif' : 'Inactif'}</td>
+      <td>
+        ${p.actif ? 'Actif' : 'Inactif'}
+        <label class="switch">
+          <input type="checkbox" ${p.actif ? 'checked' : ''} onchange="togglePromo(${p.id}, this.checked)">
+          <span class="slider"></span>
+        </label>
+      </td>
     </tr>`).join('');
 }
 
+async function togglePromo(id, actif) {
+  await sb.from('codes_promo').update({ actif }).eq('id', id);
+  chargerTablePromos();
+}
+
 // -----------------------------------------------------------------------------
-// PUBLICITÉS
+// PUBLICITÉS (ON/OFF)
 // -----------------------------------------------------------------------------
 function calculerFinPub() {
   const debut = document.getElementById('pub-debut').value;
@@ -590,13 +717,24 @@ async function chargerTablePubs() {
       <td>${p.emplacement}</td>
       <td>${p.date_debut || '-'} → ${p.date_fin || '-'}</td>
       <td><img src="${p.image_url}" alt="${p.societe}" style="width:60px; height:50px; object-fit:cover;"></td>
-      <td>${p.actif ? 'Actif' : 'Inactif'}</td>
+      <td>
+        ${p.actif ? 'Actif' : 'Inactif'}
+        <label class="switch">
+          <input type="checkbox" ${p.actif ? 'checked' : ''} onchange="togglePub(${p.id}, this.checked)">
+          <span class="slider"></span>
+        </label>
+      </td>
       <td>-</td>
     </tr>`).join('');
 }
 
+async function togglePub(id, actif) {
+  await sb.from('publicites').update({ actif }).eq('id', id);
+  chargerTablePubs();
+}
+
 // -----------------------------------------------------------------------------
-// MÉDIAS
+// MÉDIAS (RADIOS / PLAYLISTS) AVEC ON/OFF
 // -----------------------------------------------------------------------------
 async function ajouterRadio() {
   const payload = {
@@ -624,30 +762,54 @@ async function ajouterPlaylist() {
 
 async function chargerTableMedia() {
   const tbodyRadios = document.getElementById('tbody-radios');
-  tbodyRadios.innerHTML = '<tr><td colspan="4">Chargement…</td></tr>';
+  tbodyRadios.innerHTML = '<tr><td colspan="5">Chargement…</td></tr>';
   const radios = await sb.from('radios').select('*');
   tbodyRadios.innerHTML = (radios.data || []).map((r) => `
     <tr>
       <td><img src="${r.image_url}" style="width:40px;height:40px;object-fit:contain;"></td>
       <td>${r.nom}</td>
       <td>${r.url_flux}</td>
-      <td>${r.actif ? 'Actif' : 'Inactif'}</td>
+      <td>
+        ${r.actif ? 'Actif' : 'Inactif'}
+        <label class="switch">
+          <input type="checkbox" ${r.actif ? 'checked' : ''} onchange="toggleRadio(${r.id}, this.checked)">
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td>-</td>
     </tr>`).join('');
 
   const tbodyPlay = document.getElementById('tbody-playlists');
-  tbodyPlay.innerHTML = '<tr><td colspan="4">Chargement…</td></tr>';
+  tbodyPlay.innerHTML = '<tr><td colspan="5">Chargement…</td></tr>';
   const playlists = await sb.from('playlists').select('*');
   tbodyPlay.innerHTML = (playlists.data || []).map((p) => `
     <tr>
       <td>${p.plateforme}</td>
       <td>${p.titre}</td>
       <td>${p.url_embed}</td>
-      <td>${p.actif ? 'Actif' : 'Inactif'}</td>
+      <td>
+        ${p.actif ? 'Actif' : 'Inactif'}
+        <label class="switch">
+          <input type="checkbox" ${p.actif ? 'checked' : ''} onchange="togglePlaylist(${p.id}, this.checked)">
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td>-</td>
     </tr>`).join('');
 }
 
+async function toggleRadio(id, actif) {
+  await sb.from('radios').update({ actif }).eq('id', id);
+  chargerTableMedia();
+}
+
+async function togglePlaylist(id, actif) {
+  await sb.from('playlists').update({ actif }).eq('id', id);
+  chargerTableMedia();
+}
+
 // -----------------------------------------------------------------------------
-// DIVERS & INITIALISATION
+// PROFIL / PÉRIODE / INIT
 // -----------------------------------------------------------------------------
 function ouvrirModalProfil() {
   document.getElementById('modal-profil').style.display = 'flex';
@@ -663,4 +825,7 @@ function fermerModal(id) {
   document.getElementById(id).style.display = 'none';
 }
 
+// Lancement
 verifierSession();
+
+
