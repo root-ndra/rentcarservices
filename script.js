@@ -35,8 +35,8 @@ function genererCouleur(id) {
 }
 
 function formatPrix(val) {
-  if (val === null || val === undefined) return '0';
-  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  if (val === null || val === undefined || Number.isNaN(val)) return '0';
+  return parseInt(val, 10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
 // -----------------------------------------------------------------------------
@@ -54,7 +54,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     chargerAvis();
   }
 });
-
 // -----------------------------------------------------------------------------
 // CONFIGURATION SITE
 // -----------------------------------------------------------------------------
@@ -235,7 +234,7 @@ async function chargerVoituresAccueil(container) {
 }
 
 // -----------------------------------------------------------------------------
-// NAVIGATION SINGLE PAGE
+// NAVIGATION SINGLE PAGE & CALENDRIER
 // -----------------------------------------------------------------------------
 function naviguerVers(pageId) {
   document.querySelectorAll('.page-section').forEach((sec) => (sec.style.display = 'none'));
@@ -246,9 +245,6 @@ function naviguerVers(pageId) {
   if (nav) nav.classList.remove('active');
 }
 
-// -----------------------------------------------------------------------------
-// SÉLECTION D'UNE VOITURE
-// -----------------------------------------------------------------------------
 function selectionnerVoiture(id, nom, prix, ref, description, isReservable) {
   if (!isReservable) {
     document.getElementById('contact-car-name').innerText = nom;
@@ -280,9 +276,6 @@ function selectionnerVoiture(id, nom, prix, ref, description, isReservable) {
   initCalendar(id);
 }
 
-// -----------------------------------------------------------------------------
-// CALENDRIER
-// -----------------------------------------------------------------------------
 async function initCalendar(idVoiture) {
   const calendarEl = document.getElementById('calendrier-dispo');
   if (calendarInstance) calendarInstance.destroy();
@@ -399,8 +392,52 @@ function calculerPrix() {
 async function verifierPromo() {
   const code = document.getElementById('code-promo').value.trim().toUpperCase();
   const msg = document.getElementById('msg-promo');
-  const d1 = document.getElementLinejoin
-  async function lancerReservationWhatsApp() {
+  msg.innerText = '';
+  reductionActive = 0;
+  calculerPrix();
+  if (!code) return;
+
+  const d1 = document.getElementById('date-debut').value;
+  const d2 = document.getElementById('date-fin').value;
+  if (!d1 || !d2) {
+    msg.innerText = 'Sélectionnez vos dates avant le code promo.';
+    msg.style.color = '#e67e22';
+    return;
+  }
+  const diffDays = Math.ceil((new Date(d2) - new Date(d1)) / 86400000) + 1;
+
+  const today = new Date().toISOString().split('T')[0];
+  const { data, error } = await sb
+    .from('codes_promo')
+    .select('*')
+    .eq('code', code)
+    .eq('actif', true)
+    .lte('date_debut', today)
+    .gte('date_fin', today)
+    .maybeSingle();
+
+  if (error || !data) {
+    msg.innerText = 'Code invalide ou expiré.';
+    msg.style.color = '#e74c3c';
+    return;
+  }
+
+  if (diffDays < data.min_jours) {
+    msg.innerText = `Minimum ${data.min_jours} jour(s) requis.`;
+    msg.style.color = '#e67e22';
+    return;
+  }
+
+  reductionActive = data.reduction_pourcent;
+  msg.innerText = `Code appliqué : -${reductionActive}%`;
+  msg.style.color = '#27ae60';
+  calculerPrix();
+}
+
+// -----------------------------------------------------------------------------
+// RÉSERVATION & WHATSAPP
+// -----------------------------------------------------------------------------
+async function lancerReservationWhatsApp() {
   if (!document.getElementById('check-conditions-step1').checked) {
     alert('Veuillez accepter les conditions.');
     return;
@@ -513,6 +550,11 @@ function toggleAutreMontant() {
 async function envoyerInfosPaiement() {
   if (!currentReservationId) return;
   const method = document.getElementById('pay-method').value;
+  if (!method) {
+    alert('Choisissez un mode de paiement.');
+    return;
+  }
+
   const payInfos = {
     methode: method,
     titulaire: method === 'mvola' ? document.getElementById('pay-mvola-nom').value.trim() : document.getElementById('pay-cash-nom').value.trim(),
