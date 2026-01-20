@@ -1,0 +1,12 @@
+{
+  "domaines": [
+    { "code": "informatique", "label": "Informatique" },
+    { "code": "batiment", "label": "Bâtiment" },
+    { "code": "administration", "label": "Administration" },
+    { "code": "hotellerie", "label": "Hôtellerie" },
+    { "code": "tourisme", "label": "Tourisme" },
+    { "code": "mecanique", "label": "Mécanique" },
+    { "code": "logistique", "label": "Logistique" },
+    { "code": "communication", "label": "Communication" }
+  ]
+}
