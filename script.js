@@ -11,7 +11,6 @@ try {
   console.error('Supabase indisponible', err);
 }
 
-// Variables globales pour la réservation
 let calendarInstance = null;
 let voitureSelectionnee = null;
 let currentCarReservations = [];
@@ -41,11 +40,10 @@ function formatPrix(val) {
 }
 
 // -----------------------------------------------------------------------------
-// CHARGEMENT INITIAL DU SITE
+// CHARGEMENT INITIAL
 // -----------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', async () => {
   if (!sb) return;
-
   await loadConfig();
   await chargerPublicites();
 
@@ -58,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // -----------------------------------------------------------------------------
-// CONFIGURATION SITE / FEATURES
+// CONFIGURATION SITE
 // -----------------------------------------------------------------------------
 async function loadConfig() {
   try {
@@ -100,8 +98,7 @@ async function loadConfig() {
 
     const mapContainer = document.getElementById('footer-map');
     if (mapContainer && siteConfigGlobal.footer.mapUrl) {
-      mapContainer.innerHTML = `
-        <iframe src="${siteConfigGlobal.footer.mapUrl}" width="100%" height="250" style="border:0; border-radius:10px;" allowfullscreen="" loading="lazy"></iframe>`;
+      mapContainer.innerHTML = `<iframe src="${siteConfigGlobal.footer.mapUrl}" width="100%" height="250" style="border:0; border-radius:10px;" allowfullscreen loading="lazy"></iframe>`;
     }
 
     const featuresContainer = document.getElementById('features-container-dynamic');
@@ -186,9 +183,8 @@ async function chargerPublicites() {
   (data || []).forEach((pub) => {
     const block = targets[pub.emplacement];
     if (!block) return;
-    const link = pub.lien_redirection || '#';
     block.innerHTML = `
-      <a href="${link}" target="_blank" rel="noopener">
+      <a href="${pub.lien_redirection || '#'}" target="_blank" rel="noopener">
         <img src="${pub.image_url}" alt="${pub.societe || 'Publicité'}">
       </a>`;
     block.style.display = 'block';
@@ -349,7 +345,6 @@ function verifierDisponibilite(debut, fin) {
   const d2 = new Date(fin);
   return currentCarReservations.every(({ start, end }) => d2 < start || d1 > end);
 }
-
 // -----------------------------------------------------------------------------
 // CALCULS FINANCIERS / PROMO
 // -----------------------------------------------------------------------------
@@ -404,32 +399,8 @@ function calculerPrix() {
 async function verifierPromo() {
   const code = document.getElementById('code-promo').value.trim().toUpperCase();
   const msg = document.getElementById('msg-promo');
-  const d1 = document.getElementById('date-debut').value;
-  const d2 = document.getElementById('date-fin').value;
-
-  if (!d1 || !d2) {
-    msg.innerText = '⚠️ Sélectionnez vos dates.';
-    msg.style.color = 'orange';
-    return;
-  }
-
-  const { data, error } = await sb.from('codes_promo').select('*').eq('code', code).eq('actif', true).maybeSingle();
-  if (error || !data) {
-    reductionActive = 0;
-    msg.innerText = '❌ Code invalide ou expiré.';
-    msg.style.color = 'red';
-  } else {
-    reductionActive = data.reduction_pourcent;
-    msg.innerText = `✅ Réduction ${reductionActive}% appliquée`;
-    msg.style.color = 'green';
-  }
-  calculerPrix();
-}
-
-// -----------------------------------------------------------------------------
-// RÉSERVATION CLIENT
-// -----------------------------------------------------------------------------
-async function lancerReservationWhatsApp() {
+  const d1 = document.getElementLinejoin
+  async function lancerReservationWhatsApp() {
   if (!document.getElementById('check-conditions-step1').checked) {
     alert('Veuillez accepter les conditions.');
     return;
@@ -525,7 +496,7 @@ async function lancerReservationWhatsApp() {
 }
 
 // -----------------------------------------------------------------------------
-// PAIEMENT / OTP / PDF (début)
+// PAIEMENT / OTP / PDF
 // -----------------------------------------------------------------------------
 function togglePaymentFields() {
   const method = document.getElementById('pay-method').value;
@@ -533,9 +504,10 @@ function togglePaymentFields() {
   document.getElementById('fields-espece').style.display = method === 'espece' ? 'block' : 'none';
   document.getElementById('fields-montant').style.display = method ? 'block' : 'none';
 }
+
 function toggleAutreMontant() {
   const choix = document.getElementById('pay-choix-montant').value;
-  document.getElementById('field-autre-мontant').style.display = choix === 'autre' ? 'block' : 'none';
+  document.getElementById('field-autre-montant').style.display = choix === 'autre' ? 'block' : 'none';
 }
 
 async function envoyerInfosPaiement() {
@@ -544,8 +516,7 @@ async function envoyerInfosPaiement() {
   const payInfos = {
     methode: method,
     titulaire: method === 'mvola' ? document.getElementById('pay-mvola-nom').value.trim() : document.getElementById('pay-cash-nom').value.trim(),
-    numero: method === 'mvola' ? document.getElementById
-('pay-mvola-num').value.trim() : '',
+    numero: method === 'mvola' ? document.getElementById('pay-mvola-num').value.trim() : '',
     ref: method === 'mvola' ? document.getElementById('pay-mvola-ref').value.trim() : '',
     type_montant: document.getElementById('pay-choix-montant').value,
   };
@@ -558,7 +529,8 @@ async function envoyerInfosPaiement() {
     montantDeclare = parseFloat(document.getElementById('pay-valeur-autre').value) || 0;
   }
 
-  await sb.from('reservations')
+  await sb
+    .from('reservations')
     .update({
       paiement_methode: payInfos.methode,
       paiement_titulaire: payInfos.titulaire,
@@ -592,7 +564,6 @@ function activerBoutonDownload(code) {
 function telechargerFactureAuto() {
   if (window.currentResaData) genererPDF(window.currentResaData);
 }
-
 function genererPDF(resa) {
   if (!window.jspdf) return alert('Bibliothèque PDF non chargée');
   const { jsPDF } = window.jspdf;
@@ -665,7 +636,13 @@ function genererPDF(resa) {
 async function chargerAvis() {
   const container = document.getElementById('liste-avis');
   if (!container) return;
-  const { data, error } = await sb.from('avis').select('*').eq('visible', true).order('created_at', { ascending: false }).limit(3);
+  const { data, error } = await sb
+    .from('avis')
+    .select('*')
+    .eq('visible', true)
+    .order('created_at', { ascending: false })
+    .limit(3);
+
   if (error) {
     console.error('Avis', error);
     container.innerHTML = '<p>Impossible de charger les avis.</p>';
@@ -675,6 +652,7 @@ async function chargerAvis() {
     container.innerHTML = '<p>Pas encore d’avis.</p>';
     return;
   }
+
   container.innerHTML = data.map((a) => `
     <div style="background:#f9f9f9; padding:10px; margin-bottom:5px; border-radius:8px;">
       <strong>${'⭐'.repeat(a.note)} ${a.nom}</strong>
@@ -750,7 +728,7 @@ async function chargerMedia(type) {
 }
 
 // -----------------------------------------------------------------------------
-// MODALES FRONT (conditions & contact direct)
+// MODALES FRONT
 // -----------------------------------------------------------------------------
 function ouvrirModalConditions() {
   document.getElementById('modal-conditions').style.display = 'flex';
