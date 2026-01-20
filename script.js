@@ -19,7 +19,7 @@ let reductionActive = 0;
 let siteConfigGlobal = null;
 
 // -----------------------------------------------------------------------------
-// UTILITAIRES GÉNÉRAUX
+// UTILITAIRES
 // -----------------------------------------------------------------------------
 function toggleMenu() {
   const nav = document.getElementById('nav-menu');
@@ -35,8 +35,8 @@ function genererCouleur(id) {
 }
 
 function formatPrix(val) {
-  if (val === null || val === undefined || Number.isNaN(val)) return '0';
-  return parseInt(val, 10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  if (val === null || val === undefined) return '0';
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
 // -----------------------------------------------------------------------------
@@ -61,7 +61,6 @@ async function loadConfig() {
   try {
     const response = await fetch('site_config.json');
     siteConfigGlobal = await response.json();
-
     const headerName = document.getElementById('header-site-name');
     const headerLogo = document.getElementById('header-logo');
     const heroTitle = document.getElementById('hero-title');
@@ -234,7 +233,7 @@ async function chargerVoituresAccueil(container) {
 }
 
 // -----------------------------------------------------------------------------
-// NAVIGATION SINGLE PAGE & CALENDRIER
+// NAVIGATION + SÉLECTION
 // -----------------------------------------------------------------------------
 function naviguerVers(pageId) {
   document.querySelectorAll('.page-section').forEach((sec) => (sec.style.display = 'none'));
@@ -276,6 +275,9 @@ function selectionnerVoiture(id, nom, prix, ref, description, isReservable) {
   initCalendar(id);
 }
 
+// -----------------------------------------------------------------------------
+// CALENDRIER
+// -----------------------------------------------------------------------------
 async function initCalendar(idVoiture) {
   const calendarEl = document.getElementById('calendrier-dispo');
   if (calendarInstance) calendarInstance.destroy();
@@ -434,350 +436,4 @@ async function verifierPromo() {
   calculerPrix();
 }
 
-// -----------------------------------------------------------------------------
-// RÉSERVATION & WHATSAPP
-// -----------------------------------------------------------------------------
-async function lancerReservationWhatsApp() {
-  if (!document.getElementById('check-conditions-step1').checked) {
-    alert('Veuillez accepter les conditions.');
-    return;
-  }
 
-  const client = {
-    nom: document.getElementById('loueur-nom').value.trim(),
-    prenom: document.getElementById('loueur-prenom').value.trim(),
-    tel: document.getElementById('loueur-tel').value.trim(),
-    adresse: document.getElementById('loueur-adresse').value.trim(),
-    cin: document.getElementById('loueur-cin').value.trim(),
-  };
-  if (!client.nom || !client.tel || !client.cin) {
-    alert('Nom, Téléphone et CIN sont obligatoires.');
-    return;
-  }
-
-  const calcul = faireLeCalculMathematique();
-  if (!calcul.ok) {
-    alert('Dates invalides ou prix manquant.');
-    return;
-  }
-
-  const d1 = document.getElementById('date-debut').value;
-  const d2 = document.getElementById('date-fin').value;
-  if (!verifierDisponibilite(d1, d2)) {
-    alert('❌ Ces dates ne sont plus disponibles.');
-    return;
-  }
-
-  const livraison = {
-    lieu: document.getElementById('lieu-livraison').value.trim(),
-    heure: document.getElementById('heure-livraison').value.trim(),
-  };
-  const recuperation = {
-    lieu: document.getElementById('lieu-recuperation').value.trim(),
-    heure: document.getElementById('heure-recuperation').value.trim(),
-  };
-  const trajet = [document.getElementById('trajet-1').value, document.getElementById('trajet-2').value, document.getElementById('trajet-3').value]
-    .filter(Boolean)
-    .join(' -> ');
-
-  const reservationData = {
-    id_voiture: document.getElementById('id-voiture-input').value,
-    date_debut: d1,
-    date_fin: d2,
-    nom: client.nom,
-    prenom: client.prenom,
-    adresse: client.adresse,
-    tel: client.tel,
-    cin_passeport: client.cin,
-    urgence_nom: document.getElementById('urgence-nom').value.trim(),
-    urgence_adresse: document.getElementById('urgence-adresse').value.trim(),
-    urgence_tel: document.getElementById('urgence-tel').value.trim(),
-    type_offre: calcul.offre,
-    montant_total: calcul.total,
-    statut: 'en_attente',
-    lieu_livraison: livraison.lieu,
-    heure_livraison: livraison.heure,
-    lieu_recuperation: recuperation.lieu,
-    heure_recuperation: recuperation.heure,
-    trajet_details: trajet,
-  };
-
-  await sb.from('clients').upsert(
-    { nom: client.nom, tel: client.tel, adresse: client.adresse },
-    { onConflict: 'tel' }
-  );
-
-  const { data, error } = await sb.from('reservations').insert([reservationData]).select();
-  if (error || !data?.length) {
-    alert(`Erreur réservation : ${error?.message || 'inconnue'}`);
-    return;
-  }
-
-  currentReservationId = data[0].id;
-  window.currentResaData = data[0];
-
-  const waNumber = siteConfigGlobal?.contact?.whatsapp || '261388552432';
-  let msg = `Bonjour, réservation *${document.getElementById('nom-voiture-selectionnee').innerText}* (#${currentReservationId}).\n`;
-  msg += `📅 ${d1} au ${d2}\n`;
-  msg += `🚗 Livraison: ${livraison.lieu || 'Agence'} (${livraison.heure || '-'})\n`;
-  msg += `↩️ Retour: ${recuperation.lieu || 'Agence'} (${recuperation.heure || '-'})\n`;
-  msg += `🛣️ Trajet: ${trajet || 'Local'}\n`;
-  msg += `💰 Total: ${formatPrix(calcul.total)} Ar\n👤 ${client.nom} ${client.prenom || ''}\n📞 ${client.tel}`;
-
-  window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`, '_blank');
-
-  document.getElementById('step-1-actions').style.display = 'none';
-  document.getElementById('step-2-paiement').style.display = 'block';
-
-  setTimeout(() => document.getElementById('step-2-paiement').scrollIntoView({ behavior: 'smooth' }), 500);
-}
-
-// -----------------------------------------------------------------------------
-// PAIEMENT / OTP / PDF
-// -----------------------------------------------------------------------------
-function togglePaymentFields() {
-  const method = document.getElementById('pay-method').value;
-  document.getElementById('fields-mvola').style.display = method === 'mvola' ? 'block' : 'none';
-  document.getElementById('fields-espece').style.display = method === 'espece' ? 'block' : 'none';
-  document.getElementById('fields-montant').style.display = method ? 'block' : 'none';
-}
-
-function toggleAutreMontant() {
-  const choix = document.getElementById('pay-choix-montant').value;
-  document.getElementById('field-autre-montant').style.display = choix === 'autre' ? 'block' : 'none';
-}
-
-async function envoyerInfosPaiement() {
-  if (!currentReservationId) return;
-  const method = document.getElementById('pay-method').value;
-  if (!method) {
-    alert('Choisissez un mode de paiement.');
-    return;
-  }
-
-  const payInfos = {
-    methode: method,
-    titulaire: method === 'mvola' ? document.getElementById('pay-mvola-nom').value.trim() : document.getElementById('pay-cash-nom').value.trim(),
-    numero: method === 'mvola' ? document.getElementById('pay-mvola-num').value.trim() : '',
-    ref: method === 'mvola' ? document.getElementById('pay-mvola-ref').value.trim() : '',
-    type_montant: document.getElementById('pay-choix-montant').value,
-  };
-
-  let montantDeclare = payInfos.type_montant === '50'
-    ? window.currentResaData.montant_total / 2
-    : window.currentResaData.montant_total;
-
-  if (payInfos.type_montant === 'autre') {
-    montantDeclare = parseFloat(document.getElementById('pay-valeur-autre').value) || 0;
-  }
-
-  await sb
-    .from('reservations')
-    .update({
-      paiement_methode: payInfos.methode,
-      paiement_titulaire: payInfos.titulaire,
-      paiement_numero: payInfos.numero,
-      paiement_ref: payInfos.ref,
-      paiement_montant_declare: montantDeclare,
-    })
-    .eq('id', currentReservationId);
-
-  window.currentResaData.paiement_montant_declare = montantDeclare;
-  window.currentResaData.paiement_titulaire = payInfos.titulaire;
-
-  document.getElementById('step-2-paiement').style.display = 'none';
-  document.getElementById('step-3-download').style.display = 'block';
-
-  sb.channel(`suivi-resa-${currentReservationId}`)
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'reservations', filter: `id=eq.${currentReservationId}` }, (payload) => {
-      if (payload.new?.code_otp) activerBoutonDownload(payload.new.code_otp);
-    })
-    .subscribe();
-}
-
-function activerBoutonDownload(code) {
-  document.getElementById('input-otp-auto').value = code;
-  const btn = document.getElementById('btn-dl-pdf');
-  btn.disabled = false;
-  btn.classList.add('btn-pdf-active');
-  if (window.currentResaData) window.currentResaData.code_otp = code;
-}
-
-function telechargerFactureAuto() {
-  if (window.currentResaData) genererPDF(window.currentResaData);
-}
-function genererPDF(resa) {
-  if (!window.jspdf) return alert('Bibliothèque PDF non chargée');
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  doc.setFillColor(44, 62, 80);
-  doc.rect(0, 0, 210, 40, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(22);
-  doc.text(siteConfigGlobal?.header?.siteName || 'Rent Car Services', 105, 15, { align: 'center' });
-  doc.setFontSize(10);
-  doc.text(siteConfigGlobal?.footer?.address || 'Antananarivo', 105, 25, { align: 'center' });
-  doc.text(`Tel: ${siteConfigGlobal?.contact?.phoneDisplay || '+261 38 85 524 32'}`, 105, 32, { align: 'center' });
-
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(11);
-  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 196, 50, { align: 'right' });
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`FACTURE / REÇU N° ${resa.id}`, 15, 60);
-
-  const d1 = new Date(resa.date_debut);
-  const d2 = new Date(resa.date_fin);
-  const duree = Math.ceil((d2 - d1) / 86400000) + 1;
-
-  const clientInfo = [
-    `Nom: ${resa.nom} ${resa.prenom || ''}`,
-    `Tél: ${resa.tel}`,
-    `Adresse: ${resa.adresse || '-'}`,
-    `CIN: ${resa.cin_passeport || '-'}`,
-    `Urgence: ${resa.urgence_nom || '-'} (${resa.urgence_tel || '-'})`,
-  ].join('\n');
-
-  const locInfo = [
-    `Du ${resa.date_debut} au ${resa.date_fin} (${duree} j)`,
-    `Livraison: ${resa.lieu_livraison || 'Agence'} (${resa.heure_livraison || '-'})`,
-    `Retour: ${resa.lieu_recuperation || 'Agence'} (${resa.heure_recuperation || '-'})`,
-    `Trajet: ${resa.trajet_details || 'Non précisé'}`,
-  ].join('\n');
-
-  const paye = parseFloat(resa.paiement_montant_declare) || 0;
-  const total = parseFloat(resa.montant_total) || 0;
-  const payInfo = [
-    `Total: ${formatPrix(total)} Ar`,
-    `Payé: ${formatPrix(paye)} Ar`,
-    `Reste: ${formatPrix(total - paye)} Ar`,
-    `Payeur: ${resa.paiement_titulaire || '-'}`,
-  ].join('\n');
-
-  doc.autoTable({
-    startY: 72,
-    head: [['CLIENT', 'DÉTAILS LOCATION', 'FINANCIER']],
-    body: [[clientInfo, locInfo, payInfo]],
-    theme: 'grid',
-    headStyles: { fillColor: [52, 152, 219], halign: 'center' },
-    styles: { fontSize: 9, cellPadding: 4, valign: 'top' },
-  });
-
-  if (resa.code_otp) {
-    doc.setTextColor(39, 174, 96);
-    doc.text(`Validé - OTP: ${resa.code_otp}`, 15, doc.lastAutoTable.finalY + 10);
-  }
-
-  doc.save(`Facture_${resa.id}.pdf`);
-}
-
-// -----------------------------------------------------------------------------
-// AVIS & CONTACT
-// -----------------------------------------------------------------------------
-async function chargerAvis() {
-  const container = document.getElementById('liste-avis');
-  if (!container) return;
-  const { data, error } = await sb
-    .from('avis')
-    .select('*')
-    .eq('visible', true)
-    .order('created_at', { ascending: false })
-    .limit(3);
-
-  if (error) {
-    console.error('Avis', error);
-    container.innerHTML = '<p>Impossible de charger les avis.</p>';
-    return;
-  }
-  if (!data?.length) {
-    container.innerHTML = '<p>Pas encore d’avis.</p>';
-    return;
-  }
-
-  container.innerHTML = data.map((a) => `
-    <div style="background:#f9f9f9; padding:10px; margin-bottom:5px; border-radius:8px;">
-      <strong>${'⭐'.repeat(a.note)} ${a.nom}</strong>
-      <p>${a.commentaire}</p>
-    </div>`).join('');
-}
-
-async function envoyerAvis() {
-  const nom = document.getElementById('avis-nom').value.trim();
-  const note = parseInt(document.getElementById('avis-note').value, 10);
-  const commentaire = document.getElementById('avis-commentaire').value.trim();
-  if (!nom || !commentaire) {
-    alert('Merci de remplir nom et avis.');
-    return;
-  }
-  const { error } = await sb.from('avis').insert([{ nom, note, commentaire, visible: false }]);
-  if (error) {
-    alert('Erreur envoi avis.');
-    return;
-  }
-  alert('Merci ! Votre avis sera publié après validation.');
-  document.getElementById('avis-nom').value = '';
-  document.getElementById('avis-commentaire').value = '';
-}
-
-function envoyerContactWhatsApp() {
-  const sujet = document.getElementById('contact-sujet').value;
-  const nom = document.getElementById('contact-nom').value.trim();
-  const msg = document.getElementById('contact-message').value.trim();
-  const waNumber = siteConfigGlobal?.contact?.whatsapp || '261388552432';
-  if (!msg) return alert('Merci de saisir un message.');
-
-  const texte = `[${sujet}] ${nom ? nom + ' - ' : ''}${msg}`;
-  window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(texte)}`, '_blank');
-}
-
-// -----------------------------------------------------------------------------
-// MÉDIAS (RADIOS / PLAYLISTS)
-// -----------------------------------------------------------------------------
-async function chargerMedia(type) {
-  const conteneur = document.getElementById('conteneur-media');
-  if (!conteneur) return;
-
-  const table = type === 'radios' ? 'radios' : 'playlists';
-  const { data, error } = await sb.from(table).select('*').eq('actif', true);
-  if (error) {
-    conteneur.innerHTML = '<p>Impossible de charger le contenu.</p>';
-    return;
-  }
-  if (!data?.length) {
-    conteneur.innerHTML = '<p>Aucun contenu disponible.</p>';
-    return;
-  }
-
-  conteneur.innerHTML = data.map((item) => {
-    if (type === 'radios') {
-      return `
-        <div class="carte-voiture" style="padding:15px; text-align:center;">
-          <img src="${item.image_url}" alt="${item.nom}" style="width:60px; height:60px; object-fit:contain; margin-bottom:10px;">
-          <h4>${item.nom}</h4>
-          <audio controls src="${item.url_flux}" style="width:100%; margin-top:10px;"></audio>
-        </div>`;
-    }
-    return `
-      <div class="carte-voiture" style="padding:0;">
-        <iframe src="${item.url_embed}" width="100%" height="220" style="border:0;" allow="autoplay"></iframe>
-        <div style="padding:15px;">
-          <strong>${item.titre}</strong><br>
-          <small>${item.plateforme}</small>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-// -----------------------------------------------------------------------------
-// MODALES FRONT
-// -----------------------------------------------------------------------------
-function ouvrirModalConditions() {
-  document.getElementById('modal-conditions').style.display = 'flex';
-}
-function fermerModalConditions() {
-  document.getElementById('modal-conditions').style.display = 'none';
-}
-function fermerModalContactOnly() {
-  document.getElementById('modal-contact-only').style.display = 'none';
-}
