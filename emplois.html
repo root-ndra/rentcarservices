@@ -6,51 +6,120 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    body { margin:0; font-family:'Montserrat',sans-serif; background:#f5f7fb; color:#2c3e50; }
-    header {
-      background: linear-gradient(145deg,#0f172a,#1e293b);
-      color:white;
-      padding:40px 20px;
-      text-align:center;
-    }
-    header h1 { margin-bottom:10px; font-size:2.2rem; }
+    body { margin:0; font-family:'Montserrat',sans-serif; background:#f2f5f9; color:#1f2a37; }
+    header { background:#0f172a; color:white; padding:40px 20px; text-align:center; }
+    header h1 { margin:0 0 10px; font-size:2.2rem; }
     header p { margin:0; color:#cbd5f5; }
-    .jobs-container {
+
+    .filters-bar {
       max-width:1100px;
-      margin:40px auto;
+      margin:30px auto 10px;
+      padding:0 20px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:15px;
+      justify-content:space-between;
+    }
+    .filters-bar input, .filters-bar select {
+      flex:1;
+      min-width:220px;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid #d4dbe5;
+      font-size:1rem;
+    }
+
+    .jobs-grid {
+      max-width:1100px;
+      margin:0 auto 40px;
       padding:0 20px;
       display:grid;
-      grid-template-columns: repeat(auto-fit,minmax(300px,1fr));
-      gap:22px;
+      grid-template-columns: repeat(auto-fit,minmax(280px,1fr));
+      gap:24px;
     }
     .job-card {
+      perspective:1000px;
+    }
+    .job-card-inner {
+      position:relative;
+      width:100%;
+      height:100%;
+      min-height:260px;
+      transition:transform 0.8s;
+      transform-style:preserve-3d;
+      cursor:pointer;
+    }
+    .job-card.flipped .job-card-inner {
+      transform:rotateY(180deg);
+    }
+    .job-side {
+      position:absolute;
+      width:100%;
+      height:100%;
+      backface-visibility:hidden;
       background:white;
-      border-radius:16px;
-      padding:20px;
-      box-shadow:0 15px 40px rgba(15,23,42,.1);
+      border-radius:18px;
+      box-shadow:0 18px 40px rgba(15,23,42,.12);
+      padding:22px;
       display:flex;
       flex-direction:column;
-      gap:12px;
+      gap:10px;
     }
-    .job-card h3 { margin:0; color:#0f172a; }
-    .job-card .meta { color:#64748b; font-size:.95rem; display:flex; flex-wrap:wrap; gap:8px; }
-    .job-card p { flex:1; line-height:1.5; }
-    .job-card footer { display:flex; justify-content:space-between; align-items:center; font-size:.9rem; color:#94a3b8; }
-    .job-card a {
+    .job-front h3 {
+      margin:0;
+      color:#0f172a;
+    }
+    .job-front .meta {
+      font-size:.9rem;
+      color:#64748b;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    .job-front .tags {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .tag {
+      background:#e0ecff;
+      color:#2563eb;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:.85rem;
+      font-weight:600;
+    }
+    .job-back {
+      transform:rotateY(180deg);
+      color:#0f172a;
+      line-height:1.5;
+    }
+    .job-back p { margin:0; flex:1; }
+    .job-back a {
       margin-top:10px;
-      padding:10px;
-      text-align:center;
-      border-radius:10px;
+      align-self:flex-start;
+      padding:8px 14px;
+      border-radius:999px;
       background:#0ea5e9;
       color:white;
       text-decoration:none;
       font-weight:600;
+      font-size:.9rem;
     }
     .empty-state {
+      max-width:600px;
+      margin:50px auto;
       text-align:center;
       color:#94a3b8;
-      margin-top:60px;
       font-size:1.1rem;
+    }
+
+    @media (max-width:768px) {
+      .jobs-grid { grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); }
+    }
+    @media (max-width:480px) {
+      .filters-bar { flex-direction:column; }
+      .jobs-grid { grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -58,10 +127,17 @@
 
   <header>
     <h1>Carrières chez RentCarServices</h1>
-    <p>Découvrez nos opportunités actuelles et rejoignez l’aventure.</p>
+    <p>Faites partie de l’équipe : découvrez nos opportunités.</p>
   </header>
 
-  <section class="jobs-container" id="jobs-container">
+  <div class="filters-bar">
+    <input type="text" id="search-input" placeholder="Recherche par mot-clé…" oninput="filtrerOffres()">
+    <select id="select-domaine" onchange="filtrerOffres()">
+      <option value="">Tous les domaines</option>
+    </select>
+  </div>
+
+  <section class="jobs-grid" id="jobs-grid">
     <p class="empty-state">Chargement des offres…</p>
   </section>
 
