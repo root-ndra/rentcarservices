@@ -61,7 +61,7 @@ async function chargerRoleUtilisateur(userId) {
 function appliquerInterfaceSelonRole() {
   const badge = document.getElementById('header-user-role');
   badge.innerText = currentUserRole === ROLE_SUPER_ADMIN ? 'SUPER ADMIN' : 'PARTENAIRE';
-  badge.style.background = currentUserRole === ROLE_SUPER Admin ? '#27ae60' : '#7f8c8d';
+  badge.style.background = currentUserRole === ROLE_SUPER_Admin ? '#27ae60' : '#7f8c8d';
 
   restrictedTabs.forEach((tab) => {
     const btn = document.getElementById(`btn-tab-${tab}`);
@@ -477,4 +477,5 @@ function setPeriode(p) {
 
 // --- INITIALISATION ---
 verifierSession();
+
 
