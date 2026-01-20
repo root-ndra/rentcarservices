@@ -15,17 +15,16 @@
 
   <style>
     body { background:#f4f6f9; margin:0; font-family:'Segoe UI',sans-serif; }
-    .login-wrapper { height:100vh; display:flex; justify-content:center; align-items:center; background:#2c3e50; }
-    .login-box { background:#fff; padding:35px; border-radius:12px; width:100%; max-width:380px; text-align:center; box-shadow:0 15px 35px rgba(0,0,0,.25); }
-    .btn-login { width:100%; padding:14px; background:#3498db; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:1.05rem; }
+    .login-wrapper { height:100vh; display:flex; justify-content:center; align-items:center; background:#2c3e50; padding:20px; }
+    .login-box { background:#fff; padding:35px; border-radius:12px; width:100%; max-width:380px; text-align:center; box-shadow:0 18px 35px rgba(0,0,0,.25); }
+    .btn-login { width:100%; padding:14px; background:#3498db; color:#fff; border:none; border-radius:6px; font-size:1.05rem; cursor:pointer; }
     input { width:100%; padding:14px; border:1px solid #ccc; border-radius:6px; margin-bottom:15px; box-sizing:border-box; }
 
     .admin-header { background:#fff; padding:15px 25px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,.05); position:sticky; top:0; z-index:10; }
     .user-role-badge { padding:3px 10px; border-radius:12px; color:#fff; font-size:.75rem; }
     .admin-tabs { display:flex; flex-wrap:wrap; gap:10px; background:#fff; padding:10px; border-radius:10px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,.05); }
-    .tab-btn { border:none; background:transparent; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:600; display:flex; gap:8px; align-items:center; }
+    .tab-btn { border:none; background:transparent; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:600; display:flex; gap:8px; align-items:center; color:#555; }
     .tab-btn.active { background:#2c3e50; color:#fff; }
-    .tab-btn.hidden { display:none !important; }
 
     .admin-container { max-width:1600px; margin:0 auto; padding:20px; }
     .grid-dashboard { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:20px; }
@@ -38,21 +37,21 @@
     .car-card .stats { padding:10px 20px; background:#f8f9fa; font-size:.85rem; display:flex; justify-content:space-between; color:#2c3e50; }
     .car-card .actions { padding:12px; border-top:1px solid #eee; display:flex; gap:10px; }
     .btn-action { flex:1; padding:10px; border:none; border-radius:6px; font-weight:600; cursor:pointer; }
-    .btn-primary { background:#2c3e50; color:#fff; }
-    .btn-secondary { background:#ecf0f1; color:#2c3e50; }
+    .btn-primaire { background:#2c3e50; color:#fff; }
+    .btn-sec { background:#ecf0f1; color:#2c3e50; }
 
     .form-box { background:#fff; border-radius:12px; padding:25px; margin-bottom:20px; box-shadow:0 5px 18px rgba(0,0,0,.05); }
     .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:15px; }
-    .form-box input, .form-box select, .form-box textarea { width:100%; padding:12px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; }
+    .form-box input,.form-box select,.form-box textarea { width:100%; padding:12px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; }
     .table-container { background:#fff; border-radius:12px; box-shadow:0 5px 18px rgba(0,0,0,.05); overflow-x:auto; margin-bottom:20px; }
     table { width:100%; border-collapse:collapse; min-width:900px; }
-    th { background:#2c3e50; color:#fff; padding:12px; text-align:left; }
+    th { background:#2c3e50; color:#fff; padding:12px; text-align:left; white-space:nowrap; }
     td { padding:12px; border-bottom:1px solid #eee; font-size:.9rem; }
     .btn-small { padding:6px 10px; border:none; border-radius:4px; cursor:pointer; font-size:.8rem; color:#fff; }
 
     .modal-overlay { position:fixed; inset:0; display:none; background:rgba(0,0,0,.55); justify-content:center; align-items:center; z-index:20; }
     .modal-content { background:#fff; padding:25px; border-radius:12px; width:95%; max-width:700px; position:relative; max-height:90vh; overflow-y:auto; }
-    .close-modal { position:absolute; top:12px; right:15px; font-size:1.4rem; cursor:pointer; color:#777; }
+    .close-modal { position:absolute; top:12px; right:16px; font-size:1.4rem; cursor:pointer; color:#777; }
 
     @media (max-width:768px) {
       .admin-header { flex-direction:column; gap:12px; text-align:center; }
@@ -66,11 +65,11 @@
 <div id="login-screen" class="login-wrapper">
   <div class="login-box">
     <h2>Accès Administrateur</h2>
-    <p style="color:#777">Connexion sécurisée Supabase</p>
+    <p style="color:#777; font-size:.9rem;">Connexion sécurisée Supabase</p>
     <input id="admin-email" type="email" placeholder="Email" />
     <input id="admin-pass" type="password" placeholder="Mot de passe" />
     <button id="btn-login" class="btn-login" onclick="loginAdmin()">Se connecter</button>
-    <p id="login-error" style="color:#e74c3c; display:none;"></p>
+    <p id="login-error" style="color:#e74c3c; margin-top:12px; display:none;"></p>
   </div>
 </div>
 
@@ -88,7 +87,7 @@
       <button onclick="ouvrirModalProfil()" style="background:#ecf0f1; border:none; border-radius:50%; width:42px; height:42px;">
         <i class="fas fa-user-cog"></i>
       </button>
-      <button onclick="logoutAdmin()" style="background:#e74c3c; color:#fff; border:none; border-radius:6px; padding:10px 16px;">
+      <button onclick="logoutAdmin()" style="background:#e74c3c; color:#fff; border:none; border-radius:6px; padding:10px 15px;">
         <i class="fas fa-sign-out-alt"></i>
       </button>
     </div>
@@ -109,24 +108,24 @@
 
     <section id="view-dashboard">
       <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
-        <button class="btn-action btn-primary" style="flex:0;" onclick="ouvrirModalVoiture()"><i class="fas fa-plus-circle"></i> Ajouter une voiture</button>
+        <button class="btn-action btn-primaire" style="flex:0;" onclick="ouvrirModalVoiture()"><i class="fas fa-plus-circle"></i> Ajouter une voiture</button>
         <div>
           <strong style="margin-right:8px;">Période :</strong>
-          <button id="btn-periode-mois" class="btn-action btn-secondary" onclick="setPeriode('mois')">Ce mois</button>
-          <button id="btn-periode-annee" class="btn-action btn-secondary" onclick="setPeriode('annee')">Cette année</button>
+          <button id="btn-periode-mois" class="btn-action btn-sec" onclick="setPeriode('mois')">Ce mois</button>
+          <button id="btn-periode-annee" class="btn-action btn-sec" onclick="setPeriode('annee')">Cette année</button>
         </div>
       </div>
       <div id="grid-voitures" class="grid-dashboard"></div>
     </section>
 
     <section id="view-reservations" style="display:none;">
-      <button onclick="toggleNewResaForm()" class="btn-action btn-primary" style="margin-bottom:15px; max-width:260px;"><i class="fas fa-plus"></i> Réservation comptoir</button>
+      <button onclick="toggleNewResaForm()" class="btn-action btn-primaire" style="margin-bottom:15px; max-width:260px;"><i class="fas fa-plus"></i> Réservation comptoir</button>
       <div id="form-new-resa" class="form-box" style="display:none;">
         <h3>Création d’une réservation</h3>
         <div class="form-grid">
           <div><label>Voiture</label><select id="new-resa-voiture" onchange="calculerPrixAdmin()"></select></div>
-          <div><label>Client</label><input id="new-resa-nom" placeholder="Nom"></div>
-          <div><label>Téléphone</label><input id="new-resa-tel" placeholder="034 xx xx xx"></div>
+          <div><label>Client</label><input id="new-resa-nom"></div>
+          <div><label>Téléphone</label><input id="new-resa-tel"></div>
           <div><label>Début</label><input type="date" id="new-resa-debut" onchange="calculerPrixAdmin()"></div>
           <div><label>Fin</label><input type="date" id="new-resa-fin" onchange="calculerPrixAdmin()"></div>
           <div><label>Lieu Livraison</label><input id="new-resa-liv-lieu"></div>
@@ -139,7 +138,7 @@
           <div><label>Reste (Ar)</label><input id="new-resa-reste" readonly style="background:#f2f2f2;"></div>
           <div><label>Statut</label><select id="new-resa-statut"><option value="valide">Validé</option><option value="en_attente">En attente</option></select></div>
         </div>
-        <button class="btn-action btn-primary" style="margin-top:12px;" onclick="creerReservationAdmin()">Créer</button>
+        <button class="btn-action btn-primaire" style="margin-top:12px;" onclick="creerReservationAdmin()">Créer</button>
       </div>
 
       <div class="table-container">
@@ -160,7 +159,7 @@
         <div class="form-grid">
           <div><label>Nom</label><input id="part-nom"></div>
           <div><label>Prénom</label><input id="part-prenom"></div>
-          <div><label>Email</label><input id="part-email" type="email"></div>
+          <div><label>Email</label><input id="part-email"></div>
           <div><label>Téléphone</label><input id="part-tel"></div>
           <div><label>Durée</label>
             <select id="part-duree" onchange="calculerFinContrat()">
@@ -180,7 +179,7 @@
             </select>
           </div>
         </div>
-        <button class="btn-action btn-primary" style="margin-top:10px;" onclick="upsertPartenaire()">Enregistrer</button>
+        <button class="btn-action btn-primaire" style="margin-top:10px;" onclick="upsertPartenaire()">Enregistrer</button>
       </div>
 
       <div class="table-container">
@@ -210,7 +209,7 @@
           <div><label>Date début</label><input type="date" id="promo-debut"></div>
           <div><label>Date fin</label><input type="date" id="promo-fin"></div>
         </div>
-        <button class="btn-action btn-primary" style="margin-top:10px;" onclick="ajouterPromo()">Créer</button>
+        <button class="btn-action btn-primaire" style="margin-top:10px;" onclick="ajouterPromo()">Créer</button>
       </div>
       <div class="table-container">
         <table>
@@ -252,17 +251,17 @@
             <select id="pub-duree" onchange="calculerFinPub()">
               <option value="7">7 jours</option>
               <option value="15">15 jours</option>
-              <option value="30">1 mois</option>
+              <option value="30" selected>1 mois</option>
               <option value="90">3 mois</option>
             </select>
           </div>
           <div><label>Date fin</label><input type="date" id="pub-fin" readonly style="background:#f2f2f2;"></div>
         </div>
-        <button class="btn-action btn-primary" style="margin-top:10px;" onclick="ajouterPub()">Enregistrer</button>
+        <button class="btn-action btn-primaire" style="margin-top:10px;" onclick="ajouterPub()">Enregistrer</button>
       </div>
       <div class="table-container">
         <table>
-          <thead><tr><th>Société</th><th>Emplacement</th><th>Période</th><th>Image</th><th>Statut</th></tr></thead>
+          <thead><tr><th>Société</th><th>Emplacement</th><th>Période</th><th>Image</th><th>Statut</th><th>Actions</th></tr></thead>
           <tbody id="tbody-pubs"></tbody>
         </table>
       </div>
@@ -276,7 +275,7 @@
           <div><label>Flux</label><input id="rad-url"></div>
           <div><label>Logo (URL)</label><input id="rad-logo"></div>
         </div>
-        <button class="btn-action btn-primary" style="margin-top:10px;" onclick="ajouterRadio()">Ajouter</button>
+        <button class="btn-action btn-primaire" style="margin-top:10px;" onclick="ajouterRadio()">Ajouter</button>
       </div>
       <div class="table-container">
         <table>
@@ -289,16 +288,20 @@
         <h3>Ajouter une playlist</h3>
         <div class="form-grid">
           <div><label>Titre</label><input id="play-titre"></div>
-          <div><label>Plateforme</label>
-            <select id="play-plateforme"><option value="youtube">YouTube</option><option value="spotify">Spotify</option><option value="deezer">Deezer</option></select>
+          <div><label>Plate-forme</label>
+            <select id="play-plateforme">
+              <option value="youtube">YouTube</option>
+              <option value="spotify">Spotify</option>
+              <option value="deezer">Deezer</option>
+            </select>
           </div>
           <div><label>Lien embed</label><input id="play-url"></div>
         </div>
-        <button class="btn-action btn-primary" style="margin-top:10px;" onclick="ajouterPlaylist()">Ajouter</button>
+        <button class="btn-action btn-primaire" style="margin-top:10px;" onclick="ajouterPlaylist()">Ajouter</button>
       </div>
       <div class="table-container">
         <table>
-          <thead><tr><th>Plateforme</th><th>Titre</th><th>Lien</th><th>Statut</th></tr></thead>
+          <thead><tr><th>Plate-forme</th><th>Titre</th><th>Lien</th><th>Statut</th></tr></thead>
           <tbody id="tbody-playlists"></tbody>
         </table>
       </div>
@@ -306,7 +309,7 @@
 
     <section id="view-config" style="display:none;">
       <div class="form-box">
-        <h3>Paramètres Principaux</h3>
+        <h3>Paramètres principaux</h3>
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
           <div>
             <strong>Affichage du calendrier (site public)</strong>
@@ -325,20 +328,20 @@
 <div id="modal-voiture" class="modal-overlay">
   <div class="modal-content">
     <span class="close-modal" onclick="fermerModal('modal-voiture')">×</span>
-    <h3>Ajout / Édition d’un véhicule</h3>
+    <h3>Ajout / édition d’un véhicule</h3>
     <div class="form-grid">
       <div><label>Nom / Modèle</label><input id="new-car-nom"></div>
       <div><label>Prix (Ar/jour)</label><input id="new-car-prix" type="number"></div>
       <div><label>Places</label><input id="new-car-places" type="number"></div>
       <div><label>Transmission</label><select id="new-car-trans"><option>Manuelle</option><option>Automatique</option></select></div>
-      <div><label>Carburant</label><select id="new-car-carburant"><option>Essence</option><option>Diesel</option><option>Hybride</option><option>Electrique</option></select></div>
+      <div><label>Carburant</label><select id="new-car-carburant"><option>Essence</option><option>Diesel</option><option>Hybride</option><option>Électrique</option></select></div>
       <div><label>Type</label><select id="new-car-type"><option>Citadine</option><option>Berline</option><option>SUV</option><option>4x4</option><option>Minibus</option></select></div>
       <div><label>Réservable ?</label><select id="new-car-reservable"><option value="true">Oui</option><option value="false">Contact direct</option></select></div>
       <div style="grid-column:span 2;"><label>Description</label><textarea id="new-car-desc" rows="3"></textarea></div>
       <div style="grid-column:span 2;"><label>Image (URL)</label><input id="new-car-img"></div>
-      <div><label>Réf interne</label><input id="new-car-ref"></div>
+      <div><label>Référence interne</label><input id="new-car-ref"></div>
     </div>
-    <button class="btn-action btn-primary" style="margin-top:12px;" onclick="ajouterVoiture()">Enregistrer</button>
+    <button class="btn-action btn-primaire" style="margin-top:12px;" onclick="ajouterVoiture()">Enregistrer</button>
   </div>
 </div>
 
@@ -346,7 +349,7 @@
   <div class="modal-content">
     <span class="close-modal" onclick="fermerModal('modal-profil')">×</span>
     <h3>Profil</h3>
-    <p>Vous êtes connecté via Supabase Auth. Pour changer de mot de passe, utilisez l’espace Supabase.</p>
+    <p>Connecté via Supabase Auth. Pour changer de mot de passe, utilisez l’espace Supabase.</p>
   </div>
 </div>
 
