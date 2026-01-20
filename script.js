@@ -1,591 +1,763 @@
-/***** CONFIGURATION SUPABASE PARTAGÉE *****/
+// -----------------------------------------------------------------------------
+// CONFIGURATION SUPABASE
+// -----------------------------------------------------------------------------
 const SUPABASE_URL = 'https://ctijwjcjmbfmfhzwbguk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const ROLE_SUPER_ADMIN = 'super_admin';
-const restrictedTabs = ['partenaires','promos','pubs','media','config'];
-
-let currentUser = null;
-let currentUserRole = null;
-let globalVoitures = [];
-let periodeAnalyse = 'mois';
-
-/***** AUTH *****/
-async function loginAdmin() {
-    const email = document.getElementById('admin-email').value.trim();
-    const password = document.getElementById('admin-pass').value.trim();
-    const errorMsg = document.getElementById('login-error');
-    errorMsg.style.display = 'none';
-
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) {
-        errorMsg.innerText = error.message;
-        errorMsg.style.display = 'block';
-    } else {
-        verifierSession();
-    }
-}
-async function logoutAdmin() {
-    await sb.auth.signOut();
-    window.location.reload();
-}
-async function verifierSession() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) {
-        document.getElementById('login-screen').style.display = 'flex';
-        document.getElementById('admin-content').style.display = 'none';
-        return;
-    }
-    currentUser = session.user;
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('admin-content').style.display = 'block';
-    document.getElementById('header-user-name').innerText = currentUser.email;
-
-    await chargerRoleUtilisateur(currentUser.id);
-    appliquerInterfaceSelonRole();
-    await chargerConfigAdmin();
-    chargerDashboard();
+let sb = null;
+try {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (err) {
+  console.error('Supabase indisponible', err);
 }
 
-/***** ROLE / UI *****/
-async function chargerRoleUtilisateur(userId) {
-    const { data, error } = await sb.from('partenaires').select('role').eq('user_id', userId).maybeSingle();
-    if (error) {
-        console.warn('Impossible de charger le rôle', error);
-        currentUserRole = 'partenaire';
-    } else {
-        currentUserRole = data?.role || 'partenaire';
-    }
-}
-function appliquerInterfaceSelonRole() {
-    const badge = document.getElementById('header-user-role');
-    if (currentUserRole === ROLE_SUPER_ADMIN) {
-        badge.innerText = 'SUPER ADMIN';
-        badge.style.background = '#27ae60';
-    } else {
-        badge.innerText = 'PARTENAIRE';
-        badge.style.background = '#7f8c8d';
-        restrictedTabs.forEach((tab) => {
-            const btn = document.getElementById(`btn-tab-${tab}`);
-            if (btn) btn.classList.add('hidden');
-        });
-    }
-}
-function switchTab(tab, evt) {
-    const views = ['dashboard','reservations','maintenances','avis','pubs','media','promos','partenaires','config'];
-    views.forEach((v) => {
-        const section = document.getElementById(`view-${v}`);
-        if (section) section.style.display = v === tab ? 'block' : 'none';
-    });
-    document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.remove('active'));
-    if (evt?.currentTarget) evt.currentTarget.classList.add('active');
+// Variables globales pour la réservation
+let calendarInstance = null;
+let voitureSelectionnee = null;
+let currentCarReservations = [];
+let currentReservationId = null;
+let reductionActive = 0;
+let siteConfigGlobal = null;
 
-    if (tab === 'reservations') { chargerVoituresPourSelect(); chargerTableReservations(); }
-    if (tab === 'maintenances') chargerTableMaintenances();
-    if (tab === 'promos') chargerTablePromos();
-    if (tab === 'partenaires') chargerTablePartenaires();
-    if (tab === 'avis') chargerTableAvis();
-    if (tab === 'pubs') chargerTablePubs();
-    if (tab === 'media') chargerTableMedia();
-    if (tab === 'config') chargerConfigAdmin();
+// -----------------------------------------------------------------------------
+// UTILITAIRES GÉNÉRAUX
+// -----------------------------------------------------------------------------
+function toggleMenu() {
+  const nav = document.getElementById('nav-menu');
+  if (nav) nav.classList.toggle('active');
 }
 
-/***** CONFIG *****/
-async function chargerConfigAdmin() {
-    try {
-        const response = await fetch('site_config.json');
-        const config = await response.json();
-        document.getElementById('admin-header-subtext').innerText = `Gestion ${config.header.siteName}`;
-        document.title = `Admin - ${config.header.siteName}`;
-    } catch (e) {
-        console.warn('Config site', e);
-    }
-    const { data } = await sb.from('config_site').select('value').eq('key', 'calendar_visible').maybeSingle();
-    const toggle = document.getElementById('toggle-calendar-global');
-    const label = document.getElementById('status-calendar-text');
-    const visible = data?.value === true || data?.value === 'true';
-    toggle.checked = visible;
-    label.innerText = visible ? 'VISIBLE' : 'MASQUÉ';
-    label.style.color = visible ? '#27ae60' : '#e74c3c';
-}
-async function toggleGlobalCalendar() {
-    if (currentUserRole !== ROLE_SUPER_ADMIN) {
-        alert('Action réservée au super admin');
-        document.getElementById('toggle-calendar-global').checked = !document.getElementById('toggle-calendar-global').checked;
-        return;
-    }
-    const toggle = document.getElementById('toggle-calendar-global');
-    const visible = toggle.checked;
-    await sb.from('config_site').upsert({ key: 'calendar_visible', value: visible });
-    document.getElementById('status-calendar-text').innerText = visible ? 'VISIBLE' : 'MASQUÉ';
-    document.getElementById('status-calendar-text').style.color = visible ? '#27ae60' : '#e74c3c';
+function genererCouleur(id) {
+  const couleurs = ['#3498db', '#9b59b6', '#2ecc71', '#f1c40f', '#1abc9c', '#34495e', '#e67e22', '#16a085', '#8e44ad', '#2980b9'];
+  if (!id) return couleurs[Math.floor(Math.random() * couleurs.length)];
+  let hash = 0;
+  for (let i = 0; i < id.toString().length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return couleurs[Math.abs(hash) % couleurs.length];
 }
 
-/***** DASHBOARD – VOITURES *****/
-function resumeDescription(text) {
-    if (!text) return '<em>Aucune description</em>';
-    return text.length > 160 ? `${text.slice(0, 160)}…` : text;
-}
-async function chargerDashboard() {
-    const container = document.getElementById('grid-voitures');
-    container.innerHTML = '<p>Chargement en cours…</p>';
-
-    let query = sb.from('voitures').select('*').order('created_at', { ascending: false });
-    if (currentUserRole !== ROLE_SUPER_ADMIN) query = query.eq('proprietaire_id', currentUser.id);
-
-    const { data, error } = await query;
-    if (error) {
-        container.innerHTML = `<p>Erreur : ${error.message}</p>`;
-        return;
-    }
-    globalVoitures = data || [];
-    if (!globalVoitures.length) {
-        container.innerHTML = '<p>Aucune voiture disponible.</p>';
-        return;
-    }
-
-    container.innerHTML = '';
-    globalVoitures.forEach((voiture) => {
-        const card = document.createElement('div');
-        const isReservable = voiture.reservable !== false;
-        card.className = `car-card ${isReservable ? 'dispo' : 'indispo'}`;
-        card.innerHTML = `
-            <div class="top">
-                <div>
-                    <strong style="font-size:1.1rem;">${voiture.nom}</strong><br/>
-                    <span style="color:#999;">Ref: ${voiture.ref_id || '-'}</span>
-                </div>
-                <span class="user-role-badge" style="background:${isReservable ? '#27ae60' : '#f39c12'};">${isReservable ? 'Réservable' : 'Contact direct'}</span>
-            </div>
-            <div class="meta">
-                <span><i class="fas fa-gas-pump"></i> ${voiture.carburant || 'N/A'}</span>
-                <span><i class="fas fa-cogs"></i> ${voiture.transmission || 'N/A'}</span>
-                <span><i class="fas fa-user-friends"></i> ${voiture.places || '-'} places</span>
-                <span><i class="fas fa-money-bill"></i> ${formatPrix(voiture.prix_base)} Ar/j</span>
-            </div>
-            <div class="description">${resumeDescription(voiture.description)}</div>
-            <div class="stats">
-                <span>Type: ${voiture.type || '-'}</span>
-                <span>Prochaine vidange: ${voiture.prochaine_vidange || '-'}</span>
-            </div>
-            <div class="actions">
-                <button class="btn-action btn-primaire" onclick="toggleReservable('${voiture.id}', ${isReservable})">
-                    ${isReservable ? 'Désactiver réservation' : 'Activer réservation'}
-                </button>
-                <button class="btn-action btn-sec" onclick="ouvrirModalVoiture('${voiture.id}')">Modifier</button>
-            </div>`;
-        container.appendChild(card);
-    });
-}
-async function toggleReservable(id, current) {
-    const next = !current;
-    if (!confirm(`Passer ce véhicule en ${next ? 'réservable' : 'contact direct'} ?`)) return;
-    const { error } = await sb.from('voitures').update({ reservable: next }).eq('id', id);
-    if (error) alert(error.message);
-    else chargerDashboard();
-}
-
-/***** AJOUT VOITURE *****/
-function ouvrirModalVoiture(id = null) {
-    document.getElementById('modal-voiture').style.display = 'flex';
-    if (!id) {
-        ['new-car-nom','new-car-prix','new-car-places','new-car-trans','new-car-carburant','new-car-type','new-car-desc','new-car-img','new-car-ref']
-            .forEach((field) => (document.getElementById(field).value = ''));
-        document.getElementById('new-car-reservable').value = 'true';
-        document.getElementById('modal-voiture').dataset.editId = '';
-        return;
-    }
-
-    const voiture = globalVoitures.find((v) => v.id === id);
-    if (!voiture) return;
-    document.getElementById('modal-voiture').dataset.editId = id;
-    document.getElementById('new-car-nom').value = voiture.nom || '';
-    document.getElementById('new-car-prix').value = voiture.prix_base || '';
-    document.getElementById('new-car-places').value = voiture.places || '';
-    document.getElementById('new-car-trans').value = voiture.transmission || 'Manuelle';
-    document.getElementById('new-car-carburant').value = voiture.carburant || 'Essence';
-    document.getElementById('new-car-type').value = voiture.type || 'Citadine';
-    document.getElementById('new-car-desc').value = voiture.description || '';
-    document.getElementById('new-car-img').value = voiture.image_url || '';
-    document.getElementById('new-car-ref').value = voiture.ref_id || '';
-    document.getElementById('new-car-reservable').value = voiture.reservable === false ? 'false' : 'true';
-}
-function fermerModal(id) {
-    document.getElementById(id).style.display = 'none';
-}
-async function ajouterVoiture() {
-    const editId = document.getElementById('modal-voiture').dataset.editId;
-    const { data: { user } } = await sb.auth.getUser();
-    const payload = {
-        nom: document.getElementById('new-car-nom').value.trim(),
-        prix_base: parseInt(document.getElementById('new-car-prix').value, 10) || 0,
-        places: parseInt(document.getElementById('new-car-places').value, 10) || null,
-        transmission: document.getElementById('new-car-trans').value,
-        carburant: document.getElementById('new-car-carburant').value,
-        type: document.getElementById('new-car-type').value,
-        description: document.getElementById('new-car-desc').value,
-        image_url: document.getElementById('new-car-img').value,
-        ref_id: document.getElementById('new-car-ref').value,
-        reservable: document.getElementById('new-car-reservable').value === 'true',
-        proprietaire_id: user.id,
-    };
-    if (!payload.nom || !payload.prix_base) {
-        alert('Nom et prix sont requis.');
-        return;
-    }
-
-    let result;
-    if (editId) result = await sb.from('voitures').update(payload).eq('id', editId);
-    else result = await sb.from('voitures').insert([payload]);
-
-    if (result.error) alert(result.error.message);
-    else {
-        fermerModal('modal-voiture');
-        chargerDashboard();
-    }
-}
-
-/***** RESERVATIONS (récupération etc.) *****/
-function toggleNewResaForm() {
-    const form = document.getElementById('form-new-resa');
-    form.style.display = form.style.display === 'none' ? 'block' : 'none';
-}
-function calculerPrixAdmin() {
-    const select = document.getElementById('new-resa-voiture');
-    const prix = parseInt(select.options[select.selectedIndex]?.dataset.prix, 10) || 0;
-    const d1 = document.getElementById('new-resa-debut').value;
-    const d2 = document.getElementById('new-resa-fin').value;
-    if (!d1 || !d2 || !prix) return;
-    const diff = (new Date(d2) - new Date(d1)) / 86400000 + 1;
-    const montant = diff * prix;
-    document.getElementById('new-resa-montant').value = montant;
-    updateResteAdmin();
-}
-function updateResteAdmin() {
-    const total = parseInt(document.getElementById('new-resa-montant').value, 10) || 0;
-    const paye = parseInt(document.getElementById('new-resa-paye').value, 10) || 0;
-    document.getElementById('new-resa-reste').value = Math.max(total - paye, 0);
-}
-async function chargerVoituresPourSelect() {
-    const select = document.getElementById('new-resa-voiture');
-    select.innerHTML = '<option value="">--Sélection--</option>';
-
-    let query = sb.from('voitures').select('id, nom, prix_base, proprietaire_id').order('nom', { ascending: true });
-    if (currentUserRole !== ROLE_SUPER_ADMIN) query = query.eq('proprietaire_id', currentUser.id);
-
-    const { data } = await query;
-    (data || []).forEach((v) => {
-        const opt = document.createElement('option');
-        opt.value = v.id;
-        opt.text = `${v.nom} (${formatPrix(v.prix_base)} Ar)`;
-        opt.dataset.prix = v.prix_base;
-        opt.dataset.owner = v.proprietaire_id;
-        select.appendChild(opt);
-    });
-}
-async function creerReservationAdmin() {
-    const select = document.getElementById('new-resa-voiture');
-    const idVoiture = select.value;
-    if (!idVoiture) return alert('Choisissez une voiture.');
-
-    const owner = select.options[select.selectedIndex].dataset.owner || currentUser.id;
-    const payload = {
-        id_voiture: idVoiture,
-        partenaire_id: owner,
-        nom: document.getElementById('new-resa-nom').value || 'Client comptoir',
-        tel: document.getElementById('new-resa-tel').value || '',
-        date_debut: document.getElementById('new-resa-debut').value,
-        date_fin: document.getElementById('new-resa-fin').value,
-        montant_total: parseInt(document.getElementById('new-resa-montant').value, 10) || 0,
-        paiement_montant_declare: parseInt(document.getElementById('new-resa-paye').value, 10) || 0,
-        statut: document.getElementById('new-resa-statut').value,
-        lieu_livraison: document.getElementById('new-resa-liv-lieu').value,
-        heure_livraison: document.getElementById('new-resa-liv-heure').value,
-        lieu_recuperation: document.getElementById('new-resa-rec-lieu').value,
-        heure_recuperation: document.getElementById('new-resa-rec-heure').value,
-        trajet_details: document.getElementById('new-resa-trajet').value,
-    };
-    if (!payload.date_debut || !payload.date_fin) return alert('Dates requises.');
-
-    const { error } = await sb.from('reservations').insert([payload]);
-    if (error) alert(error.message);
-    else {
-        toggleNewResaForm();
-        chargerTableReservations();
-    }
-}
-async function chargerTableReservations() {
-    const tbody = document.getElementById('tbody-resa-full');
-    tbody.innerHTML = '<tr><td colspan="7">Chargement…</td></tr>';
-
-    let query = sb.from('reservations').select('*, voitures(nom)').order('created_at', { ascending: false });
-    if (currentUserRole !== ROLE_SUPER_ADMIN) query = query.eq('partenaire_id', currentUser.id);
-
-    const { data, error } = await query;
-    if (error) {
-        tbody.innerHTML = `<tr><td colspan="7">Erreur: ${error.message}</td></tr>`;
-        return;
-    }
-    if (!data?.length) {
-        tbody.innerHTML = '<tr><td colspan="7">Aucune réservation.</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = '';
-    data.forEach((resa) => {
-        const reste = (resa.montant_total || 0) - (resa.paiement_montant_declare || 0);
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>#${resa.id}</td>
-            <td>${resa.nom || '-'}<br><small>${resa.tel || ''}</small></td>
-            <td>${resa.voitures?.nom || '-'}<br><small>${resa.date_debut} ➜ ${resa.date_fin}</small></td>
-            <td>
-                Livraison: ${resa.lieu_livraison || '-'} (${resa.heure_livraison || '-'})<br>
-                Retour: ${resa.lieu_recuperation || '-'} (${resa.heure_recuperation || '-'})<br>
-                Trajet: ${resa.trajet_details || '-'}
-            </td>
-            <td>
-                ${resa.paiement_methode || '-'}<br>
-                Payé: ${formatPrix(resa.paiement_montant_declare || 0)} Ar<br>
-                <strong style="color:${reste > 0 ? '#e74c3c' : '#27ae60'};">Reste: ${formatPrix(reste)} Ar</strong>
-            </td>
-            <td>
-                OTP: <strong>${resa.code_otp || '-'}</strong><br>
-                <select onchange="updateStatutResa('${resa.id}', this.value)">
-                    <option value="en_attente" ${resa.statut === 'en_attente' ? 'selected' : ''}>En attente</option>
-                    <option value="valide" ${resa.statut === 'valide' ? 'selected' : ''}>Validé</option>
-                    <option value="annulee" ${resa.statut === 'annulee' ? 'selected' : ''}>Annulé</option>
-                </select>
-            </td>
-            <td>
-                <button class="btn-action btn-primaire" onclick="genererOTP('${resa.id}')">OTP</button>
-            </td>`;
-        tbody.appendChild(tr);
-    });
-}
-async function updateStatutResa(id, statut) {
-    await sb.from('reservations').update({ statut }).eq('id', id);
-}
-async function genererOTP(id) {
-    const code = Math.floor(1000 + Math.random() * 9000);
-    const { error } = await sb.from('reservations').update({ code_otp: code, statut: 'valide' }).eq('id', id);
-    if (error) alert(error.message);
-    else {
-        alert(`OTP ${code} généré`);
-        chargerTableReservations();
-    }
-}
-
-/***** DIVERS TABLEAUX / FONCTIONS ANNEXES *****/
-async function chargerTableMaintenances() {
-    const tbody = document.getElementById('tbody-maint-global');
-    tbody.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
-
-    let query = sb.from('maintenances').select('*, voitures!inner(nom, proprietaire_id)').order('date_debut', { ascending: false });
-    if (currentUserRole !== ROLE_SUPER_ADMIN) query = query.eq('voitures.proprietaire_id', currentUser.id);
-
-    const { data, error } = await query;
-    if (error) {
-        tbody.innerHTML = `<tr><td colspan="6">Erreur: ${error.message}</td></tr>`;
-        return;
-    }
-    if (!data?.length) {
-        tbody.innerHTML = '<tr><td colspan="6">Aucune maintenance.</td></tr>';
-        return;
-    }
-    tbody.innerHTML = data.map((m) => `
-        <tr>
-            <td>${m.date_debut || '-'}</td>
-            <td>${m.voitures?.nom || '-'}</td>
-            <td>${m.type_intervention || '-'}</td>
-            <td>${m.details || '-'}</td>
-            <td>${formatPrix(m.cout || 0)} Ar</td>
-            <td>-</td>
-        </tr>`).join('');
-}
-async function chargerTablePartenaires() {
-    if (currentUserRole !== ROLE_SUPER_ADMIN) {
-        document.getElementById('tbody-partenaires').innerHTML = '<tr><td colspan="6">Section réservée.</td></tr>';
-        return;
-    }
-    const tbody = document.getElementById('tbody-partenaires');
-    const { data, error } = await sb.from('partenaires').select('*').order('created_at', { ascending: false });
-    if (error) {
-        tbody.innerHTML = `<tr><td colspan="6">Erreur: ${error.message}</td></tr>`;
-        return;
-    }
-    if (!data?.length) {
-        tbody.innerHTML = '<tr><td colspan="6">Aucun partenaire.</td></tr>';
-        return;
-    }
-    tbody.innerHTML = data.map((p) => `
-        <tr>
-            <td>${p.nom_complet || `${p.nom || ''} ${p.prenom || ''}`}</td>
-            <td>${p.email}<br>${p.telephone || '-'}</td>
-            <td>${p.date_fin_contrat || '-'}</td>
-            <td>${p.commission_taux || 0}%</td>
-            <td>${p.est_gele ? 'Gelé' : 'Actif'}</td>
-            <td>-</td>
-        </tr>`).join('');
-}
-function calculerFinContrat() {
-    const cours = parseInt(document.getElementById('part-duree').value, 10);
-    const d = new Date();
-    d.setDate(d.getDate() + cours);
-    document.getElementById('part-fin').value = d.toISOString().split('T')[0];
-}
-async function upsertPartenaire() {
-    const payload = {
-        email: document.getElementById('part-email').value,
-        nom_complet: `${document.getElementById('part-nom').value} ${document.getElementById('part-prenom').value}`.trim(),
-        telephone: document.getElementById('part-tel').value,
-        date_fin_contrat: document.getElementById('part-fin').value,
-        commission_taux: document.getElementById('part-royalties').value,
-        role: 'partenaire',
-    };
-    if (!payload.email) return alert('Email requis');
-    const { error } = await sb.from('partenaires').insert([payload]);
-    if (error) alert(error.message);
-    else chargerTablePartenaires();
-}
-
-async function chargerTablePromos() {
-    const tbody = document.getElementById('tbody-promos');
-    const { data, error } = await sb.from('codes_promo').select('*').order('date_debut', { ascending: true });
-    if (error) {
-        tbody.innerHTML = `<tr><td colspan="5">Erreur: ${error.message}</td></tr>`;
-        return;
-    }
-    tbody.innerHTML = (data || []).map((p) => `
-        <tr>
-            <td>${p.code}</td>
-            <td>${p.reduction_pourcent}%</td>
-            <td>${p.date_debut || '-'} ➜ ${p.date_fin || '-'}</td>
-            <td>${p.min_jours || 1} jours mini</td>
-            <td>${p.actif ? 'Actif' : 'Inactif'}</td>
-        </tr>`).join('');
-}
-async function ajouterPromo() {
-    const payload = {
-        code: document.getElementById('promo-code').value.toUpperCase(),
-        reduction_pourcent: parseInt(document.getElementById('promo-pourcent').value, 10) || 0,
-        min_jours: parseInt(document.getElementById('promo-jours').value, 10) || 1,
-        date_debut: document.getElementById('promo-debut').value,
-        date_fin: document.getElementById('promo-fin').value,
-        actif: true,
-    };
-    if (!payload.code) return alert('Code requis');
-    const { error } = await sb.from('codes_promo').insert([payload]);
-    if (error) alert(error.message);
-    else chargerTablePromos();
-}
-
-async function chargerTableAvis() {
-    const tbody = document.getElementById('tbody-avis');
-    const { data, error } = await sb.from('avis').select('*').order('created_at', { ascending: false });
-    if (error) {
-        tbody.innerHTML = `<tr><td colspan="6">Erreur: ${error.message}</td></tr>`;
-        return;
-    }
-    tbody.innerHTML = (data || []).map((a) => `
-        <tr>
-            <td>${new Date(a.created_at).toLocaleDateString('fr-FR')}</td>
-            <td>${a.nom}</td>
-            <td>${a.note}/5</td>
-            <td>${a.commentaire}</td>
-            <td>${a.visible ? 'Visible' : 'Masqué'}</td>
-            <td><button class="btn-action btn-sec" onclick="toggleAvis(${a.id}, ${a.visible})">Basculer</button></td>
-        </tr>`).join('');
-}
-async function toggleAvis(id, visible) {
-    await sb.from('avis').update({ visible: !visible }).eq('id', id);
-    chargerTableAvis();
-}
-
-/***** PUBLICITÉS / MÉDIAS *****/
-function calculerFinPub() {
-    const debut = document.getElementById('pub-debut').value;
-    if (!debut) return;
-    const jours = parseInt(document.getElementById('pub-duree').value, 10);
-    const d = new Date(debut);
-    d.setDate(d.getDate() + jours);
-    document.getElementById('pub-fin').value = d.toISOString().split('T')[0];
-}
-async function ajouterPub() {
-    const payload = {
-        societe: document.getElementById('pub-societe').value,
-        contact: document.getElementById('pub-contact').value,
-        emplacement: document.getElementById('pub-emplacement').value,
-        image_url: document.getElementById('pub-image').value,
-        lien_redirection: document.getElementById('pub-lien').value,
-        date_debut: document.getElementById('pub-debut').value,
-        date_fin: document.getElementById('pub-fin').value,
-        actif: true,
-    };
-    const { error } = await sb.from('publicites').insert([payload]);
-    if (error) alert(error.message);
-    else chargerTablePubs();
-}
-async function chargerTablePubs() {
-    const tbody = document.getElementById('tbody-pubs');
-    const { data, error } = await sb.from('publicites').select('*').order('date_debut', { ascending: false });
-    if (error) {
-        tbody.innerHTML = `<tr><td colspan="5">Erreur: ${error.message}</td></tr>`;
-        return;
-    }
-    tbody.innerHTML = (data || []).map((p) => `
-        <tr>
-            <td>${p.societe}</td>
-            <td>${p.emplacement}</td>
-            <td>${p.date_debut || '-'} ➜ ${p.date_fin || '-'}</td>
-            <td><img src="${p.image_url}" alt="${p.societe}" style="width:70px; height:50px; object-fit:cover;"></td>
-            <td>${p.actif ? 'Actif' : 'Inactif'}</td>
-        </tr>`).join('');
-}
-
-async function ajouterRadio() {
-    const payload = { nom: document.getElementById('rad-nom').value, url_flux: document.getElementById('rad-url').value, image_url: document.getElementById('rad-logo').value, actif: true };
-    await sb.from('radios').insert([payload]);
-    chargerTableMedia();
-}
-async function ajouterPlaylist() {
-    const payload = { titre: document.getElementById('play-titre').value, plateforme: document.getElementById('play-plateforme').value, url_embed: document.getElementById('play-url').value, actif: true };
-    await sb.from('playlists').insert([payload]);
-    chargerTableMedia();
-}
-async function chargerTableMedia() {
-    const tbRadios = document.getElementById('tbody-radios');
-    const radios = await sb.from('radios').select('*').order('created_at', { ascending: false });
-    tbRadios.innerHTML = (radios.data || []).map((r) => `
-        <tr>
-            <td><img src="${r.image_url}" style="width:40px; height:40px; object-fit:contain;"></td>
-            <td>${r.nom}</td>
-            <td>${r.url_flux}</td>
-            <td>${r.actif ? 'Actif' : 'Inactif'}</td>
-        </tr>`).join('');
-
-    const tbPlay = document.getElementById('tbody-playlists');
-    const playlists = await sb.from('playlists').select('*').order('created_at', { ascending: false });
-    tbPlay.innerHTML = (playlists.data || []).map((p) => `
-        <tr>
-            <td>${p.plateforme}</td>
-            <td>${p.titre}</td>
-            <td>${p.url_embed}</td>
-            <td>${p.actif ? 'Actif' : 'Inactif'}</td>
-        </tr>`).join('');
-}
-
-/***** UTILITAIRES *****/
 function formatPrix(val) {
-    if (val === null || val === undefined) return '0';
-    return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-}
-function setPeriode(p) {
-    periodeAnalyse = p;
-    document.getElementById('btn-periode-mois').classList.toggle('btn-primaire', p === 'mois');
-    document.getElementById('btn-periode-annee').classList.toggle('btn-primaire', p === 'annee');
+  if (val === null || val === undefined) return '0';
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
-/***** DEMARRAGE *****/
-verifierSession();
+// -----------------------------------------------------------------------------
+// CHARGEMENT INITIAL DU SITE
+// -----------------------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!sb) return;
+
+  await loadConfig();
+  await chargerPublicites();
+
+  const containerVoitures = document.getElementById('container-voitures');
+  if (containerVoitures) {
+    await chargerVoituresAccueil(containerVoitures);
+    chargerMedia('radios');
+    chargerAvis();
+  }
+});
+
+// -----------------------------------------------------------------------------
+// CONFIGURATION SITE / FEATURES
+// -----------------------------------------------------------------------------
+async function loadConfig() {
+  try {
+    const response = await fetch('site_config.json');
+    siteConfigGlobal = await response.json();
+
+    const headerName = document.getElementById('header-site-name');
+    const headerLogo = document.getElementById('header-logo');
+    const heroTitle = document.getElementById('hero-title');
+    const footerTitle = document.getElementById('footer-title');
+    const footerAddress = document.getElementById('footer-address');
+    const footerNif = document.getElementById('footer-nif');
+    const footerStat = document.getElementById('footer-stat');
+    const footerPhone = document.getElementById('footer-phone');
+    const callBtnLink = document.getElementById('call-btn-link');
+
+    if (headerName) headerName.innerText = siteConfigGlobal.header.siteName;
+    if (headerLogo) headerLogo.src = siteConfigGlobal.header.logoUrl;
+    if (heroTitle) heroTitle.innerText = siteConfigGlobal.header.siteName;
+    if (footerTitle) footerTitle.innerText = siteConfigGlobal.header.siteName;
+    if (footerAddress) footerAddress.innerText = siteConfigGlobal.footer.address;
+    if (footerNif) footerNif.innerText = siteConfigGlobal.footer.nif;
+    if (footerStat) footerStat.innerText = siteConfigGlobal.footer.stat;
+    if (footerPhone) footerPhone.innerText = siteConfigGlobal.contact.phoneDisplay;
+    if (callBtnLink) callBtnLink.href = `tel:${siteConfigGlobal.contact.phoneCall}`;
+
+    const socialsContainer = document.getElementById('footer-socials');
+    if (socialsContainer) {
+      socialsContainer.innerHTML = '';
+      const icons = { facebook: 'fab fa-facebook', instagram: 'fab fa-instagram', tiktok: 'fab fa-tiktok' };
+      Object.entries(siteConfigGlobal.footer.socials || {}).forEach(([network, url]) => {
+        if (!url) return;
+        socialsContainer.innerHTML += `
+          <a href="${url}" target="_blank" style="color:white; margin:0 10px; font-size:1.5rem;">
+            <i class="${icons[network] || 'fas fa-globe'}"></i>
+          </a>`;
+      });
+    }
+
+    const mapContainer = document.getElementById('footer-map');
+    if (mapContainer && siteConfigGlobal.footer.mapUrl) {
+      mapContainer.innerHTML = `
+        <iframe src="${siteConfigGlobal.footer.mapUrl}" width="100%" height="250" style="border:0; border-radius:10px;" allowfullscreen="" loading="lazy"></iframe>`;
+    }
+
+    const featuresContainer = document.getElementById('features-container-dynamic');
+    if (featuresContainer && Array.isArray(siteConfigGlobal.features)) {
+      featuresContainer.innerHTML = siteConfigGlobal.features.map((feat) => `
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="flip-card-inner">
+            <div class="flip-card-front">
+              <span class="feature-emoji">${feat.emoji}</span>
+              <h3>${feat.title}</h3>
+              <small>(Cliquez ici)</small>
+            </div>
+            <div class="flip-card-back">
+              <p>${feat.text}</p>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+  } catch (e) {
+    console.error('Erreur chargement config JSON', e);
+  }
+
+  try {
+    const respCond = await fetch('conditions.json');
+    const conditions = await respCond.json();
+    const container = document.getElementById('container-conditions-cards');
+    if (container) {
+      container.innerHTML = conditions.map((cond) => `
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="flip-card-inner">
+            <div class="flip-card-front">
+              <i class="${cond.icon}" style="font-size:2rem; margin-bottom:10px;"></i>
+              <h3>${cond.title}</h3>
+              <small>(Voir)</small>
+            </div>
+            <div class="flip-card-back">
+              <p>${cond.details}</p>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+  } catch (e) {
+    console.error('Erreur chargement conditions', e);
+  }
+
+  if (sb) {
+    const { data } = await sb.from('config_site').select('value').eq('key', 'calendar_visible').maybeSingle();
+    if (data) {
+      const isVisible = data.value === true || data.value === 'true';
+      const wrapper = document.getElementById('wrapper-calendrier-global');
+      if (wrapper) wrapper.style.display = isVisible ? 'block' : 'none';
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// PUBLICITÉS
+// -----------------------------------------------------------------------------
+async function chargerPublicites() {
+  const targets = {
+    home_top: document.getElementById('pub-home_top'),
+    home_bot: document.getElementById('pub-home_bot'),
+    flotte_top: document.getElementById('pub-flotte_top'),
+    flotte_bot: document.getElementById('pub-flotte_bot'),
+    media_top: document.getElementById('pub-media_top'),
+    media_bot: document.getElementById('pub-media_bot'),
+  };
+  Object.values(targets).forEach((ref) => {
+    if (ref) { ref.style.display = 'none'; ref.innerHTML = ''; }
+  });
+
+  const today = new Date().toISOString().split('T')[0];
+  const { data, error } = await sb
+    .from('publicites')
+    .select('*')
+    .eq('actif', true)
+    .lte('date_debut', today)
+    .gte('date_fin', today);
+
+  if (error) return console.error('Publicités', error);
+
+  (data || []).forEach((pub) => {
+    const block = targets[pub.emplacement];
+    if (!block) return;
+    const link = pub.lien_redirection || '#';
+    block.innerHTML = `
+      <a href="${link}" target="_blank" rel="noopener">
+        <img src="${pub.image_url}" alt="${pub.societe || 'Publicité'}">
+      </a>`;
+    block.style.display = 'block';
+  });
+}
+
+// -----------------------------------------------------------------------------
+// AFFICHAGE DES VOITURES
+// -----------------------------------------------------------------------------
+async function chargerVoituresAccueil(container) {
+  const { data: voitures, error } = await sb
+    .from('voitures')
+    .select('*')
+    .order('prix_base', { ascending: true });
+
+  if (error) {
+    container.innerHTML = '<p>Impossible de charger les voitures.</p>';
+    return;
+  }
+  if (!voitures?.length) {
+    container.innerHTML = '<p>Aucune voiture disponible pour le moment.</p>';
+    return;
+  }
+
+  container.innerHTML = voitures.map((v) => {
+    const places = v.places ? `<i class="fas fa-user-friends"></i> ${v.places} places` : '';
+    const carbu = v.carburant ? `<i class="fas fa-gas-pump"></i> ${v.carburant}` : '';
+    const desc = (v.description || '').trim();
+    const resume = desc ? `<p class="carte-desc">${desc.slice(0, 110)}${desc.length > 110 ? '…' : ''}</p>` : '';
+    const reservable = v.reservable !== false;
+
+    return `
+      <div class="carte-voiture">
+        <img src="${v.image_url}" alt="${v.nom}">
+        <h3>${v.nom}</h3>
+        <div style="padding:0 20px; color:#555; font-size:.9rem; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+          <span><i class="fas fa-cogs"></i> ${v.transmission || '-'}</span>
+          ${places ? `<span>${places}</span>` : ''}
+          ${carbu ? `<span>${carbu}</span>` : ''}
+        </div>
+        ${resume}
+        <p class="prix">${formatPrix(v.prix_base)} Ar / jour</p>
+        <button onclick='selectionnerVoiture("${v.id}", ${JSON.stringify(v.nom)}, ${v.prix_base}, ${JSON.stringify(v.ref_id || '')}, ${JSON.stringify(desc)}, ${reservable})'>
+          ${reservable ? 'Réserver' : 'Contacter'}
+        </button>
+      </div>`;
+  }).join('');
+}
+
+// -----------------------------------------------------------------------------
+// NAVIGATION SINGLE PAGE
+// -----------------------------------------------------------------------------
+function naviguerVers(pageId) {
+  document.querySelectorAll('.page-section').forEach((sec) => (sec.style.display = 'none'));
+  const section = document.getElementById(pageId);
+  if (section) section.style.display = 'block';
+  window.scrollTo(0, 0);
+  const nav = document.getElementById('nav-menu');
+  if (nav) nav.classList.remove('active');
+}
+
+// -----------------------------------------------------------------------------
+// SÉLECTION D'UNE VOITURE
+// -----------------------------------------------------------------------------
+function selectionnerVoiture(id, nom, prix, ref, description, isReservable) {
+  if (!isReservable) {
+    document.getElementById('contact-car-name').innerText = nom;
+    if (siteConfigGlobal?.contact) {
+      document.getElementById('btn-modal-call').href = `tel:${siteConfigGlobal.contact.phoneCall}`;
+      document.getElementById('btn-modal-wa').href = `https://wa.me/${siteConfigGlobal.contact.whatsapp}?text=${encodeURIComponent(`Bonjour, je suis intéressé par ${nom}`)}`;
+      document.getElementById('txt-modal-phone').innerText = siteConfigGlobal.contact.phoneDisplay;
+    }
+    document.getElementById('modal-contact-only').style.display = 'flex';
+    return;
+  }
+
+  voitureSelectionnee = { id, nom, prix, ref };
+  naviguerVers('reservation');
+  document.getElementById('nom-voiture-selectionnee').innerText = nom;
+  document.getElementById('desc-voiture-selectionnee').innerText = description || '';
+  document.getElementById('id-voiture-input').value = id;
+  document.getElementById('ref-voiture-input').value = ref;
+  document.getElementById('prix-base-input').value = prix;
+
+  ['date-debut','date-fin','lieu-livraison','heure-livraison','lieu-recuperation','heure-recuperation','trajet-1','trajet-2','trajet-3'].forEach((field) => {
+    document.getElementById(field).value = '';
+  });
+
+  document.getElementById('step-1-actions').style.display = 'block';
+  document.getElementById('step-2-paiement').style.display = 'none';
+  document.getElementById('step-3-download').style.display = 'none';
+
+  initCalendar(id);
+}
+
+// -----------------------------------------------------------------------------
+// CALENDRIER
+// -----------------------------------------------------------------------------
+async function initCalendar(idVoiture) {
+  const calendarEl = document.getElementById('calendrier-dispo');
+  if (calendarInstance) calendarInstance.destroy();
+
+  const { data: resas } = await sb
+    .from('reservations')
+    .select('id, date_debut, date_fin')
+    .eq('id_voiture', idVoiture)
+    .eq('statut', 'valide');
+
+  const { data: maints } = await sb
+    .from('maintenances')
+    .select('date_debut, date_fin')
+    .eq('id_voiture', idVoiture);
+
+  currentCarReservations = [];
+  const events = [];
+
+  (resas || []).forEach((r) => {
+    currentCarReservations.push({ start: new Date(r.date_debut), end: new Date(r.date_fin) });
+    const end = new Date(r.date_fin); end.setDate(end.getDate() + 1);
+    events.push({ title: 'Loué', start: r.date_debut, end: end.toISOString().split('T')[0], display: 'background', color: genererCouleur(r.id) });
+  });
+  (maints || []).forEach((m) => {
+    currentCarReservations.push({ start: new Date(m.date_debut), end: new Date(m.date_fin) });
+    const end = new Date(m.date_fin); end.setDate(end.getDate() + 1);
+    events.push({ title: 'Entretien', start: m.date_debut, end: end.toISOString().split('T')[0], display: 'background', color: '#c0392b' });
+  });
+
+  calendarInstance = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    locale: 'fr',
+    height: 'auto',
+    events,
+    headerToolbar: { left: 'prev,next', center: 'title', right: '' },
+    dateClick(info) {
+      const dDebut = document.getElementById('date-debut');
+      const dFin = document.getElementById('date-fin');
+      if (!dDebut.value || new Date(info.dateStr) < new Date(dDebut.value)) {
+        dDebut.value = info.dateStr;
+        dFin.value = '';
+      } else {
+        dFin.value = info.dateStr;
+      }
+      calculerPrix();
+    },
+  });
+  calendarInstance.render();
+}
+
+function toggleCalendarVisibility() {
+  const el = document.getElementById('wrapper-calendrier');
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (el.style.display === 'block' && calendarInstance) calendarInstance.render();
+}
+
+function verifierDisponibilite(debut, fin) {
+  const d1 = new Date(debut);
+  const d2 = new Date(fin);
+  return currentCarReservations.every(({ start, end }) => d2 < start || d1 > end);
+}
+
+// -----------------------------------------------------------------------------
+// CALCULS FINANCIERS / PROMO
+// -----------------------------------------------------------------------------
+function faireLeCalculMathematique() {
+  const prixBase = parseInt(document.getElementById('prix-base-input').value, 10);
+  const d1 = document.getElementById('date-debut').value;
+  const d2 = document.getElementById('date-fin').value;
+  if (!prixBase || !d1 || !d2) return { ok: false };
+
+  const start = new Date(d1);
+  const end = new Date(d2);
+  if (end < start) return { ok: false };
+
+  const diffDays = Math.ceil((end - start) / 86400000) + 1;
+  const radioOffre = document.querySelector('input[name="offre"]:checked');
+  let formule = 'jour';
+  let multiplier = 1;
+  if (radioOffre) {
+    formule = radioOffre.value;
+    if (formule === 'nuit') multiplier = 1.5;
+    if (formule === '24h') multiplier = 2;
+  }
+
+  let cout = diffDays * prixBase * multiplier;
+  if (diffDays >= 30) cout *= 0.85;
+  else if (diffDays >= 7) cout *= 0.9;
+  if (reductionActive > 0) cout *= 1 - reductionActive / 100;
+
+  let options = 0;
+  if (document.getElementById('opt-livraison').checked) options += 15000;
+  if (document.getElementById('opt-recuperation').checked) options += 15000;
+
+  const total = Math.round(cout + options);
+  return {
+    ok: true,
+    total,
+    acompte: Math.round(total * 0.5),
+    offre: formule,
+    duree: diffDays,
+  };
+}
+
+function calculerPrix() {
+  const res = faireLeCalculMathematique();
+  if (!res.ok) return;
+  document.getElementById('prix-total').innerText = formatPrix(res.total);
+  document.getElementById('prix-acompte').innerText = formatPrix(res.acompte);
+  document.getElementById('txt-jours').innerText = res.duree;
+  document.getElementById('txt-formule').innerText = res.offre.toUpperCase();
+}
+
+async function verifierPromo() {
+  const code = document.getElementById('code-promo').value.trim().toUpperCase();
+  const msg = document.getElementById('msg-promo');
+  const d1 = document.getElementById('date-debut').value;
+  const d2 = document.getElementById('date-fin').value;
+
+  if (!d1 || !d2) {
+    msg.innerText = '⚠️ Sélectionnez vos dates.';
+    msg.style.color = 'orange';
+    return;
+  }
+
+  const { data, error } = await sb.from('codes_promo').select('*').eq('code', code).eq('actif', true).maybeSingle();
+  if (error || !data) {
+    reductionActive = 0;
+    msg.innerText = '❌ Code invalide ou expiré.';
+    msg.style.color = 'red';
+  } else {
+    reductionActive = data.reduction_pourcent;
+    msg.innerText = `✅ Réduction ${reductionActive}% appliquée`;
+    msg.style.color = 'green';
+  }
+  calculerPrix();
+}
+
+// -----------------------------------------------------------------------------
+// RÉSERVATION CLIENT
+// -----------------------------------------------------------------------------
+async function lancerReservationWhatsApp() {
+  if (!document.getElementById('check-conditions-step1').checked) {
+    alert('Veuillez accepter les conditions.');
+    return;
+  }
+
+  const client = {
+    nom: document.getElementById('loueur-nom').value.trim(),
+    prenom: document.getElementById('loueur-prenom').value.trim(),
+    tel: document.getElementById('loueur-tel').value.trim(),
+    adresse: document.getElementById('loueur-adresse').value.trim(),
+    cin: document.getElementById('loueur-cin').value.trim(),
+  };
+  if (!client.nom || !client.tel || !client.cin) {
+    alert('Nom, Téléphone et CIN sont obligatoires.');
+    return;
+  }
+
+  const calcul = faireLeCalculMathematique();
+  if (!calcul.ok) {
+    alert('Dates invalides ou prix manquant.');
+    return;
+  }
+
+  const d1 = document.getElementById('date-debut').value;
+  const d2 = document.getElementById('date-fin').value;
+  if (!verifierDisponibilite(d1, d2)) {
+    alert('❌ Ces dates ne sont plus disponibles.');
+    return;
+  }
+
+  const livraison = {
+    lieu: document.getElementById('lieu-livraison').value.trim(),
+    heure: document.getElementById('heure-livraison').value.trim(),
+  };
+  const recuperation = {
+    lieu: document.getElementById('lieu-recuperation').value.trim(),
+    heure: document.getElementById('heure-recuperation').value.trim(),
+  };
+  const trajet = [document.getElementById('trajet-1').value, document.getElementById('trajet-2').value, document.getElementById('trajet-3').value]
+    .filter(Boolean)
+    .join(' -> ');
+
+  const reservationData = {
+    id_voiture: document.getElementById('id-voiture-input').value,
+    date_debut: d1,
+    date_fin: d2,
+    nom: client.nom,
+    prenom: client.prenom,
+    adresse: client.adresse,
+    tel: client.tel,
+    cin_passeport: client.cin,
+    urgence_nom: document.getElementById('urgence-nom').value.trim(),
+    urgence_adresse: document.getElementById('urgence-adresse').value.trim(),
+    urgence_tel: document.getElementById('urgence-tel').value.trim(),
+    type_offre: calcul.offre,
+    montant_total: calcul.total,
+    statut: 'en_attente',
+    lieu_livraison: livraison.lieu,
+    heure_livraison: livraison.heure,
+    lieu_recuperation: recuperation.lieu,
+    heure_recuperation: recuperation.heure,
+    trajet_details: trajet,
+  };
+
+  await sb.from('clients').upsert(
+    { nom: client.nom, tel: client.tel, adresse: client.adresse },
+    { onConflict: 'tel' }
+  );
+
+  const { data, error } = await sb.from('reservations').insert([reservationData]).select();
+  if (error || !data?.length) {
+    alert(`Erreur réservation : ${error?.message || 'inconnue'}`);
+    return;
+  }
+
+  currentReservationId = data[0].id;
+  window.currentResaData = data[0];
+
+  const waNumber = siteConfigGlobal?.contact?.whatsapp || '261388552432';
+  let msg = `Bonjour, réservation *${document.getElementById('nom-voiture-selectionnee').innerText}* (#${currentReservationId}).\n`;
+  msg += `📅 ${d1} au ${d2}\n`;
+  msg += `🚗 Livraison: ${livraison.lieu || 'Agence'} (${livraison.heure || '-'})\n`;
+  msg += `↩️ Retour: ${recuperation.lieu || 'Agence'} (${recuperation.heure || '-'})\n`;
+  msg += `🛣️ Trajet: ${trajet || 'Local'}\n`;
+  msg += `💰 Total: ${formatPrix(calcul.total)} Ar\n👤 ${client.nom} ${client.prenom || ''}\n📞 ${client.tel}`;
+
+  window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+
+  document.getElementById('step-1-actions').style.display = 'none';
+  document.getElementById('step-2-paiement').style.display = 'block';
+
+  setTimeout(() => document.getElementById('step-2-paiement').scrollIntoView({ behavior: 'smooth' }), 500);
+}
+
+// -----------------------------------------------------------------------------
+// PAIEMENT / OTP / PDF (début)
+// -----------------------------------------------------------------------------
+function togglePaymentFields() {
+  const method = document.getElementById('pay-method').value;
+  document.getElementById('fields-mvola').style.display = method === 'mvola' ? 'block' : 'none';
+  document.getElementById('fields-espece').style.display = method === 'espece' ? 'block' : 'none';
+  document.getElementById('fields-montant').style.display = method ? 'block' : 'none';
+}
+function toggleAutreMontant() {
+  const choix = document.getElementById('pay-choix-montant').value;
+  document.getElementById('field-autre-мontant').style.display = choix === 'autre' ? 'block' : 'none';
+}
+
+async function envoyerInfosPaiement() {
+  if (!currentReservationId) return;
+  const method = document.getElementById('pay-method').value;
+  const payInfos = {
+    methode: method,
+    titulaire: method === 'mvola' ? document.getElementById('pay-mvola-nom').value.trim() : document.getElementById('pay-cash-nom').value.trim(),
+    numero: method === 'mvola' ? document.getElementById
+('pay-mvola-num').value.trim() : '',
+    ref: method === 'mvola' ? document.getElementById('pay-mvola-ref').value.trim() : '',
+    type_montant: document.getElementById('pay-choix-montant').value,
+  };
+
+  let montantDeclare = payInfos.type_montant === '50'
+    ? window.currentResaData.montant_total / 2
+    : window.currentResaData.montant_total;
+
+  if (payInfos.type_montant === 'autre') {
+    montantDeclare = parseFloat(document.getElementById('pay-valeur-autre').value) || 0;
+  }
+
+  await sb.from('reservations')
+    .update({
+      paiement_methode: payInfos.methode,
+      paiement_titulaire: payInfos.titulaire,
+      paiement_numero: payInfos.numero,
+      paiement_ref: payInfos.ref,
+      paiement_montant_declare: montantDeclare,
+    })
+    .eq('id', currentReservationId);
+
+  window.currentResaData.paiement_montant_declare = montantDeclare;
+  window.currentResaData.paiement_titulaire = payInfos.titulaire;
+
+  document.getElementById('step-2-paiement').style.display = 'none';
+  document.getElementById('step-3-download').style.display = 'block';
+
+  sb.channel(`suivi-resa-${currentReservationId}`)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'reservations', filter: `id=eq.${currentReservationId}` }, (payload) => {
+      if (payload.new?.code_otp) activerBoutonDownload(payload.new.code_otp);
+    })
+    .subscribe();
+}
+
+function activerBoutonDownload(code) {
+  document.getElementById('input-otp-auto').value = code;
+  const btn = document.getElementById('btn-dl-pdf');
+  btn.disabled = false;
+  btn.classList.add('btn-pdf-active');
+  if (window.currentResaData) window.currentResaData.code_otp = code;
+}
+
+function telechargerFactureAuto() {
+  if (window.currentResaData) genererPDF(window.currentResaData);
+}
+
+function genererPDF(resa) {
+  if (!window.jspdf) return alert('Bibliothèque PDF non chargée');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFillColor(44, 62, 80);
+  doc.rect(0, 0, 210, 40, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(22);
+  doc.text(siteConfigGlobal?.header?.siteName || 'Rent Car Services', 105, 15, { align: 'center' });
+  doc.setFontSize(10);
+  doc.text(siteConfigGlobal?.footer?.address || 'Antananarivo', 105, 25, { align: 'center' });
+  doc.text(`Tel: ${siteConfigGlobal?.contact?.phoneDisplay || '+261 38 85 524 32'}`, 105, 32, { align: 'center' });
+
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
+  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 196, 50, { align: 'right' });
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`FACTURE / REÇU N° ${resa.id}`, 15, 60);
+
+  const d1 = new Date(resa.date_debut);
+  const d2 = new Date(resa.date_fin);
+  const duree = Math.ceil((d2 - d1) / 86400000) + 1;
+
+  const clientInfo = [
+    `Nom: ${resa.nom} ${resa.prenom || ''}`,
+    `Tél: ${resa.tel}`,
+    `Adresse: ${resa.adresse || '-'}`,
+    `CIN: ${resa.cin_passeport || '-'}`,
+    `Urgence: ${resa.urgence_nom || '-'} (${resa.urgence_tel || '-'})`,
+  ].join('\n');
+
+  const locInfo = [
+    `Du ${resa.date_debut} au ${resa.date_fin} (${duree} j)`,
+    `Livraison: ${resa.lieu_livraison || 'Agence'} (${resa.heure_livraison || '-'})`,
+    `Retour: ${resa.lieu_recuperation || 'Agence'} (${resa.heure_recuperation || '-'})`,
+    `Trajet: ${resa.trajet_details || 'Non précisé'}`,
+  ].join('\n');
+
+  const paye = parseFloat(resa.paiement_montant_declare) || 0;
+  const total = parseFloat(resa.montant_total) || 0;
+  const payInfo = [
+    `Total: ${formatPrix(total)} Ar`,
+    `Payé: ${formatPrix(paye)} Ar`,
+    `Reste: ${formatPrix(total - paye)} Ar`,
+    `Payeur: ${resa.paiement_titulaire || '-'}`,
+  ].join('\n');
+
+  doc.autoTable({
+    startY: 72,
+    head: [['CLIENT', 'DÉTAILS LOCATION', 'FINANCIER']],
+    body: [[clientInfo, locInfo, payInfo]],
+    theme: 'grid',
+    headStyles: { fillColor: [52, 152, 219], halign: 'center' },
+    styles: { fontSize: 9, cellPadding: 4, valign: 'top' },
+  });
+
+  if (resa.code_otp) {
+    doc.setTextColor(39, 174, 96);
+    doc.text(`Validé - OTP: ${resa.code_otp}`, 15, doc.lastAutoTable.finalY + 10);
+  }
+
+  doc.save(`Facture_${resa.id}.pdf`);
+}
+
+// -----------------------------------------------------------------------------
+// AVIS & CONTACT
+// -----------------------------------------------------------------------------
+async function chargerAvis() {
+  const container = document.getElementById('liste-avis');
+  if (!container) return;
+  const { data, error } = await sb.from('avis').select('*').eq('visible', true).order('created_at', { ascending: false }).limit(3);
+  if (error) {
+    console.error('Avis', error);
+    container.innerHTML = '<p>Impossible de charger les avis.</p>';
+    return;
+  }
+  if (!data?.length) {
+    container.innerHTML = '<p>Pas encore d’avis.</p>';
+    return;
+  }
+  container.innerHTML = data.map((a) => `
+    <div style="background:#f9f9f9; padding:10px; margin-bottom:5px; border-radius:8px;">
+      <strong>${'⭐'.repeat(a.note)} ${a.nom}</strong>
+      <p>${a.commentaire}</p>
+    </div>`).join('');
+}
+
+async function envoyerAvis() {
+  const nom = document.getElementById('avis-nom').value.trim();
+  const note = parseInt(document.getElementById('avis-note').value, 10);
+  const commentaire = document.getElementById('avis-commentaire').value.trim();
+  if (!nom || !commentaire) {
+    alert('Merci de remplir nom et avis.');
+    return;
+  }
+  const { error } = await sb.from('avis').insert([{ nom, note, commentaire, visible: false }]);
+  if (error) {
+    alert('Erreur envoi avis.');
+    return;
+  }
+  alert('Merci ! Votre avis sera publié après validation.');
+  document.getElementById('avis-nom').value = '';
+  document.getElementById('avis-commentaire').value = '';
+}
+
+function envoyerContactWhatsApp() {
+  const sujet = document.getElementById('contact-sujet').value;
+  const nom = document.getElementById('contact-nom').value.trim();
+  const msg = document.getElementById('contact-message').value.trim();
+  const waNumber = siteConfigGlobal?.contact?.whatsapp || '261388552432';
+  if (!msg) return alert('Merci de saisir un message.');
+
+  const texte = `[${sujet}] ${nom ? nom + ' - ' : ''}${msg}`;
+  window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(texte)}`, '_blank');
+}
+
+// -----------------------------------------------------------------------------
+// MÉDIAS (RADIOS / PLAYLISTS)
+// -----------------------------------------------------------------------------
+async function chargerMedia(type) {
+  const conteneur = document.getElementById('conteneur-media');
+  if (!conteneur) return;
+
+  const table = type === 'radios' ? 'radios' : 'playlists';
+  const { data, error } = await sb.from(table).select('*').eq('actif', true);
+  if (error) {
+    conteneur.innerHTML = '<p>Impossible de charger le contenu.</p>';
+    return;
+  }
+  if (!data?.length) {
+    conteneur.innerHTML = '<p>Aucun contenu disponible.</p>';
+    return;
+  }
+
+  conteneur.innerHTML = data.map((item) => {
+    if (type === 'radios') {
+      return `
+        <div class="carte-voiture" style="padding:15px; text-align:center;">
+          <img src="${item.image_url}" alt="${item.nom}" style="width:60px; height:60px; object-fit:contain; margin-bottom:10px;">
+          <h4>${item.nom}</h4>
+          <audio controls src="${item.url_flux}" style="width:100%; margin-top:10px;"></audio>
+        </div>`;
+    }
+    return `
+      <div class="carte-voiture" style="padding:0;">
+        <iframe src="${item.url_embed}" width="100%" height="220" style="border:0;" allow="autoplay"></iframe>
+        <div style="padding:15px;">
+          <strong>${item.titre}</strong><br>
+          <small>${item.plateforme}</small>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// -----------------------------------------------------------------------------
+// MODALES FRONT (conditions & contact direct)
+// -----------------------------------------------------------------------------
+function ouvrirModalConditions() {
+  document.getElementById('modal-conditions').style.display = 'flex';
+}
+function fermerModalConditions() {
+  document.getElementById('modal-conditions').style.display = 'none';
+}
+function fermerModalContactOnly() {
+  document.getElementById('modal-contact-only').style.display = 'none';
+}
