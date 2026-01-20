@@ -7,7 +7,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ROLE_SUPER_ADMIN = 'super_admin';
 const ROLE_PARTENAIRE = 'partenaire';
-const restrictedTabs = ['partenaires','promos','pubs','media','config'];
+const restrictedTabs = ['partenaires','promos','pubs','media'];
 
 let currentUser = null;
 let currentUserRole = ROLE_PARTENAIRE;
@@ -55,6 +55,7 @@ async function verifierSession() {
   appliquerInterfaceSelonRole();
   await chargerMaintenanceOptions();
   chargerConfigAdmin();
+  switchTab('dashboard');
   chargerDashboard();
 }
 
@@ -78,12 +79,14 @@ function appliquerInterfaceSelonRole() {
 }
 
 function switchTab(tab, evt) {
-  const views = ['dashboard','reservations','maintenances','avis','pubs','media','promos','partenaires','config'];
+  const views = ['dashboard','reservations','maintenances','avis','pubs','media','promos','partenaires'];
   views.forEach((v) => {
     const el = document.getElementById(`view-${v}`);
     if (el) el.style.display = v === tab ? 'block' : 'none';
   });
   document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.remove('active'));
+  const targetBtn = document.getElementById(`btn-tab-${tab}`);
+  if (targetBtn) targetBtn.classList.add('active');
   if (evt?.currentTarget) evt.currentTarget.classList.add('active');
 
   if (tab === 'reservations') { chargerVoituresPourSelect(); chargerTableReservations(); }
@@ -93,7 +96,7 @@ function switchTab(tab, evt) {
   if (tab === 'avis') chargerTableAvis();
   if (tab === 'pubs') chargerTablePubs();
   if (tab === 'media') chargerTableMedia();
-  if (tab === 'config') chargerConfigAdmin();
+  if (tab === 'dashboard') chargerDashboard();
 }
 
 // -----------------------------------------------------------------------------
@@ -184,6 +187,7 @@ function remplirSelectMaintenance() {
     });
   };
 }
+
 // -----------------------------------------------------------------------------
 // DASHBOARD VOITURES
 // -----------------------------------------------------------------------------
@@ -326,7 +330,7 @@ function ouvrirModalMaintenance(id, nom) {
   document.getElementById('modal-maintenance').style.display = 'flex';
   document.getElementById('maint-voiture-id').value = id;
   document.getElementById('maint-voiture-nom').innerText = nom || '-';
-  remplirSelectMaintenance(); // reset des selects
+  remplirSelectMaintenance();
   document.getElementById('maint-cout').value = '';
   document.getElementById('maint-debut').value = '';
   document.getElementById('maint-fin').value = '';
@@ -480,8 +484,7 @@ async function chargerTableReservations() {
         Total : ${formatPrix(resa.montant_total)} Ar<br>
         Payé : ${formatPrix(resa.paiement_montant_declare || 0)} Ar
       </td>
-      <td>${resa.code_otp ? `OTP ${resa.code_otp}` : (resa.statut || 'en_attente')}</td
-      >
+      <td>${resa.code_otp ? `OTP ${resa.code_otp}` : (resa.statut || 'en_attente')}</td>
       <td>
         <button class="btn-small btn-primaire" onclick="assignerOTP(${resa.id})">OTP</button>
         <button class="btn-small btn-sec" onclick="changerStatutResa(${resa.id})">Statut</button>
@@ -502,6 +505,7 @@ async function changerStatutResa(id) {
   await sb.from('reservations').update({ statut }).eq('id', id);
   chargerTableReservations();
 }
+
 // -----------------------------------------------------------------------------
 // AVIS AVEC SWITCH
 // -----------------------------------------------------------------------------
@@ -594,6 +598,7 @@ async function chargerTablePartenaires() {
 
 // -----------------------------------------------------------------------------
 // MAINTENANCES (TABLE)
+// -----------------------------------------------------------------------------
 async function chargerTableMaintenances() {
   const tbody = document.getElementById('tbody-maint-global');
   tbody.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
@@ -827,5 +832,3 @@ function fermerModal(id) {
 
 // Lancement
 verifierSession();
-
-
