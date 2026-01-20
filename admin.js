@@ -145,7 +145,7 @@ async function chargerDashboard() {
   const grid = document.getElementById('grid-voitures');
   grid.innerHTML = '<p>Chargement…</p>';
 
-  let query = sb.from('voitures').select('*').order('created_at', { ascending: false });
+  let query = sb.from('voitures').select('*').order('nom', { ascending: true });
   if (currentUserRole !== ROLE_SUPER_ADMIN) query = query.eq('proprietaire_id', currentUser.id);
 
   const { data, error } = await query;
@@ -335,7 +335,15 @@ async function creerReservationAdmin() {
   if (error) alert(error.message);
   else {
     toggleNewResaForm();
-    chargerTableReservations();
+    chargerTableReservations(
+      <td>
+  ${r.paiement_methode || '-'}<br>
+  Payeur: ${r.paiement_titulaire || '-'}<br>
+  Réf: ${r.paiement_ref || '-'}<br>
+  Payé: ${formatPrix(r.paiement_montant_declare || 0)} Ar<br>
+  <strong style="color:${reste > 0 ? '#e74c3c' : '#27ae60'};">Reste: ${formatPrix(reste)} Ar</strong>
+</td>
+    );
   }
 }
 
@@ -692,3 +700,4 @@ function setPeriode(p) {
 
 // --- DÉMARRAGE ---
 verifierSession();
+
