@@ -7,29 +7,12 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ROLE_SUPER_ADMIN = 'super_admin';
 const ROLE_PARTENAIRE = 'partenaire';
-const restrictedTabs = ['partenaires', 'promos', 'pubs', 'media', 'config'];
+const restrictedTabs = ['partenaires','promos','pubs','media','config'];
 
 let currentUser = null;
 let currentUserRole = ROLE_PARTENAIRE;
 let globalVoitures = [];
 let periodeAnalyse = 'mois';
-
-// -----------------------------------------------------------------------------
-// HELPERS GÉNÉRAUX
-// -----------------------------------------------------------------------------
-function formatPrix(val) {
-  if (val === null || val === undefined) return '0';
-  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-}
-
-function formatDateHuman(dateStr) {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('fr-FR');
-}
-
-function formatDateISO(date = new Date()) {
-  return date.toISOString().split('T')[0];
-}
 
 // -----------------------------------------------------------------------------
 // AUTHENTIFICATION
@@ -44,9 +27,9 @@ async function loginAdmin() {
   if (error) {
     errorMsg.innerText = error.message;
     errorMsg.style.display = 'block';
-    return;
+  } else {
+    verifierSession();
   }
-  verifierSession();
 }
 
 async function logoutAdmin() {
@@ -72,6 +55,7 @@ async function verifierSession() {
   chargerConfigAdmin();
   chargerDashboard();
 }
+
 // -----------------------------------------------------------------------------
 // RÔLES & INTERFACE
 // -----------------------------------------------------------------------------
@@ -97,7 +81,6 @@ function switchTab(tab, evt) {
     const el = document.getElementById(`view-${v}`);
     if (el) el.style.display = v === tab ? 'block' : 'none';
   });
-
   document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.remove('active'));
   if (evt?.currentTarget) evt.currentTarget.classList.add('active');
 
@@ -110,9 +93,8 @@ function switchTab(tab, evt) {
   if (tab === 'media') chargerTableMedia();
   if (tab === 'config') chargerConfigAdmin();
 }
-
 // -----------------------------------------------------------------------------
-// CONFIGURATION (HEADER + CALENDRIER PUBLIC)
+// CONFIGURATION ADMIN
 // -----------------------------------------------------------------------------
 async function chargerConfigAdmin() {
   try {
@@ -151,6 +133,11 @@ async function toggleGlobalCalendar() {
 // -----------------------------------------------------------------------------
 // DASHBOARD VOITURES
 // -----------------------------------------------------------------------------
+function formatPrix(val) {
+  if (val === null || val === undefined) return '0';
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
 function resumeDescription(text) {
   if (!text) return '<em>Aucune description</em>';
   return text.length > 160 ? `${text.slice(0, 160)}…` : text;
@@ -278,15 +265,6 @@ async function ajouterVoiture() {
   }
 }
 
-function ouvrirModalProfil() {
-  document.getElementById('modal-profil').style.display = 'flex';
-}
-
-function setPeriode(p) {
-  periodeAnalyse = p;
-  document.getElementById('btn-periode-mois').classList.toggle('btn-primaire', p === 'mois');
-  document.getElementById('btn-periode-annee').classList.toggle('btn-primaire', p === 'annee');
-}
 // -----------------------------------------------------------------------------
 // RÉSERVATIONS
 // -----------------------------------------------------------------------------
@@ -382,9 +360,9 @@ async function chargerTableReservations() {
 
   tbody.innerHTML = data.map((resa) => `
     <tr>
-      <td>#${resa.id}<br><small>${formatDateHuman(resa.created_at)}</small></td>
+      <td>#${resa.id}<br><small>${new Date(resa.created_at).toLocaleDateString('fr-FR')}</small></td>
       <td>${resa.nom || '-'}<br><small>${resa.tel || ''}</small></td>
-      <td>${resa.voitures?.nom || '-'}<br><small>${formatDateHuman(resa.date_debut)} → ${formatDateHuman(resa.date_fin)}</small></td>
+      <td>${resa.voitures?.nom || '-'}<br><small>${resa.date_debut} → ${resa.date_fin}</small></td>
       <td>
         Livraison : ${resa.lieu_livraison || 'Agence'} (${resa.heure_livraison || '-'})<br>
         Retour : ${resa.lieu_recuperation || 'Agence'} (${resa.heure_recuperation || '-'})
@@ -414,7 +392,6 @@ async function changerStatutResa(id) {
   await sb.from('reservations').update({ statut }).eq('id', id);
   chargerTableReservations();
 }
-
 // -----------------------------------------------------------------------------
 // AVIS
 // -----------------------------------------------------------------------------
@@ -429,7 +406,7 @@ async function chargerTableAvis() {
   }
   tbody.innerHTML = (data || []).map((a) => `
     <tr>
-      <td>${formatDateHuman(a.created_at)}</td>
+      <td>${new Date(a.created_at).toLocaleDateString('fr-FR')}</td>
       <td>${a.nom}</td>
       <td>${a.note}/5</td>
       <td>${a.commentaire}</td>
@@ -442,6 +419,7 @@ async function toggleAvis(id, visible) {
   await sb.from('avis').update({ visible: !visible }).eq('id', id);
   chargerTableAvis();
 }
+
 // -----------------------------------------------------------------------------
 // PARTENAIRES
 // -----------------------------------------------------------------------------
@@ -449,7 +427,7 @@ function calculerFinContrat() {
   const duree = parseInt(document.getElementById('part-duree').value, 10) || 30;
   const fin = new Date();
   fin.setDate(fin.getDate() + duree);
-  document.getElementById('part-fin').value = formatDateISO(fin);
+  document.getElementById('part-fin').value = fin.toISOString().split('T')[0];
 }
 
 async function upsertPartenaire() {
@@ -458,7 +436,7 @@ async function upsertPartenaire() {
 
   const { data: partenaire } = await sb.from('partenaires').select('*').eq('email', email).maybeSingle();
   if (!partenaire) {
-    alert('Crée d’abord l’utilisateur dans Supabase Auth puis associe-le ici (enregistrez son email).');
+    alert('Crée d’abord l’utilisateur dans Supabase Auth puis associe-le ici.');
     return;
   }
 
@@ -491,7 +469,7 @@ async function chargerTablePartenaires() {
     <tr>
       <td>${p.nom_complet || '-'}</td>
       <td>${p.email}<br><small>${p.telephone || ''}</small></td>
-      <td>${p.date_fin_contrat ? formatDateHuman(p.date_fin_contrat) : '-'}</td>
+      <td>${p.date_fin_contrat ? new Date(p.date_fin_contrat).toLocaleDateString('fr-FR') : '-'}</td>
       <td>${p.commission_taux || 0}%</td>
       <td>${p.role}</td>
       <td>${p.est_gele ? 'Gelé' : 'Actif'}</td>
@@ -517,7 +495,7 @@ async function chargerTableMaintenances() {
 
   tbody.innerHTML = (data || []).map((m) => `
     <tr>
-      <td>${formatDateHuman(m.date_debut)} → ${formatDateHuman(m.date_fin)}</td>
+      <td>${new Date(m.date_debut).toLocaleDateString('fr-FR')} → ${new Date(m.date_fin).toLocaleDateString('fr-FR')}</td>
       <td>${m.voitures?.nom || '-'}</td>
       <td>${m.type_intervention || '-'}</td>
       <td>${m.details || '-'}</td>
@@ -525,7 +503,6 @@ async function chargerTableMaintenances() {
       <td>-</td>
     </tr>`).join('');
 }
-
 // -----------------------------------------------------------------------------
 // CODES PROMO
 // -----------------------------------------------------------------------------
@@ -564,7 +541,7 @@ async function chargerTablePromos() {
     <tr>
       <td>${p.code}</td>
       <td>${p.reduction_pourcent}%</td>
-      <td>${formatDateHuman(p.date_debut)} → ${formatDateHuman(p.date_fin)}</td>
+      <td>${p.date_debut} → ${p.date_fin}</td>
       <td>${p.min_jours} jour(s) min</td>
       <td>${p.actif ? 'Actif' : 'Inactif'}</td>
     </tr>`).join('');
@@ -579,7 +556,7 @@ function calculerFinPub() {
   const days = parseInt(document.getElementById('pub-duree').value, 10);
   const d = new Date(debut);
   d.setDate(d.getDate() + days);
-  document.getElementById('pub-fin').value = formatDateISO(d);
+  document.getElementById('pub-fin').value = d.toISOString().split('T')[0];
 }
 
 async function ajouterPub() {
@@ -611,7 +588,7 @@ async function chargerTablePubs() {
     <tr>
       <td>${p.societe}</td>
       <td>${p.emplacement}</td>
-      <td>${formatDateHuman(p.date_debut)} → ${formatDateHuman(p.date_fin)}</td>
+      <td>${p.date_debut || '-'} → ${p.date_fin || '-'}</td>
       <td><img src="${p.image_url}" alt="${p.societe}" style="width:60px; height:50px; object-fit:cover;"></td>
       <td>${p.actif ? 'Actif' : 'Inactif'}</td>
       <td>-</td>
@@ -619,7 +596,7 @@ async function chargerTablePubs() {
 }
 
 // -----------------------------------------------------------------------------
-// MÉDIAS (RADIOS / PLAYLISTS)
+// MÉDIAS
 // -----------------------------------------------------------------------------
 async function ajouterRadio() {
   const payload = {
@@ -670,7 +647,20 @@ async function chargerTableMedia() {
 }
 
 // -----------------------------------------------------------------------------
-// INITIALISATION
+// DIVERS & INITIALISATION
 // -----------------------------------------------------------------------------
-verifierSession();
+function ouvrirModalProfil() {
+  document.getElementById('modal-profil').style.display = 'flex';
+}
 
+function setPeriode(p) {
+  periodeAnalyse = p;
+  document.getElementById('btn-periode-mois').classList.toggle('btn-primaire', p === 'mois');
+  document.getElementById('btn-periode-annee').classList.toggle('btn-primaire', p === 'annee');
+}
+
+function fermerModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+verifierSession();
