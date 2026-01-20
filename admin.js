@@ -3,12 +3,10 @@ const SUPABASE_URL = 'https://ctijwjcjmbfmfhzwbguk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- CONSTANTES RÔLES / TABS ---
 const ROLE_SUPER_ADMIN = 'super_admin';
 const ROLE_PARTENAIRE = 'partenaire';
-const restrictedTabs = ['partenaires', 'promos', 'pubs', 'media', 'config'];
+const restrictedTabs = ['partenaires','promos','pubs','media','config'];
 
-// --- ÉTAT GLOBAL ---
 let currentUser = null;
 let currentUserRole = null;
 let globalVoitures = [];
@@ -54,21 +52,16 @@ async function verifierSession() {
   chargerDashboard();
 }
 
-// --- RÔLE & UI ---
+// --- RÔLE & INTERFACE ---
 async function chargerRoleUtilisateur(userId) {
   const { data, error } = await sb.from('partenaires').select('role').eq('user_id', userId).maybeSingle();
-  if (error) {
-    console.warn('Impossible de charger le rôle', error);
-    currentUserRole = ROLE_PARTENAIRE;
-  } else {
-    currentUserRole = data?.role || ROLE_PARTENAIRE;
-  }
+  currentUserRole = error ? ROLE_PARTENAIRE : (data?.role || ROLE_PARTENAire);
 }
 
 function appliquerInterfaceSelonRole() {
   const badge = document.getElementById('header-user-role');
   badge.innerText = currentUserRole === ROLE_SUPER_ADMIN ? 'SUPER ADMIN' : 'PARTENAIRE';
-  badge.style.background = currentUserRole === ROLE_SUPER_ADMIN ? '#27ae60' : '#7f8c8d';
+  badge.style.background = currentUserRole === ROLE_SUPER Admin ? '#27ae60' : '#7f8c8d';
 
   restrictedTabs.forEach((tab) => {
     const btn = document.getElementById(`btn-tab-${tab}`);
@@ -76,27 +69,26 @@ function appliquerInterfaceSelonRole() {
   });
 }
 
-function switchTab(tabName, evt) {
-  const sections = ['dashboard','reservations','maintenances','avis','pubs','media','promos','partenaires','config'];
-  sections.forEach((sec) => {
-    const elt = document.getElementById(`view-${sec}`);
-    if (elt) elt.style.display = sec === tabName ? 'block' : 'none';
+function switchTab(tab, evt) {
+  const views = ['dashboard','reservations','maintenances','avis','pubs','media','promos','partenaires','config'];
+  views.forEach((v) => {
+    const el = document.getElementById(`view-${v}`);
+    if (el) el.style.display = v === tab ? 'block' : 'none';
   });
-
   document.querySelectorAll('.tab-btn').forEach((btn) => btn.classList.remove('active'));
   if (evt?.currentTarget) evt.currentTarget.classList.add('active');
 
-  if (tabName === 'reservations') { chargerVoituresPourSelect(); chargerTableReservations(); }
-  if (tabName === 'maintenances') chargerTableMaintenances();
-  if (tabName === 'promos') chargerTablePromos();
-  if (tabName === 'partenaires') chargerTablePartenaires();
-  if (tabName === 'avis') chargerTableAvis();
-  if (tabName === 'pubs') chargerTablePubs();
-  if (tabName === 'media') chargerTableMedia();
-  if (tabName === 'config') chargerConfigAdmin();
+  if (tab === 'reservations') { chargerVoituresPourSelect(); chargerTableReservations(); }
+  if (tab === 'maintenances') chargerTableMaintenances();
+  if (tab === 'promos') chargerTablePromos();
+  if (tab === 'partenaires') chargerTablePartenaires();
+  if (tab === 'avis') chargerTableAvis();
+  if (tab === 'pubs') chargerTablePubs();
+  if (tab === 'media') chargerTableMedia();
+  if (tab === 'config') chargerConfigAdmin();
 }
 
-// --- CONFIG ---
+// --- CONFIGURATION GÉNÉRALE ---
 async function chargerConfigAdmin() {
   try {
     const response = await fetch('site_config.json');
@@ -118,16 +110,15 @@ async function chargerConfigAdmin() {
 
 async function toggleGlobalCalendar() {
   if (currentUserRole !== ROLE_SUPER_ADMIN) {
-    alert('Action réservée au super admin.');
+    alert('Action réservée au Super Admin.');
     document.getElementById('toggle-calendar-global').checked = !document.getElementById('toggle-calendar-global').checked;
     return;
   }
   const toggle = document.getElementById('toggle-calendar-global');
   const visible = toggle.checked;
   await sb.from('config_site').upsert({ key: 'calendar_visible', value: visible });
-  const label = document.getElementById('status-calendar-text');
-  label.innerText = visible ? 'VISIBLE' : 'MASQUÉ';
-  label.style.color = visible ? '#27ae60' : '#e74c3c';
+  document.getElementById('status-calendar-text').innerText = visible ? 'VISIBLE' : 'MASQUÉ';
+  document.getElementById('status-calendar-text').style.color = visible ? '#27ae60' : '#e74c3c';
 }
 
 // --- DASHBOARD VOITURES ---
@@ -145,7 +136,7 @@ async function chargerDashboard() {
   const grid = document.getElementById('grid-voitures');
   grid.innerHTML = '<p>Chargement…</p>';
 
-  let query = sb.from('voitures').select('*').order('nom', { ascending: true });
+  let query = sb.from('voitures').select('*');
   if (currentUserRole !== ROLE_SUPER_ADMIN) query = query.eq('proprietaire_id', currentUser.id);
 
   const { data, error } = await query;
@@ -179,10 +170,6 @@ async function chargerDashboard() {
         <span><i class="fas fa-money-bill"></i> ${formatPrix(voiture.prix_base)} Ar/j</span>
       </div>
       <div class="description">${resumeDescription(voiture.description)}</div>
-      <div class="stats">
-        <span>Type: ${voiture.type || '-'}</span>
-        <span>Vidange: ${voiture.prochaine_vidange || '-'}</span>
-      </div>
       <div class="actions">
         <button class="btn-action btn-primaire" onclick="toggleReservable('${voiture.id}', ${isReservable})">
           ${isReservable ? 'Désactiver' : 'Activer'}
@@ -201,7 +188,6 @@ async function toggleReservable(id, currentVal) {
   else chargerDashboard();
 }
 
-// --- MODALE VOITURE ---
 function ouvrirModalVoiture(id = null) {
   document.getElementById('modal-voiture').style.display = 'flex';
   document.getElementById('modal-voiture').dataset.editId = id || '';
@@ -265,7 +251,7 @@ async function ajouterVoiture() {
   }
 }
 
-// --- TABLEAU RÉSERVATIONS ---
+// --- RÉSERVATIONS ---
 function toggleNewResaForm() {
   const form = document.getElementById('form-new-resa');
   form.style.display = form.style.display === 'none' ? 'block' : 'none';
@@ -335,15 +321,7 @@ async function creerReservationAdmin() {
   if (error) alert(error.message);
   else {
     toggleNewResaForm();
-    chargerTableReservations(
-      <td>
-  ${r.paiement_methode || '-'}<br>
-  Payeur: ${r.paiement_titulaire || '-'}<br>
-  Réf: ${r.paiement_ref || '-'}<br>
-  Payé: ${formatPrix(r.paiement_montant_declare || 0)} Ar<br>
-  <strong style="color:${reste > 0 ? '#e74c3c' : '#27ae60'};">Reste: ${formatPrix(reste)} Ar</strong>
-</td>
-    );
+    chargerTableReservations();
   }
 }
 
@@ -365,193 +343,7 @@ async function chargerTableReservations() {
   }
 
   tbody.innerHTML = '';
-  data.forEach((resa) => {
-    const reste = (resa.montant_total || 0) - (resa.paiement_montant_declare || 0);
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>#${resa.id}</td>
-      <td>${resa.nom || '-'}<br><small>${resa.tel || ''}</small></td>
-      <td>${resa.voitures?.nom || '-'}<br><small>${resa.date_debut} → ${resa.date_fin}</small></td>
-      <td>
-        Livraison: ${resa.lieu_livraison || '-'} (${resa.heure_livraison || '-'})<br>
-        Retour: ${resa.lieu_recuperation || '-'} (${resa.heure_recuperation || '-'})<br>
-        Trajet: ${resa.trajet_details || '-'}
-      </td>
-      <td>
-        ${resa.paiement_methode || '-'}<br>
-        Payé: ${formatPrix(resa.paiement_montant_declare || 0)} Ar<br>
-        <strong style="color:${reste > 0 ? '#e74c3c' : '#27ae60'};">Reste: ${formatPrix(reste)} Ar</strong>
-      </td>
-      <td>
-        OTP: <strong>${resa.code_otp || '-'}</strong><br>
-        <select onchange="updateStatutResa('${resa.id}', this.value)">
-          <option value="en_attente" ${resa.statut === 'en_attente' ? 'selected' : ''}>En attente</option>
-          <option value="valide" ${resa.statut === 'valide' ? 'selected' : ''}>Validé</option>
-          <option value="annulee" ${resa.statut === 'annulee' ? 'selected' : ''}>Annulé</option>
-        </select>
-      </td>
-      <td>
-        <button class="btn-action btn-primaire" onclick="genererOTP('${resa.id}')">OTP</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-async function updateStatutResa(id, statut) {
-  await sb.from('reservations').update({ statut }).eq('id', id);
-}
-
-async function genererOTP(id) {
-  const code = Math.floor(1000 + Math.random() * 9000);
-  const { error } = await sb.from('reservations').update({ code_otp: code, statut: 'valide' }).eq('id', id);
-  if (error) alert(error.message);
-  else {
-    alert(`OTP ${code} généré`);
-    chargerTableReservations();
-  }
-}
-
-// --- MAINTENANCES ---
-async function chargerTableMaintenances() {
-  const tbody = document.getElementById('tbody-maint-global');
-  tbody.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
-
-  let query = sb
-    .from('maintenances')
-    .select('*, voitures!inner(id, nom, proprietaire_id)')
-    .order('date_debut', { ascending: false });
-
-  if (currentUserRole !== ROLE_SUPER_ADMIN) {
-    query = query.eq('voitures.proprietaire_id', currentUser.id);
-  }
-
-  const { data, error } = await query;
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan="6">Erreur: ${error.message}</td></tr>`;
-    return;
-  }
-  if (!data?.length) {
-    tbody.innerHTML = '<tr><td colspan="6">Aucune maintenance.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data
-    .map(
-      (m) => `
-        <tr>
-          <td>${m.date_debut}</td>
-          <td>${m.voitures?.nom || '-'}</td>
-          <td>${m.type_intervention || '-'}</td>
-          <td>${m.details || '-'}</td>
-          <td>${formatPrix(m.cout || 0)} Ar</td>
-          <td>-</td>
-        </tr>`
-    )
-    .join('');
-}
-
-// --- PARTENAIRES ---
-async function chargerTablePartenaires() {
-  if (currentUserRole !== ROLE_SUPER_ADMIN) {
-    document.getElementById('tbody-partenaires').innerHTML = '<tr><td colspan="6">Section réservée.</td></tr>';
-    return;
-  }
-  const tbody = document.getElementById('tbody-partenaires');
-  tbody.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
-
-  const { data, error } = await sb.from('partenaires').select('*').order('created_at', { ascending: false });
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan="6">Erreur: ${error.message}</td></tr>`;
-    return;
-  }
-  if (!data?.length) {
-    tbody.innerHTML = '<tr><td colspan="6">Aucun partenaire.</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = data
-    .map(
-      (p) => `
-        <tr>
-          <td>${p.nom_complet}</td>
-          <td>${p.email}<br>${p.telephone || '-'}</td>
-          <td>${p.date_fin_contrat || '-'}</td>
-          <td>${p.commission_taux || 0}%</td>
-          <td>${p.est_gele ? 'Gelé' : 'Actif'}</td>
-          <td>-</td>
-        </tr>`
-    )
-    .join('');
-}
-
-function calculerFinContrat() {
-  const days = parseInt(document.getElementById('part-duree').value, 10);
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  document.getElementById('part-fin').value = d.toISOString().split('T')[0];
-}
-
-async function upsertPartenaire() {
-  if (currentUserRole !== ROLE_SUPER_ADMIN) return;
-  const payload = {
-    email: document.getElementById('part-email').value,
-    nom_complet: `${document.getElementById('part-nom').value} ${document.getElementById('part-prenom').value}`.trim(),
-    telephone: document.getElementById('part-tel').value,
-    date_fin_contrat: document.getElementById('part-fin').value,
-    commission_taux: document.getElementById('part-royalties').value,
-    role: ROLE_PARTENAIRE,
-  };
-  if (!payload.email) {
-    alert('Email requis');
-    return;
-  }
-  const { error } = await sb.from('partenaires').insert([payload]);
-  if (error) alert(error.message);
-  else chargerTablePartenaires();
-}
-
-// --- CODES PROMO ---
-async function chargerTablePromos() {
-  const tbody = document.getElementById('tbody-promos');
-  tbody.innerHTML = '<tr><td colspan="5">Chargement…</td></tr>';
-
-  const { data, error } = await sb.from('codes_promo').select('*').order('date_debut', { ascending: true });
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan="5">Erreur: ${error.message}</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = (data || [])
-    .map(
-      (p) => `
-        <tr>
-          <td>${p.code}</td>
-          <td>${p.reduction_pourcent}%</td>
-          <td>${p.date_debut} → ${p.date_fin}</td>
-          <td>${p.min_jours} jours min.</td>
-          <td>${p.actif ? 'Actif' : 'Inactif'}</td>
-        </tr>`
-    )
-    .join('');
-}
-
-async function ajouterPromo() {
-  const payload = {
-    code: document.getElementById('promo-code').value.trim().toUpperCase(),
-    reduction_pourcent: parseInt(document.getElementById('promo-pourcent').value, 10) || 0,
-    min_jours: parseInt(document.getElementById('promo-jours').value, 10) || 1,
-    date_debut: document.getElementById('promo-debut').value,
-    date_fin: document.getElementById('promo-fin').value,
-    actif: true,
-  };
-  if (!payload.code) {
-    alert('Code requis');
-    return;
-  }
-  const { error } = await sb.from('codes_promo').insert([payload]);
-  if (error) alert(error.message);
-  else chargerTablePromos();
-}
-
-// --- AVIS ---
+  data.forခြ
 async function chargerTableAvis() {
   const tbody = document.getElementById('tbody-avis');
   tbody.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
@@ -561,19 +353,15 @@ async function chargerTableAvis() {
     tbody.innerHTML = `<tr><td colspan="6">Erreur: ${error.message}</td></tr>`;
     return;
   }
-  tbody.innerHTML = (data || [])
-    .map(
-      (a) => `
-        <tr>
-          <td>${new Date(a.created_at).toLocaleDateString('fr-FR')}</td>
-          <td>${a.nom}</td>
-          <td>${a.note}/5</td>
-          <td>${a.commentaire}</td>
-          <td>${a.visible ? 'Visible' : 'Masqué'}</td>
-          <td><button class="btn-action btn-sec" onclick="toggleAvis(${a.id}, ${a.visible})">Basculer</button></td>
-        </tr>`
-    )
-    .join('');
+  tbody.innerHTML = (data || []).map((a) => `
+    <tr>
+      <td>${new Date(a.created_at).toLocaleDateString('fr-FR')}</td>
+      <td>${a.nom}</td>
+      <td>${a.note}/5</td>
+      <td>${a.commentaire}</td>
+      <td>${a.visible ? 'Visible' : 'Masqué'}</td>
+      <td><button class="btn-action btn-sec" onclick="toggleAvis(${a.id}, ${a.visible})">Basculer</button></td>
+    </tr>`).join('');
 }
 
 async function toggleAvis(id, visible) {
@@ -616,22 +404,18 @@ async function chargerTablePubs() {
     tbody.innerHTML = `<tr><td colspan="6">Erreur: ${error.message}</td></tr>`;
     return;
   }
-  tbody.innerHTML = (data || [])
-    .map(
-      (p) => `
-        <tr>
-          <td>${p.societe}</td>
-          <td>${p.emplacement}</td>
-          <td>${p.date_debut} → ${p.date_fin}</td>
-          <td><img src="${p.image_url}" alt="${p.societe}" style="width:60px; height:50px; object-fit:cover;"></td>
-          <td>${p.actif ? 'Actif' : 'Inactif'}</td>
-          <td>-</td>
-        </tr>`
-    )
-    .join('');
+  tbody.innerHTML = (data || []).map((p) => `
+    <tr>
+      <td>${p.societe}</td>
+      <td>${p.emplacement}</td>
+      <td>${p.date_debut || '-'} → ${p.date_fin || '-'}</td>
+      <td><img src="${p.image_url}" alt="${p.societe}" style="width:60px; height:50px; object-fit:cover;"></td>
+      <td>${p.actif ? 'Actif' : 'Inactif'}</td>
+      <td>-</td>
+    </tr>`).join('');
 }
 
-// --- MEDIA ---
+// --- MÉDIAS ---
 async function ajouterRadio() {
   const payload = {
     nom: document.getElementById('rad-nom').value,
@@ -657,47 +441,40 @@ async function ajouterPlaylist() {
 }
 
 async function chargerTableMedia() {
-  const tbRadios = document.getElementById('tbody-radios');
-  const { data: radios } = await sb.from('radios').select('*').order('created_at', { ascending: false });
-  tbRadios.innerHTML = (radios || [])
-    .map(
-      (r) => `
-        <tr>
-          <td><img src="${r.image_url}" style="width:40px;height:40px;object-fit:contain;"></td>
-          <td>${r.nom}</td>
-          <td>${r.url_flux}</td>
-          <td>${r.actif ? 'Actif' : 'Inactif'}</td>
-        </tr>`
-    )
-    .join('');
+  const tbodyRadios = document.getElementById('tbody-radios');
+  tbodyRadios.innerHTML = '<tr><td colspan="4">Chargement…</td></tr>';
+  const radios = await sb.from('radios').select('*');
+  tbodyRadios.innerHTML = (radios.data || []).map((r) => `
+    <tr>
+      <td><img src="${r.image_url}" style="width:40px;height:40px;object-fit:contain;"></td>
+      <td>${r.nom}</td>
+      <td>${r.url_flux}</td>
+      <td>${r.actif ? 'Actif' : 'Inactif'}</td>
+    </tr>`).join('');
 
-  const tbPlay = document.getElementById('tbody-playlists');
-  const { data: playlists } = await sb.from('playlists').select('*').order('created_at', { ascending: false });
-  tbPlay.innerHTML = (playlists || [])
-    .map(
-      (p) => `
-        <tr>
-          <td>${p.plateforme}</td>
-          <td>${p.titre}</td>
-          <td>${p.url_embed}</td>
-          <td>${p.actif ? 'Actif' : 'Inactif'}</td>
-        </tr>`
-    )
-    .join('');
+  const tbodyPlay = document.getElementById('tbody-playlists');
+  tbodyPlay.innerHTML = '<tr><td colspan="4">Chargement…</td></tr>';
+  const playlists = await sb.from('playlists').select('*');
+  tbodyPlay.innerHTML = (playlists.data || []).map((p) => `
+    <tr>
+      <td>${p.plateforme}</td>
+      <td>${p.titre}</td>
+      <td>${p.url_embed}</td>
+      <td>${p.actif ? 'Actif' : 'Inactif'}</td>
+    </tr>`).join('');
 }
 
-// --- PROFIL MODAL ---
+// --- PROFIL MODAL / PÉRIODE ---
 function ouvrirModalProfil() {
   document.getElementById('modal-profil').style.display = 'flex';
 }
 
-// --- ANALYTICS UI ---
 function setPeriode(p) {
   periodeAnalyse = p;
   document.getElementById('btn-periode-mois').classList.toggle('btn-primaire', p === 'mois');
   document.getElementById('btn-periode-annee').classList.toggle('btn-primaire', p === 'annee');
 }
 
-// --- DÉMARRAGE ---
+// --- INITIALISATION ---
 verifierSession();
 
