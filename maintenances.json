@@ -1,0 +1,185 @@
+{
+  "maintenanceCategories": [
+    {
+      "label": "Pneus",
+      "subcategories": [
+        {
+          "label": "Avant droite",
+          "motifs": ["Crevaison", "Remplacement pneu", "Jante HS", "Équilibrage", "Pression / valve"]
+        },
+        {
+          "label": "Avant gauche",
+          "motifs": ["Crevaison", "Remplacement pneu", "Jante HS", "Équilibrage", "Pression / valve"]
+        },
+        {
+          "label": "Arrière droite",
+          "motifs": ["Crevaison", "Remplacement pneu", "Jante HS", "Équilibrage", "Pression / valve"]
+        },
+        {
+          "label": "Arrière gauche",
+          "motifs": ["Crevaison", "Remplacement pneu", "Jante HS", "Équilibrage", "Pression / valve"]
+        },
+        {
+          "label": "Kit complet",
+          "motifs": ["Permutation saisonnière", "Alignement train avant/arrière", "Remplacement pneus avant", "Remplacement pneus arrière"]
+        }
+      ]
+    },
+    {
+      "label": "Freinage",
+      "subcategories": [
+        {
+          "label": "Disques + plaquettes",
+          "motifs": ["Usure plaquettes", "Disque voilé", "Remplacement complet"]
+        },
+        {
+          "label": "Liquide de frein",
+          "motifs": ["Purge", "Fuite circuit", "Remplacement périodique"]
+        },
+        {
+          "label": "ABS / capteurs",
+          "motifs": ["Capteur HS", "Témoin ABS allumé", "Câblage / calculateur"]
+        },
+        {
+          "label": "Frein à main",
+          "motifs": ["Réglage tension", "Câble usé", "Blocage"]
+        }
+      ]
+    },
+    {
+      "label": "Vidange & lubrification",
+      "subcategories": [
+        {
+          "label": "Moteur",
+          "motifs": ["Vidange + filtre huile", "Huile basse", "Fuite carter"]
+        },
+        {
+          "label": "Boîte / transmission",
+          "motifs": ["Vidange boîte auto", "Vidange boîte manuelle", "Huile pont / différentiel"]
+        },
+        {
+          "label": "Filtres",
+          "motifs": ["Filtre air moteur", "Filtre carburant", "Filtre habitacle"]
+        }
+      ]
+    },
+    {
+      "label": "Transmission / Direction",
+      "subcategories": [
+        {
+          "label": "Direction assistée",
+          "motifs": ["Pompe DA", "Fuite flexible", "Bruit colonne"]
+        },
+        {
+          "label": "Cardans & soufflets",
+          "motifs": ["Soufflet déchiré", "Cardan HS", "Jeu anormal"]
+        },
+        {
+          "label": "Embrayage",
+          "motifs": ["Patinage", "Butée HS", "Kit complet"]
+        },
+        {
+          "label": "Boîte automatique",
+          "motifs": ["Vidange ATF", "Passage rapports anormal", "Reprogrammation"]
+        }
+      ]
+    },
+    {
+      "label": "Électricité / Électronique",
+      "subcategories": [
+        {
+          "label": "Batterie & alimentation",
+          "motifs": ["Batterie HS", "Alternateur", "Démarreur"]
+        },
+        {
+          "label": "Éclairage",
+          "motifs": ["Optique avant", "Feux arrière", "Antibrouillard", "Réglage alignement"]
+        },
+        {
+          "label": "Capteurs / calculateur",
+          "motifs": ["Témoin moteur", "Capteur température", "Diagnostic OBD", "ECU"]
+        },
+        {
+          "label": "Confort / multimédia",
+          "motifs": ["Autoradio / écran", "Caméra recul", "Lève-vitres", "Climatisation"]
+        }
+      ]
+    },
+    {
+      "label": "Carrosserie & vitrage",
+      "subcategories": [
+        {
+          "label": "Pare-chocs",
+          "motifs": ["Rayure", "Fissure", "Remplacement complet"]
+        },
+        {
+          "label": "Portières",
+          "motifs": ["Enfoncement", "Serrure / poignée", "Charnière / alignement"]
+        },
+        {
+          "label": "Vitrage",
+          "motifs": ["Pare-brise", "Vitres latérales", "Dégivrage arrière"]
+        },
+        {
+          "label": "Peinture",
+          "motifs": ["Retouche locale", "Polissage", "Reprise panneau"]
+        }
+      ]
+    },
+    {
+      "label": "Intérieur / habitacle",
+      "subcategories": [
+        {
+          "label": "Sellerie",
+          "motifs": ["Nettoyage profond", "Réparation cuir/tissu", "Remplacement housse"]
+        },
+        {
+          "label": "Tableau de bord",
+          "motifs": ["Grincements / fixations", "Habillage", "Commandes"]
+        },
+        {
+          "label": "Sécurité",
+          "motifs": ["Ceintures", "Airbag témoin", "Capteurs présence"]
+        }
+      ]
+    },
+    {
+      "label": "Divers",
+      "subcategories": [
+        {
+          "label": "Inspection périodique",
+          "motifs": ["Pré-contrôle technique", "Contrôle 50k km", "Diagnostic général"]
+        },
+        {
+          "label": "Nettoyage / detailing",
+          "motifs": ["Extérieur premium", "Intérieur vapeur", "Traitement céramique"]
+        },
+        {
+          "label": "Accessoires",
+          "motifs": ["Barre de toit", "Attelage", "Kit sécurité / triangle"]
+        }
+      ]
+    },
+    {
+      "label": "Autres",
+      "subcategories": [
+        {
+          "label": "Adaptations spécifiques",
+          "motifs": ["Aménagement PMR", "Installation GPS pro", "Support matériel événementiel"]
+        },
+        {
+          "label": "Diagnostic approfondi",
+          "motifs": ["Analyse vibrations", "Recherche panne intermittente", "Essai routier prolongé"]
+        },
+        {
+          "label": "Assistance sinistre",
+          "motifs": ["Expertise assurance", "Chiffrage dégâts", "Gestion dossier accident"]
+        },
+        {
+          "label": "Projet personnalisé",
+          "motifs": ["Préparation rallye", "Conversion utilitaire", "Autre (champ libre)"]
+        }
+      ]
+    }
+  ]
+}
