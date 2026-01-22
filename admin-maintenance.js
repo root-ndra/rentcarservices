@@ -3,18 +3,23 @@ const supabaseMaint = supabase.createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk'
 );
 
-let maintUser, interventions = [], fleetOptions = [];
+let maintUser = null;
+let interventions = [];
+let voitures = [];
+let editingMaintenanceId = null;
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', initMaintenance);
 
-async function init() {
+async function initMaintenance() {
   const { data } = await supabaseMaint.auth.getSession();
   if (!data.session) { window.location='login.html'; return; }
   maintUser = data.session.user;
+
   document.getElementById('user-email').textContent = maintUser.email;
   document.getElementById('user-role').textContent = (maintUser.user_metadata?.role || 'maintenance').toUpperCase();
   document.getElementById('btn-logout').addEventListener('click', async () => {
-    await supabaseMaint.auth.signOut(); window.location='login.html';
+    await supabaseMaint.auth.signOut();
+    window.location='login.html';
   });
 
   await loadFleet();
@@ -27,48 +32,53 @@ async function init() {
 
 async function loadFleet() {
   const { data } = await supabaseMaint.from('voitures').select('id, nom');
-  fleetOptions = data || [];
+  voitures = data || [];
+
   const selectFilter = document.getElementById('maintenance-voiture');
   const selectModal = document.getElementById('maintenance-voiture-select');
-  fleetOptions.forEach(v => {
-    const opt = document.createElement('option');
-    opt.value = v.id; opt.textContent = v.nom;
-    selectFilter.appendChild(opt.cloneNode(true));
-    selectModal.appendChild(opt);
+  voitures.forEach(v => {
+    const option = new Option(v.nom, v.id);
+    selectFilter.appendChild(option.cloneNode(true));
+    selectModal.appendChild(option);
   });
 }
 
 async function loadInterventions() {
   const { data, error } = await supabaseMaint
     .from('maintenances')
-    .select('*, voitures(nom)')
-    .order('date_intervention', { ascending:false });
+    .select('id, voiture_id, type_intervention, date_prevue, date_effective, statut, cout_estime, observations, created_at, voitures(nom)')
+    .order('created_at', { ascending: false });
 
-  if (error) { alert(error.message); return; }
+  if (error) {
+    alert(error.message);
+    return;
+  }
   interventions = data || [];
   renderInterventions();
 }
 
 function renderInterventions() {
   const status = document.getElementById('maintenance-status').value;
-  const carId = document.getElementById('maintenance-voiture').value;
-  const list = interventions.filter(m =>
+  const car = document.getElementById('maintenance-voiture').value;
+
+  const filtered = interventions.filter(m =>
     (!status || m.statut === status) &&
-    (!carId || m.voiture_id === carId)
+    (!car || m.voiture_id === car)
   );
 
   const body = document.getElementById('maintenance-body');
-  if (!list.length) {
-    body.innerHTML = '<tr><td colspan="6">Aucune intervention</td></tr>';
+  if (!filtered.length) {
+    body.innerHTML = '<tr><td colspan="6">Aucune intervention.</td></tr>';
     return;
   }
-  body.innerHTML = list.map(m => `
+
+  body.innerHTML = filtered.map(m => `
     <tr>
-      <td>${m.voitures?.nom || '-'}</td>
-      <td>${m.type_intervention || '-'}</td>
-      <td>${m.date_intervention || '-'}</td>
+      <td>${m.voitures?.nom || '—'}</td>
+      <td>${m.type_intervention || '—'}</td>
+      <td>${m.date_prevue || m.date_effective || '—'}</td>
       <td>${m.statut}</td>
-      <td>${(m.cout_estime || 0).toLocaleString('fr-FR')} Ar</td>
+      <td>${m.cout_estime ? `${m.cout_estime.toLocaleString('fr-FR')} Ar` : '—'}</td>
       <td>
         <button class="btn-small btn-sec" onclick="editMaintenance('${m.id}')"><i class="fas fa-pen"></i></button>
         <button class="btn-small" style="background:#ef4444;color:white;" onclick="deleteMaintenance('${m.id}')"><i class="fas fa-trash"></i></button>
@@ -78,9 +88,10 @@ function renderInterventions() {
 }
 
 function openMaintenanceModal() {
-  document.getElementById('maintenance-modal-title').textContent = 'Nouvelle intervention';
+  editingMaintenanceId = null;
   document.getElementById('maintenance-form').reset();
-  document.getElementById('maintenance-id').value = '';
+  document.getElementById('maintenance-feedback').textContent = '';
+  document.getElementById('maintenance-modal-title').textContent = 'Nouvelle intervention';
   document.getElementById('maintenance-modal').style.display = 'flex';
 }
 
@@ -91,34 +102,35 @@ function closeMaintenanceModal() {
 function editMaintenance(id) {
   const record = interventions.find(m => m.id === id);
   if (!record) return;
+
+  editingMaintenanceId = id;
   document.getElementById('maintenance-modal-title').textContent = 'Modifier intervention';
-  document.getElementById('maintenance-id').value = record.id;
   document.getElementById('maintenance-voiture-select').value = record.voiture_id;
   document.getElementById('maintenance-type').value = record.type_intervention || '';
-  document.getElementById('maintenance-date').value = record.date_intervention || '';
+  document.getElementById('maintenance-date').value = record.date_prevue || '';
   document.getElementById('maintenance-notes').value = record.observations || '';
   document.getElementById('maintenance-cost').value = record.cout_estime || '';
   document.getElementById('maintenance-state').value = record.statut || 'planifiee';
   document.getElementById('maintenance-modal').style.display = 'flex';
 }
 
-async function saveIntervention(e) {
-  e.preventDefault();
+async function saveIntervention(event) {
+  event.preventDefault();
   const feedback = document.getElementById('maintenance-feedback');
   feedback.textContent = 'Enregistrement…';
+  feedback.style.color = '#2563eb';
 
   const payload = {
     voiture_id: document.getElementById('maintenance-voiture-select').value,
     type_intervention: document.getElementById('maintenance-type').value,
-    date_intervention: document.getElementById('maintenance-date').value,
-    observations: document.getElementById('maintenance-notes').value,
-    cout_estime: parseInt(document.getElementById('maintenance-cost').value, 10) || null,
+    date_prevue: document.getElementById('maintenance-date').value || null,
+    observations: document.getElementById('maintenance-notes').value || null,
+    cout_estime: document.getElementById('maintenance-cost').value ? parseInt(document.getElementById('maintenance-cost').value, 10) : null,
     statut: document.getElementById('maintenance-state').value
   };
-  const id = document.getElementById('maintenance-id').value;
 
-  const { error } = id
-    ? await supabaseMaint.from('maintenances').update(payload).eq('id', id)
+  const { error } = editingMaintenanceId
+    ? await supabaseMaint.from('maintenances').update(payload).eq('id', editingMaintenanceId)
     : await supabaseMaint.from('maintenances').insert([payload]);
 
   if (error) {
@@ -126,8 +138,8 @@ async function saveIntervention(e) {
     feedback.style.color = '#e74c3c';
     return;
   }
-  feedback.textContent = 'Opération réussie';
-  feedback.style.color = '#22c55e';
+  feedback.textContent = 'Opération réussie ✅';
+  feedback.style.color = '#16a34a';
   await loadInterventions();
   setTimeout(closeMaintenanceModal, 800);
 }
@@ -135,10 +147,9 @@ async function saveIntervention(e) {
 async function deleteMaintenance(id) {
   if (!confirm('Supprimer cette intervention ?')) return;
   await supabaseMaint.from('maintenances').delete().eq('id', id);
-  loadInterventions();
+  await loadInterventions();
 }
 
-// expose
 window.openMaintenanceModal = openMaintenanceModal;
 window.closeMaintenanceModal = closeMaintenanceModal;
 window.editMaintenance = editMaintenance;
