@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin · Maintenance</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style-admin.css">
+</head>
+<body>
+<div id="admin-content">
+  <header>
+    <div>
+      <h2>Maintenance flotte</h2>
+      <p>Suivi des interventions, rappels et pièces</p>
+    </div>
+    <div class="header-user">
+      <span id="user-email"></span>
+      <span class="user-role-badge" id="user-role">ROLE</span>
+      <button class="btn-logout" id="btn-logout">Déconnexion</button>
+    </div>
+  </header>
+
+  <main>
+    <nav>
+      <button class="tab-btn" onclick="window.location='admin.html'">Dashboard</button>
+      <button class="tab-btn" onclick="window.location='admin-reservations.html'">Réservations</button>
+      <button class="tab-btn active"><i class="fas fa-tools"></i>Maintenance</button>
+      <button class="tab-btn" onclick="window.location='admin-communication.html'">Communication</button>
+      <button class="tab-btn" onclick="window.location='admin-emplois.html'">Emplois</button>
+    </nav>
+
+    <section class="content-area">
+      <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:20px;">
+        <select id="maintenance-status">
+          <option value="">Tous les statuts</option>
+          <option value="planifiee">Planifiée</option>
+          <option value="en_cours">En cours</option>
+          <option value="terminee">Terminée</option>
+        </select>
+        <select id="maintenance-voiture">
+          <option value="">Toutes les voitures</option>
+        </select>
+        <button class="btn-action btn-primaire" onclick="openMaintenanceModal()">+ Intervention</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>Voiture</th><th>Type</th><th>Date</th><th>Statut</th><th>Coût estimé</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="maintenance-body"><tr><td colspan="6">Chargement…</td></tr></tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<div class="modal-overlay" id="maintenance-modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeMaintenanceModal()">&times;</span>
+    <h3 id="maintenance-modal-title">Nouvelle intervention</h3>
+    <form id="maintenance-form">
+      <input type="hidden" id="maintenance-id">
+      <label>Voiture</label>
+      <select id="maintenance-voiture-select" required></select>
+      <label>Type d’intervention</label>
+      <input id="maintenance-type" required placeholder="Vidange, pneus, révision…">
+      <label>Date prévue</label>
+      <input type="date" id="maintenance-date" required>
+      <label>Description</label>
+      <textarea id="maintenance-notes" rows="3"></textarea>
+      <label>Coût estimé (Ar)</label>
+      <input type="number" id="maintenance-cost">
+      <label>Statut</label>
+      <select id="maintenance-state">
+        <option value="planifiee">Planifiée</option>
+        <option value="en_cours">En cours</option>
+        <option value="terminee">Terminée</option>
+      </select>
+      <button class="btn-full" type="submit">Enregistrer</button>
+      <p id="maintenance-feedback"></p>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="admin-maintenance.js"></script>
+</body>
+</html>

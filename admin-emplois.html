@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin · Emplois & recruteurs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style-admin.css">
+</head>
+<body>
+<div id="admin-content">
+  <header>
+    <div>
+      <h2>Gestion des offres d’emploi</h2>
+      <p>Validation des recruteurs, suivi des annonces</p>
+    </div>
+    <div class="header-user">
+      <span id="user-email"></span>
+      <span class="user-role-badge" id="user-role">ROLE</span>
+      <button class="btn-logout" id="btn-logout">Déconnexion</button>
+    </div>
+  </header>
+
+  <main>
+    <nav>
+      <button class="tab-btn" onclick="window.location='admin.html'">Dashboard</button>
+      <button class="tab-btn" onclick="window.location='admin-reservations.html'">Réservations</button>
+      <button class="tab-btn" onclick="window.location='admin-maintenance.html'">Maintenance</button>
+      <button class="tab-btn" onclick="window.location='admin-communication.html'">Communication</button>
+      <button class="tab-btn active"><i class="fas fa-briefcase"></i>Emplois</button>
+    </nav>
+
+    <section class="content-area">
+      <div style="display:flex; gap:15px; align-items:center;">
+        <select id="job-status">
+          <option value="">Toutes les offres</option>
+          <option value="actif">Actives</option>
+          <option value="attente">En attente</option>
+          <option value="expiré">Expirées</option>
+        </select>
+        <button class="btn-action btn-primaire" onclick="openJobModal()">+ Offre</button>
+      </div>
+
+      <table style="margin-top:20px;">
+        <thead>
+          <tr><th>Titre</th><th>Recruteur</th><th>Domaine</th><th>Publié</th><th>Expiration</th><th>Actif</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="jobs-body"><tr><td colspan="7">Chargement…</td></tr></tbody>
+      </table>
+
+      <h3 style="margin-top:40px;">Recruteurs</h3>
+      <table>
+        <thead><tr><th>Entreprise</th><th>Email</th><th>Domaines</th><th>Statut</th></tr></thead>
+        <tbody id="recruteurs-body"><tr><td colspan="4">Chargement…</td></tr></tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<div class="modal-overlay" id="job-modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeJobModal()">&times;</span>
+    <h3>Nouvelle offre</h3>
+    <form id="job-form">
+      <input type="hidden" id="job-id">
+      <label>Titre</label>
+      <input id="job-title" required>
+      <label>Entreprise / Recruteur</label>
+      <input id="job-company" required>
+      <label>Domaine</label>
+      <input id="job-domain" required>
+      <label>Description</label>
+      <textarea id="job-desc" rows="4" required></textarea>
+      <label>Date limite</label>
+      <input type="date" id="job-limit">
+      <label>Contact / Email</label>
+      <input type="email" id="job-email">
+      <label>Lien candidature</label>
+      <input id="job-link">
+      <label>Activer directement ?</label>
+      <select id="job-active">
+        <option value="true">Oui</option>
+        <option value="false">Non (attente)</option>
+      </select>
+      <button class="btn-full" type="submit">Enregistrer</button>
+      <p id="job-feedback"></p>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="admin-emplois.js"></script>
+</body>
+</html>

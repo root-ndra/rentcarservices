@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin · Communication</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style-admin.css">
+</head>
+<body>
+<div id="admin-content">
+  <header>
+    <div>
+      <h2>Communication & Marketing</h2>
+      <p>Publicités, codes promo, avis clients</p>
+    </div>
+    <div class="header-user">
+      <span id="user-email"></span>
+      <span class="user-role-badge" id="user-role">ROLE</span>
+      <button class="btn-logout" id="btn-logout">Déconnexion</button>
+    </div>
+  </header>
+
+  <main>
+    <nav>
+      <button class="tab-btn" onclick="window.location='admin.html'">Dashboard</button>
+      <button class="tab-btn" onclick="window.location='admin-reservations.html'">Réservations</button>
+      <button class="tab-btn" onclick="window.location='admin-maintenance.html'">Maintenance</button>
+      <button class="tab-btn active"><i class="fas fa-bullhorn"></i>Communication</button>
+      <button class="tab-btn" onclick="window.location='admin-emplois.html'">Emplois</button>
+    </nav>
+
+    <section class="content-area">
+      <div class="card-grid" id="ads-grid"></div>
+
+      <h3>Codes promo</h3>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:15px;">
+        <input id="promo-code" placeholder="Code">
+        <input type="number" id="promo-percent" placeholder="% réduction" min="1" max="80">
+        <input type="date" id="promo-expire">
+        <button class="btn-action btn-primaire" onclick="createPromo()">Créer</button>
+      </div>
+      <table>
+        <thead><tr><th>Code</th><th>Remise</th><th>Expire</th><th>Actif</th></tr></thead>
+        <tbody id="promo-body"><tr><td colspan="4">Chargement…</td></tr></tbody>
+      </table>
+
+      <h3 style="margin-top:40px;">Avis à valider</h3>
+      <div id="avis-list"></div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="admin-communication.js"></script>
+</body>
+</html>

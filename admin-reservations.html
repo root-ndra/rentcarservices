@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin · Réservations & flotte</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style-admin.css">
+</head>
+<body>
+<div id="admin-content">
+  <header>
+    <div>
+      <h2>Réservations & flotte</h2>
+      <p>Suivez les demandes et l’état des véhicules</p>
+    </div>
+    <div class="header-user">
+      <span id="user-email"></span>
+      <span class="user-role-badge" id="user-role">ROLE</span>
+      <button class="btn-logout" id="btn-logout">Déconnexion</button>
+    </div>
+  </header>
+
+  <main>
+    <nav>
+      <button class="tab-btn" onclick="window.location='admin.html'">Dashboard</button>
+      <button class="tab-btn active"><i class="fas fa-calendar-check"></i>Réservations</button>
+      <button class="tab-btn" onclick="window.location='admin-maintenance.html'">Maintenance</button>
+      <button class="tab-btn" onclick="window.location='admin-communication.html'">Communication</button>
+      <button class="tab-btn" onclick="window.location='admin-emplois.html'">Emplois</button>
+    </nav>
+
+    <section class="content-area">
+      <div class="card-grid" id="kpi-reservations"></div>
+
+      <div style="display:flex; gap:15px; flex-wrap:wrap; margin:25px 0;">
+        <select id="filter-status">
+          <option value="">Tous les statuts</option>
+          <option value="pending">En attente</option>
+          <option value="confirmed">Confirmée</option>
+          <option value="cancelled">Annulée</option>
+        </select>
+        <select id="filter-voiture">
+          <option value="">Toutes les voitures</option>
+        </select>
+        <input type="date" id="filter-date">
+        <button class="btn-action btn-primaire" onclick="exportReservations()">Exporter CSV</button>
+      </div>
+
+      <table id="table-reservations">
+        <thead>
+          <tr><th>Client</th><th>Voiture</th><th>Dates</th><th>Montant</th><th>Statut</th><th>Actions</th></tr>
+        </thead>
+        <tbody><tr><td colspan="6">Chargement…</td></tr></tbody>
+      </table>
+
+      <h3 style="margin-top:40px;">Flotte & disponibilité</h3>
+      <div class="card-grid" id="fleet-grid"></div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-overlay" id="reservation-modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeReservationModal()">&times;</span>
+    <div id="reservation-details"></div>
+    <button class="btn-full" onclick="updateReservationStatus('confirmed')">Marquer confirmée</button>
+    <button class="btn-full" style="background:#f97316;" onclick="updateReservationStatus('cancelled')">Marquer annulée</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="admin-reservations.js"></script>
+</body>
+</html>

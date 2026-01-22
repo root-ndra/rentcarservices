@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Contact & Avis – RentCarServices</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="style-ui.css">
+  <style>
+    body { margin:0; font-family:'Montserrat',sans-serif; background:#f2f5f9; color:#0f172a; }
+    header.hero-contact {
+      background: linear-gradient(135deg,#0f172a,#2563eb);
+      color:white; padding:60px 20px; text-align:center;
+    }
+    header.hero-contact h1 { margin:0; font-size:2.5rem; }
+    header.hero-contact p { margin-top:15px; color:#dbeafe; max-width:780px; margin-left:auto;margin-right:auto; }
+    .contact-layout { max-width:1100px; margin:40px auto; padding:0 20px; display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:24px; }
+    .card-contact { background:white; border-radius:18px; padding:25px; box-shadow:0 18px 45px rgba(15,23,42,.08); }
+    .card-contact h3 { margin:0 0 8px; }
+    .card-contact p { margin:0; color:#475569; }
+    .card-contact a { color:#2563eb; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
+    .contact-form { background:white; border-radius:20px; padding:35px; box-shadow:0 20px 50px rgba(15,23,42,.08); }
+    .contact-form .field-group { display:flex; flex-wrap:wrap; gap:15px; }
+    .contact-form label { font-weight:600; color:#1f2a37; }
+    .contact-form input, .contact-form textarea, .contact-form select {
+      width:100%; border-radius:12px; border:1px solid #dbe2ef; padding:12px; background:#f8fafc;
+    }
+    .map-box { border-radius:20px; overflow:hidden; box-shadow:0 18px 50px rgba(15,23,42,.15); }
+    .avis-section { max-width:1100px; margin:50px auto; padding:0 20px; display:grid; gap:30px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+    .avis-card {
+      background:white; border-radius:16px; padding:20px;
+      box-shadow:0 16px 36px rgba(15,23,42,.08); position:relative;
+    }
+    .avis-card .note { color:#facc15; font-size:1.2rem; }
+    .avis-form { grid-column: 1 / -1; background:white; border-radius:18px; padding:30px; box-shadow:0 18px 40px rgba(15,23,42,.08); }
+    .btn-primary {
+      display:inline-flex; align-items:center; justify-content:center;
+      background:#1d4ed8; color:white; border:none; border-radius:999px; padding:14px 24px;
+      font-weight:600; cursor:pointer; width:100%;
+    }
+    .status-text { margin-top:12px; font-weight:600; }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="logo-container">
+    <img src="" alt="Logo" class="nav-logo" id="header-logo">
+    <span id="header-site-name">RentCarServices</span>
+  </div>
+  <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+  <ul class="nav-links" id="nav-menu">
+    <li><a href="index.html">Accueil</a></li>
+    <li><a href="voitures.html">Nos voitures</a></li>
+    <li><a href="divertissement.html">Divertissement</a></li>
+    <li><a href="emplois.html">Emplois</a></li>
+    <li><a href="contact.html" class="active">Contact & Avis</a></li>
+    <li><a href="login.html" class="btn-action btn-sec">Portail admin</a></li>
+  </ul>
+</nav>
+
+<header class="hero-contact">
+  <h1>Contactez l’équipe RentCarServices</h1>
+  <p>Réservation sur mesure, suivi de dossier ou simple retour d’expérience : nous répondons sous 2h ouvrées.</p>
+</header>
+
+<section class="contact-layout" id="cards-contact">
+  <!-- cartes injectées par JS -->
+</section>
+
+<section class="contact-layout">
+  <div class="contact-form">
+    <h2><i class="fas fa-paper-plane"></i> Envoyer un message</h2>
+    <form id="form-contact">
+      <div class="field-group">
+        <div style="flex:1;">
+          <label>Sujet</label>
+          <select id="contact-sujet" required>
+            <option value="Reservation">Réservation</option>
+            <option value="Partenariat">Partenariat</option>
+            <option value="Maintenance">Maintenance / SAV</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+        <div style="flex:1;">
+          <label>Prénom & Nom</label>
+          <input id="contact-nom" required>
+        </div>
+      </div>
+      <div class="field-group">
+        <div style="flex:1;">
+          <label>Email</label>
+          <input type="email" id="contact-email" required>
+        </div>
+        <div style="flex:1;">
+          <label>Téléphone</label>
+          <input type="tel" id="contact-tel" placeholder="+261…" required>
+        </div>
+      </div>
+      <label>Message</label>
+      <textarea id="contact-message" rows="4" required></textarea>
+      <button class="btn-primary" type="submit"><i class="fas fa-envelope"></i> Envoyer</button>
+      <p id="contact-feedback" class="status-text"></p>
+    </form>
+  </div>
+  <div>
+    <div class="card-contact">
+      <h3><i class="fas fa-headset"></i> Hotline 7j/7</h3>
+      <p id="contact-hotline">Chargement…</p>
+      <a id="btn-call" href="#"><i class="fas fa-phone"></i> Appeler</a><br>
+      <a id="btn-wa" href="#" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+    </div>
+    <div class="card-contact" style="margin-top:24px;">
+      <h3><i class="fas fa-location-dot"></i> Agence & horaires</h3>
+      <p id="contact-address">-</p>
+      <p><strong>Horaires</strong> : Lundi - Samedi (8h - 18h)</p>
+    </div>
+  </div>
+</section>
+
+<section class="contact-layout">
+  <div class="map-box" id="contact-map">
+    <!-- iframe injecté -->
+  </div>
+</section>
+
+<section class="avis-section" id="avis-list">
+  <!-- avis dynamiques -->
+</section>
+
+<div class="avis-form">
+  <h3>Laisser un avis</h3>
+  <form id="form-avis">
+    <div class="field-group">
+      <div style="flex:1;">
+        <label>Votre nom</label>
+        <input id="avis-nom" required>
+      </div>
+      <div style="flex:1;">
+        <label>Note</label>
+        <select id="avis-note">
+          <option value="5">⭐⭐⭐⭐⭐</option>
+          <option value="4">⭐⭐⭐⭐</option>
+          <option value="3">⭐⭐⭐</option>
+          <option value="2">⭐⭐</option>
+          <option value="1">⭐</option>
+        </select>
+      </div>
+    </div>
+    <label>Commentaire</label>
+    <textarea id="avis-message" rows="3" required></textarea>
+    <button class="btn-primary" type="submit"><i class="fas fa-check"></i> Envoyer</button>
+    <p id="avis-feedback" class="status-text"></p>
+  </form>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-content">
+    <h3 id="footer-title"></h3>
+    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address"></span></p>
+    <p class="footer-legal">NIF: <span id="footer-nif"></span> | STAT: <span id="footer-stat"></span></p>
+    <p class="footer-phone"><i class="fas fa-phone"></i> <span id="footer-phone"></span></p>
+    <div id="footer-socials" style="margin-top:15px;"></div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script-contact.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Portail RentCarServices</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style-ui.css">
+</head>
+<body>
+<section id="login-screen">
+  <article class="login-card">
+    <div style="text-align:center; margin-bottom:20px;">
+      <img src="https://i.ibb.co/dw8gxWXL/1765001359376.png" alt="Logo" style="height:60px;">
+      <h1 style="color:white; margin:15px 0 5px;">Portail sécurisé</h1>
+      <p style="color:#94a3b8;">Accédez au module adapté à votre rôle</p>
+    </div>
+    <form id="login-form">
+      <label>Email</label>
+      <input type="email" id="login-email" required>
+      <label style="margin-top:15px;">Mot de passe</label>
+      <input type="password" id="login-password" required>
+      <button type="submit">Connexion</button>
+    </form>
+    <p id="login-feedback" style="margin-top:15px; text-align:center;"></p>
+  </article>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="login.js"></script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+/* === STYLE-UI.CSS : BASE THEME PUBLIC === */
+:root {
+  --primary: #3498db;
+  --primary-dark: #1f2a37;
+  --secondary: #0f172a;
+  --accent: #1abc9c;
+  --success: #27ae60;
+  --glass: rgba(255,255,255,0.85);
+  --shadow: 0 18px 44px rgba(15,23,42,.16);
+  --radius: 18px;
+  font-family: 'Montserrat','Segoe UI',Arial,sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: url('https://i.ibb.co/JR6fhqY8/soarano.png') no-repeat center fixed;
+  background-size: cover;
+  min-height: 100vh;
+  color: var(--primary-dark);
+}
+
+/* NAVBAR */
+.navbar {
+  position: sticky; top: 0; z-index: 1000;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 5%;
+  background: rgba(15,23,42,.92);
+  border-bottom: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+}
+.navbar .logo-container { display:flex; align-items:center; gap:12px; color:white; font-weight:700; letter-spacing:.08em; }
+.nav-logo { height:42px; }
+.menu-toggle { display:none; background:none; border:none; color:white; font-size:1.6rem; }
+.nav-links { list-style:none; display:flex; gap:28px; margin:0; padding:0; align-items:center; }
+.nav-links a {
+  text-transform:uppercase; font-size:.9rem;
+  color:rgba(255,255,255,.85); text-decoration:none; letter-spacing:.05em;
+}
+.nav-links a:hover, .nav-links a.active { color:var(--accent); }
+.btn-action.btn-sec {
+  border:1px solid rgba(255,255,255,.3);
+  border-radius:999px; padding:10px 20px; color:white;
+}
+
+/* SECTIONS + HERO */
+.page-section { max-width:1100px; margin:35px auto; padding:0 20px; }
+.hero-banner {
+  background: linear-gradient(135deg, var(--secondary), rgba(52,152,219,.7));
+  border-radius:var(--radius); padding:70px 30px; text-align:center; color:white;
+  box-shadow:var(--shadow);
+}
+.hero-banner h1 { margin:0 0 15px; font-size:2.7rem; }
+.hero-description { max-width:720px; margin:0 auto 25px; color:#e2e8f0; }
+.btn-hero {
+  border:none; border-radius:999px; padding:15px 40px; font-weight:600;
+  background:var(--accent); color:white; cursor:pointer;
+}
+.section-title {
+  text-align:center; color:white; font-size:2rem; margin:50px 0 25px;
+  position:relative; padding-bottom:12px; letter-spacing:.08em;
+}
+.section-title::after {
+  content:''; width:70px; height:3px; background:var(--accent);
+  position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+}
+
+/* FLIP CARDS (features & conditions) */
+.features-container, .conditions-grid {
+  display:flex; flex-wrap:wrap; justify-content:center; gap:18px;
+}
+.flip-card {
+  width:200px; height:200px; perspective:1000px; cursor:pointer;
+}
+.flip-card-inner {
+  position:relative; width:100%; height:100%; transition:transform .9s;
+  transform-style:preserve-3d; border-radius:16px; box-shadow:var(--shadow);
+}
+.flip-card.flipped .flip-card-inner { transform:rotateY(180deg); }
+.flip-card-front, .flip-card-back {
+  position:absolute; inset:0; backface-visibility:hidden; border-radius:inherit;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:16px; text-align:center;
+}
+.flip-card-front { background:var(--glass); border:1px solid rgba(255,255,255,.4); }
+.flip-card-back { background:var(--secondary); color:white; transform:rotateY(180deg); }
+
+/* CATALOGUE VOITURES */
+.grid-voitures {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:22px;
+}
+.carte-voiture {
+  background:var(--glass); border-radius:16px; overflow:hidden;
+  box-shadow:var(--shadow); backdrop-filter:blur(8px);
+}
+.carte-voiture img { width:100%; height:200px; object-fit:cover; }
+.carte-voiture h3 { margin:15px 20px 8px; }
+.carte-voiture .prix { margin:0 20px 15px; color:var(--primary); font-weight:700; }
+.carte-voiture button {
+  width:100%; padding:16px; border:none; background:var(--secondary);
+  color:white; text-transform:uppercase; font-weight:600; cursor:pointer;
+}
+.carte-voiture button:hover { background:var(--primary); }
+.btn-disabled { background:#cbd5f5!important; color:#6b7280!important; cursor:not-allowed; }
+
+/* FORMULAIRES & OPTIONS */
+.container-form, .form-contact-box, .avis-box, .contact-form,
+.partner-section, .jobs-grid .job-card-inner, .media-card, .card-contact {
+  background:white; border-radius:20px; padding:30px; box-shadow:var(--shadow);
+}
+.grid-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; }
+input, select, textarea {
+  width:100%; padding:12px; border-radius:12px; border:1px solid #d4dbe5;
+  background:#f8fafc; font-size:1rem;
+}
+.options-grid { display:flex; flex-wrap:wrap; gap:12px; }
+.hidden-input { display:none; }
+.btn-option {
+  flex:1; min-width:140px; padding:15px; background:white; border:2px solid #e2e8f0;
+  border-radius:14px; text-align:center; font-weight:600; cursor:pointer;
+}
+.hidden-input:checked + .btn-option {
+  border-color:var(--primary); color:var(--primary);
+  box-shadow:0 8px 20px rgba(15,23,42,.1);
+}
+
+/* PARTENAIRES */
+.partner-section { margin-top:40px; }
+.partner-card { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:18px; }
+.partner-actions { grid-column:1/-1; text-align:right; }
+.partner-actions button {
+  border:none; border-radius:999px; padding:14px 26px;
+  background:var(--accent); color:white; font-weight:600; cursor:pointer;
+}
+
+/* FILTRES EMPLOIS / VOITURES / MEDIA */
+.cars-filters, .filters-bar, .media-filters {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:16px; margin:20px 0; padding:20px;
+  background:white; border-radius:18px; box-shadow:var(--shadow);
+}
+.filters-bar input, .filters-bar select,
+.media-filters input, .media-filters select { min-width:180px; }
+
+/* EMPLOIS */
+.jobs-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:22px; }
+.job-card { perspective:1000px; }
+.job-card-inner { position:relative; min-height:270px; transform-style:preserve-3d; transition:.8s; cursor:pointer; }
+.job-card.flipped .job-card-inner { transform:rotateY(180deg); }
+.job-side {
+  position:absolute; inset:0; backface-visibility:hidden; border-radius:18px;
+  padding:24px; display:flex; flex-direction:column; gap:10px;
+}
+.job-front { background:white; }
+.job-back { background:#0f172a; color:white; transform:rotateY(180deg); }
+
+/* CONTACT */
+.contact-layout { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:24px; }
+.card-contact a { color:var(--primary); text-decoration:none; }
+
+/* DIVERTISSEMENT */
+.media-card { text-align:left; }
+.media-card audio, .media-card iframe { width:100%; margin-top:12px; border-radius:12px; }
+
+/* FOOTER */
+.site-footer {
+  background:rgba(15,23,42,.92); color:rgba(255,255,255,.85);
+  text-align:center; padding:40px 20px; margin-top:60px;
+}
+
+/* MODALES */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.65); display:none;
+  justify-content:center; align-items:center; z-index:2000; backdrop-filter:blur(6px);
+}
+.modal-content {
+  background:white; border-radius:20px; padding:30px; max-width:800px;
+  width:90%; max-height:90vh; overflow-y:auto; position:relative;
+}
+.close-modal { position:absolute; top:12px; right:18px; font-size:1.6rem; cursor:pointer; }
+
+/* RESPONSIVE */
+@media (max-width:768px) {
+  .menu-toggle { display:block; }
+  .nav-links {
+    display:none; width:100%; flex-direction:column; padding:18px 0;
+    background:rgba(15,23,42,.95); margin-top:14px; border-radius:14px;
+  }
+  .nav-links.active { display:flex; }
+  .hero-banner { padding:50px 18px; }
+  .hero-banner h1 { font-size:2rem; }
+  .partner-card, .grid-form { grid-template-columns:1fr; }
+}
