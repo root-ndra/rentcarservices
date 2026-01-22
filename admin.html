@@ -11,11 +11,11 @@
   <header>
     <div>
       <h2>Dashboard général</h2>
-      <p>Suivi partenaires, flotte et croissance</p>
+      <p>Vue synthétique partenaires & indicateurs</p>
     </div>
     <div class="header-user">
       <span id="user-email"></span>
-      <span class="user-role-badge" id="user-role">ROLE</span>
+      <span class="user-role-badge" id="user-role"></span>
       <button class="btn-logout" id="btn-logout">Déconnexion</button>
     </div>
   </header>
@@ -33,45 +33,55 @@
       <div class="card-grid" id="stats-grid"></div>
 
       <div style="margin:30px 0; display:flex; justify-content:space-between; align-items:center;">
-        <h3>Partenaires actifs</h3>
-        <button class="btn-action btn-primaire" onclick="openPartnerModal()">+ Nouveau partenaire</button>
+        <h3>Partenaires</h3>
+        <button class="btn-action btn-primaire" onclick="openPartnerModal()">+ Ajouter</button>
       </div>
 
-      <div class="table-wrapper">
-        <table id="table-partenaires">
-          <thead>
-            <tr>
-              <th>Nom</th><th>Email</th><th>Téléphone</th><th>Commission</th><th>Statut</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody><tr><td colspan="6">Chargement…</td></tr></tbody>
-        </table>
-      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Nom</th><th>Email</th><th>Téléphone</th><th>Commission</th><th>Actif</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="partners-body"><tr><td colspan="6">Chargement…</td></tr></tbody>
+      </table>
     </section>
   </main>
 </div>
 
-<!-- Modal ajout partenaire -->
 <div class="modal-overlay" id="partner-modal">
   <div class="modal-content">
     <span class="close-modal" onclick="closePartnerModal()">&times;</span>
-    <h3>Nouveau partenaire</h3>
+    <h3 id="partner-modal-title">Nouveau partenaire</h3>
     <form id="partner-form">
+      <input type="hidden" id="partner-id">
+
       <label>Prénom</label>
       <input id="new-prenom" required>
+
       <label>Nom</label>
       <input id="new-nom" required>
+
       <label>Email</label>
       <input type="email" id="new-email" required>
+
       <label>Téléphone</label>
       <input id="new-tel">
+
       <label>Commission (%)</label>
       <input type="number" id="new-commission" min="5" max="40" value="15">
-      <label>Login (email Supabase)</label>
-      <input type="email" id="new-login" required>
-      <label>Mot de passe temporaire</label>
-      <input type="text" id="new-password" value="" placeholder="Généré automatiquement si vide">
-      <button class="btn-full" type="submit">Créer</button>
+
+      <div class="auth-only">
+        <label>Login Supabase (email)</label>
+        <input type="email" id="new-login">
+      </div>
+
+      <div class="auth-only">
+        <label>Mot de passe provisoire</label>
+        <input id="new-password" placeholder="Généré si vide">
+      </div>
+
+      <button class="btn-full" type="submit">Enregistrer</button>
       <p id="partner-feedback"></p>
     </form>
   </div>
