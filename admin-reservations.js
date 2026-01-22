@@ -10,14 +10,14 @@ let selectedReservation = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   const { data } = await supabaseRes.auth.getSession();
-  if (!data.session) { window.location='login.html'; return; }
+  if (!data.session) { window.location = 'login.html'; return; }
   currentUser = data.session.user;
 
   document.getElementById('user-email').textContent = currentUser.email;
   document.getElementById('user-role').textContent = (currentUser.user_metadata?.role || 'reservations').toUpperCase();
   document.getElementById('btn-logout').addEventListener('click', async () => {
     await supabaseRes.auth.signOut();
-    window.location='login.html';
+    window.location = 'login.html';
   });
 
   await Promise.all([loadReservations(), loadVoitures()]);
@@ -30,13 +30,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadReservations() {
   const { data, error } = await supabaseRes
     .from('reservations')
-    .select('id, reference, nom_client, email_client, telephone_client, voiture_id, date_depart, date_retour, montant_total, statut, created_at, voitures(nom)')
+    .select('id, nom_client, email_client, telephone_client, voiture_id, date_depart, date_retour, montant_total, statut, created_at, voitures(nom)')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
+  if (error) { alert(error.message); return; }
   reservationsCache = data || [];
   renderReservations();
   renderReservationKPIs();
@@ -47,7 +44,7 @@ async function loadVoitures() {
   voituresCache = data || [];
 
   const select = document.getElementById('filter-voiture');
-  voituresCache.forEach(v => {
+  voituresCache.forEach((v) => {
     const opt = document.createElement('option');
     opt.value = v.id;
     opt.textContent = v.nom;
@@ -62,7 +59,7 @@ function renderReservations() {
   const voitureId = document.getElementById('filter-voiture').value;
   const date = document.getElementById('filter-date').value;
 
-  const filtered = reservationsCache.filter(r => {
+  const filtered = reservationsCache.filter((r) => {
     const matchStatus = !status || r.statut === status;
     const matchCar = !voitureId || r.voiture_id === voitureId;
     const matchDate = !date || r.date_depart === date || r.date_retour === date;
@@ -71,11 +68,11 @@ function renderReservations() {
 
   const tbody = document.querySelector('#table-reservations tbody');
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="6">Aucune réservation trouvée.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6">Aucune réservation.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = filtered.map(res => `
+  tbody.innerHTML = filtered.map((res) => `
     <tr>
       <td>${res.nom_client}<br><small>${res.email_client}</small></td>
       <td>${res.voitures?.nom || '—'}</td>
@@ -89,8 +86,8 @@ function renderReservations() {
 
 function renderReservationKPIs() {
   const total = reservationsCache.length;
-  const confirmed = reservationsCache.filter(r => r.statut === 'confirmed').length;
-  const pending = reservationsCache.filter(r => r.statut === 'pending').length;
+  const confirmed = reservationsCache.filter((r) => r.statut === 'confirmed').length;
+  const pending = reservationsCache.filter((r) => r.statut === 'pending').length;
 
   document.getElementById('kpi-reservations').innerHTML = `
     <article class="car-card"><h4><i class="fas fa-calendar"></i> Total</h4><p style="font-size:2rem">${total}</p></article>
@@ -100,10 +97,10 @@ function renderReservationKPIs() {
 }
 
 function renderFleetCards() {
-  document.getElementById('fleet-grid').innerHTML = (voituresCache || []).map(v => `
+  document.getElementById('fleet-grid').innerHTML = (voituresCache || []).map((v) => `
     <article class="car-card">
       <h4>${v.nom}</h4>
-      <p>${v.reservable === false ? 'Non réservable' : 'Disponible à la réservation'}</p>
+      <p>${v.reservable === false ? 'Non réservable' : 'Disponible'}</p>
       <button class="btn-small" onclick="toggleReservable('${v.id}', ${v.reservable !== false})">
         ${v.reservable === false ? 'Activer' : 'Suspendre'}
       </button>
@@ -111,17 +108,17 @@ function renderFleetCards() {
   `).join('');
 }
 
-async function toggleReservable(id, currentlyReservable) {
-  await supabaseRes.from('voitures').update({ reservable: !currentlyReservable }).eq('id', id);
+async function toggleReservable(id, current) {
+  await supabaseRes.from('voitures').update({ reservable: !current }).eq('id', id);
   await loadVoitures();
 }
 
 function openReservation(id) {
-  selectedReservation = reservationsCache.find(r => r.id === id);
+  selectedReservation = reservationsCache.find((r) => r.id === id);
   if (!selectedReservation) return;
 
   document.getElementById('reservation-details').innerHTML = `
-    <h3>Réservation ${selectedReservation.reference || selectedReservation.id}</h3>
+    <h3>Réservation ${selectedReservation.id}</h3>
     <p><strong>Client :</strong> ${selectedReservation.nom_client} (${selectedReservation.email_client})</p>
     <p><strong>Voiture :</strong> ${selectedReservation.voitures?.nom || '-'}</p>
     <p><strong>Période :</strong> ${selectedReservation.date_depart} → ${selectedReservation.date_retour}</p>
@@ -146,7 +143,7 @@ function exportReservations() {
   const rows = [
     ['Client', 'Email', 'Téléphone', 'Voiture', 'Départ', 'Retour', 'Montant', 'Statut']
   ];
-  reservationsCache.forEach(res => {
+  reservationsCache.forEach((res) => {
     rows.push([
       res.nom_client,
       res.email_client,
@@ -158,13 +155,11 @@ function exportReservations() {
       res.statut
     ]);
   });
-  const csv = rows.map(row => row.map(v => `"${v ?? ''}"`).join(',')).join('\n');
+  const csv = rows.map((row) => row.map((v) => `"${v ?? ''}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = 'reservations.csv';
-  a.click();
+  a.href = url; a.download = 'reservations.csv'; a.click();
   URL.revokeObjectURL(url);
 }
 
