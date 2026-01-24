@@ -1,4 +1,14 @@
+/* chargement Supabase via supabase-config.json */
 let supabaseClient = null;
+async function initSupabase() {
+  if (supabaseClient) return;
+  const resp = await fetch('supabase-config.json');
+  if (!resp.ok) throw new Error('supabase-config.json introuvable');
+  const { supabaseUrl, supabaseKey } = await resp.json();
+  supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+}
+
+/* données globales */
 let siteConfig = null;
 let voituresCache = [];
 let selectedCar = null;
@@ -8,65 +18,47 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     await initSupabase();
     await loadSiteConfig();
-    initFilterListeners();
-    bindQuickReservation();
+    bindFilterListeners();
+    bindReservationForm();
     await chargerVoitures();
   } catch (error) {
     console.error('Initialisation impossible :', error);
     document.getElementById('container-voitures').innerHTML =
-      '<p class="empty-state">Impossible de charger le catalogue.</p>';
+      '<p class="empty-state">Erreur de chargement.</p>';
   }
 });
 
-async function initSupabase() {
-  const response = await fetch('supabase-config.json');
-  if (!response.ok) throw new Error('supabase-config.json introuvable');
-  const { supabaseUrl, supabaseKey } = await response.json();
-  supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-}
-
+/* config site pour header/footer & contacts */
 async function loadSiteConfig() {
-  const response = await fetch('site_config.json');
-  if (!response.ok) throw new Error('site_config.json introuvable');
-  siteConfig = await response.json();
+  const resp = await fetch('site_config.json');
+  if (!resp.ok) throw new Error('site_config.json introuvable');
+  siteConfig = await resp.json();
 
-  const { header, contact, footer } = siteConfig;
-  setText('header-site-name', header.siteName);
-  setAttr('header-logo', 'src', header.logoUrl);
-  setText('footer-title', header.siteName);
-  setText('footer-address', footer.address);
-  setText('footer-phone', contact.phoneDisplay);
-  setText('footer-nif', footer.nif);
-  setText('footer-stat', footer.stat);
-  setAttr('cta-hotline', 'href', `tel:${contact.phoneCall}`);
+  setText('header-site-name', siteConfig.header.siteName);
+  setAttr('header-logo', 'src', siteConfig.header.logoUrl);
+  setText('footer-title', siteConfig.header.siteName);
+  setText('footer-address', siteConfig.footer.address);
+  setText('footer-nif', siteConfig.footer.nif);
+  setText('footer-stat', siteConfig.footer.stat);
+  setText('footer-phone', siteConfig.contact.phoneDisplay);
+  setAttr('cta-hotline', 'href', `tel:${siteConfig.contact.phoneCall}`);
 
   const socials = document.getElementById('footer-socials');
   socials.innerHTML = '';
   const icons = { facebook: 'fab fa-facebook', instagram: 'fab fa-instagram', tiktok: 'fab fa-tiktok' };
-  Object.entries(footer.socials || {}).forEach(([network, url]) => {
+  Object.entries(siteConfig.footer.socials || {}).forEach(([network, url]) => {
     if (!url || url === '#') return;
-    socials.innerHTML += `
-      <a href="${url}" target="_blank" rel="noopener"
-         style="color:white;margin:0 8px;font-size:1.3rem;">
-        <i class="${icons[network] || 'fas fa-globe'}"></i>
-      </a>`;
+    socials.innerHTML += `<a href="${url}" target="_blank" style="color:white;margin:0 8px;font-size:1.3rem;">
+      <i class="${icons[network] || 'fas fa-globe'}"></i></a>`;
   });
 }
 
-function toggleMenu() {
-  document.getElementById('nav-menu')?.classList.toggle('active');
-}
+/* utilitaires */
+function toggleMenu() { document.getElementById('nav-menu')?.classList.toggle('active'); }
+function setText(id, text) { const el = document.getElementById(id); if (el) el.textContent = text ?? ''; }
+function setAttr(id, attr, value) { const el = document.getElementById(id); if (el) el.setAttribute(attr, value ?? ''); }
 
-function setText(id, text) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = text ?? '';
-}
-
-function setAttr(id, attr, value) {
-  const el = document.getElementById(id);
-  if (el) el.setAttribute(attr, value ?? '');
-}
-
+/* chargement & rendu flotte */
 async function chargerVoitures() {
   const container = document.getElementById('container-voitures');
   container.innerHTML = '<p>Chargement…</p>';
@@ -77,79 +69,65 @@ async function chargerVoitures() {
     .order('prix_base', { ascending: true });
 
   if (error) {
-    container.innerHTML = `<p class="empty-state">Erreur : ${error.message}</p>`;
+    container.innerHTML = `<p class="empty-state">${error.message}</p>`;
     return;
   }
 
   voituresCache = data || [];
-  peuplerFiltresDynamiques(voituresCache);
+  populateDynamicFilters();
   renderVoitures(voituresCache);
 }
 
-function peuplerFiltresDynamiques(list) {
-  const remplir = (id, values) => {
+function populateDynamicFilters() {
+  const fillSelect = (id, values) => {
     const select = document.getElementById(id);
     if (!select) return;
     const uniques = Array.from(new Set(values.filter(Boolean)))
       .sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
-    const current = select.value;
+    const oldValue = select.value;
     select.innerHTML = '<option value="">Tous</option>';
     uniques.forEach((val) => {
       const opt = document.createElement('option');
-      opt.value = val;
-      opt.textContent = val;
+      opt.value = val; opt.textContent = val;
       select.appendChild(opt);
     });
-    if (current && uniques.includes(current)) select.value = current;
+    if (oldValue && uniques.includes(oldValue)) select.value = oldValue;
   };
 
-  remplir('filter-type', list.map((v) => v.type));
-  remplir('filter-carburant', list.map((v) => v.carburant));
+  fillSelect('filter-type', voituresCache.map((v) => v.type));
+  fillSelect('filter-carburant', voituresCache.map((v) => v.carburant));
 }
 
-function initFilterListeners() {
-  [
-    'filter-type',
-    'filter-carburant',
-    'filter-chauffeur',
-    'filter-places',
-    'filter-prix-max',
-    'sort-prix'
-  ].forEach((id) => document.getElementById(id)?.addEventListener('input', appliquerFiltres));
+function bindFilterListeners() {
+  ['filter-type','filter-carburant','filter-places','filter-prix-max','sort-prix']
+    .forEach((id) => document.getElementById(id)?.addEventListener('input', applyFilters));
 }
 
-function appliquerFiltres() {
+function applyFilters() {
   const type = document.getElementById('filter-type').value;
   const carburant = document.getElementById('filter-carburant').value;
-  const chauffeur = document.getElementById('filter-chauffeur').value;
   const places = document.getElementById('filter-places').value;
   const prixMax = parseInt(document.getElementById('filter-prix-max').value, 10);
   const sort = document.getElementById('sort-prix').value;
 
-  let resultat = voituresCache.filter((v) => {
+  let result = voituresCache.filter((v) => {
     const matchType = !type || v.type === type;
     const matchCarb = !carburant || v.carburant === carburant;
-    const matchChauffeur = !chauffeur || (v.chauffeur_option || 'option') === chauffeur;
-    const matchPlaces =
-      !places ||
+    const matchPlaces = !places ||
       (places === '7+' ? (v.places || 0) >= 7 : String(v.places || '') === places);
     const matchPrix = !prixMax || (v.prix_base || 0) <= prixMax;
-    return matchType && matchCarb && matchChauffeur && matchPlaces && matchPrix;
+    return matchType && matchCarb && matchPlaces && matchPrix;
   });
 
-  resultat = trierVoitures(resultat, sort);
-  renderVoitures(resultat);
-}
-
-function trierVoitures(list, sort) {
-  const comparator = {
+  const sorters = {
     'prix-asc': (a, b) => (a.prix_base || 0) - (b.prix_base || 0),
     'prix-desc': (a, b) => (b.prix_base || 0) - (a.prix_base || 0),
-    'type-asc': (a, b) => (a.type || '').localeCompare(b.type || '', 'fr', { sensitivity: 'base' }),
-    'carburant-asc': (a, b) =>
-      (a.carburant || '').localeCompare(b.carburant || '', 'fr', { sensitivity: 'base' }),
+    'type-asc': (a, b) => (a.type || '').localeCompare(b.type || '', 'fr'),
+    'carburant-asc': (a, b) => (a.carburant || '').localeCompare(b.carburant || '', 'fr'),
   };
-  return [...list].sort(comparator[sort] || comparator['prix-asc']);
+  result = [...result].sort(sorters[sort] || sorters['prix-asc']);
+
+  renderVoitures(result);
 }
 
 function renderVoitures(list) {
@@ -159,69 +137,71 @@ function renderVoitures(list) {
     return;
   }
 
-  container.innerHTML = list
-    .map((v) => {
-      const prix = (v.prix_base || 0).toLocaleString('fr-FR');
-      const places = v.places ? `${v.places} places` : '—';
-      const carbu = v.carburant || '—';
-      const type = v.type || '—';
-      const desc = (v.description || '').slice(0, 140);
-      const isReservable = v.reservable !== false;
-      const chauffeurLabel = {
-        oui: 'Chauffeur inclus',
-        non: 'Sans chauffeur',
-        option: 'Chauffeur en option'
-      }[v.chauffeur_option || 'option'];
+  container.innerHTML = list.map((v) => {
+    const prix = (v.prix_base || 0).toLocaleString('fr-FR');
+    const desc = (v.description || '').slice(0, 140);
+    const chauffeur = { oui: 'Chauffeur inclus', non: 'Sans chauffeur', option: 'Chauffeur en option' }[v.chauffeur_option || 'option'];
+    const reservable = v.reservable !== false;
 
-      return `
-        <article class="carte-voiture">
-          <img src="${v.image_url || 'https://placehold.co/600x400?text=Voiture'}" alt="${v.nom}">
-          <h3>${v.nom}</h3>
-          <div style="padding:0 20px; color:#64748b; font-size:.9rem; display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
-            <span><i class="fas fa-tags"></i> ${type}</span>
-            <span><i class="fas fa-gas-pump"></i> ${carbu}</span>
-            <span><i class="fas fa-user-friends"></i> ${places}</span>
-            <span><i class="fas fa-id-card"></i> ${chauffeurLabel}</span>
-          </div>
-          <p class="carte-desc">${desc}${v.description?.length > 140 ? '…' : ''}</p>
-          <p class="prix">${prix} Ar / jour</p>
-          <button ${isReservable ? '' : 'class="btn-disabled"'}
-            onclick="reserverVoiture('${v.id}')">
-            ${isReservable ? 'Réserver' : 'Contact direct'}
-          </button>
-        </article>`;
-    })
-    .join('');
+    return `
+      <article class="carte-voiture">
+        <img src="${v.image_url || 'https://placehold.co/600x400?text=Voiture'}" alt="${v.nom}">
+        <h3>${v.nom}</h3>
+        <div style="padding:0 20px; color:#64748b; font-size:.9rem; display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
+          <span><i class="fas fa-tags"></i> ${v.type || '—'}</span>
+          <span><i class="fas fa-gas-pump"></i> ${v.carburant || '—'}</span>
+          <span><i class="fas fa-user-friends"></i> ${v.places ? `${v.places} places` : '—'}</span>
+          <span><i class="fas fa-id-card"></i> ${chauffeur}</span>
+        </div>
+        <p class="carte-desc">${desc}${v.description?.length > 140 ? '…' : ''}</p>
+        <p class="prix">${prix} Ar / jour</p>
+        <button ${reservable ? '' : 'class="btn-disabled"'}
+          onclick="reserverVoiture('${v.id}')">
+          ${reservable ? 'Réserver' : 'Contact direct'}
+        </button>
+      </article>`;
+  }).join('');
 }
 
-/* ---------- RÉSERVATION EXPRESS ---------- */
-function bindQuickReservation() {
-  ['res-date-start', 'res-date-end', 'opt-chauffeur', 'opt-wifi', 'opt-assurance'].forEach((id) => {
-    document.getElementById(id)?.addEventListener('input', updateEstimation);
-  });
-  document.getElementById('quick-reservation-form')?.addEventListener('submit', submitQuickReservation);
+/* reservation / contact */
+function bindReservationForm() {
+  ['res-date-start','res-date-end','opt-chauffeur','opt-wifi','opt-assurance']
+    .forEach((id) => document.getElementById(id)?.addEventListener('input', updateEstimation));
+  document.getElementById('quick-reservation-form')?.addEventListener('submit', submitReservation);
 }
 
 function reserverVoiture(id) {
-  const voiture = voituresCache.find((v) => v.id === id);
-  if (!voiture) return;
+  const car = voituresCache.find((v) => v.id === id);
+  if (!car) return;
 
-  if (voiture.reservable === false) {
-    openContactModal(voiture);
+  if (car.reservable === false) {
+    openContactModal(car);
     return;
   }
-  openReservationModal(voiture);
+  openReservationModal(car);
 }
 
-function openReservationModal(voiture) {
-  selectedCar = voiture;
+function openContactModal(car) {
+  document.getElementById('contact-car-name').textContent = car.nom;
+  document.getElementById('txt-modal-phone').textContent = siteConfig.contact.phoneDisplay;
+  document.getElementById('btn-modal-call').href = `tel:${siteConfig.contact.phoneCall}`;
+  const whatsapp = siteConfig.contact.whatsapp.replace(/\D/g, '');
+  const message = encodeURIComponent(`Bonjour, je souhaite plus d'informations sur ${car.nom}.`);
+  document.getElementById('btn-modal-wa').href = `https://wa.me/${whatsapp}?text=${message}`;
+  document.getElementById('modal-contact-only').style.display = 'flex';
+}
+
+function closeContactModal() {
+  document.getElementById('modal-contact-only').style.display = 'none';
+}
+
+function openReservationModal(car) {
+  selectedCar = car;
   promoReduction = 0;
-  document.getElementById('res-promo').value = '';
-  document.getElementById('promo-feedback').textContent = '';
+  document.getElementById('modal-car-name').textContent = car.nom;
+  document.getElementById('modal-car-price').textContent = (car.prix_base || 0).toLocaleString('fr-FR');
   document.getElementById('quick-reservation-form').reset();
-  document.getElementById('modal-car-name').textContent = voiture.nom;
-  document.getElementById('modal-car-price').textContent =
-    (voiture.prix_base || 0).toLocaleString('fr-FR');
+  document.getElementById('promo-feedback').textContent = '';
   updateEstimation();
   document.getElementById('reservation-modal').style.display = 'flex';
 }
@@ -241,7 +221,6 @@ function calcDays(start, end) {
 function updateEstimation() {
   const summaryDays = document.getElementById('summary-days');
   const summaryTotal = document.getElementById('summary-total');
-
   if (!selectedCar) {
     summaryDays.textContent = '—';
     summaryTotal.textContent = '—';
@@ -251,7 +230,6 @@ function updateEstimation() {
   const start = document.getElementById('res-date-start').value;
   const end = document.getElementById('res-date-end').value;
   const days = calcDays(start, end);
-
   if (!days) {
     summaryDays.textContent = '—';
     summaryTotal.textContent = '—';
@@ -268,22 +246,18 @@ function updateEstimation() {
   summaryTotal.textContent = `${Math.round(total).toLocaleString('fr-FR')} Ar`;
 }
 
-async function applyPromo() {
-  const code = document.getElementById('res-promo').value.trim().toUpperCase();
+window.applyPromo = async function applyPromo() {
+  const codeInput = document.getElementById('res-promo');
   const feedback = document.getElementById('promo-feedback');
+  const code = codeInput.value.trim().toUpperCase();
   promoReduction = 0;
-
-  if (!code) {
-    feedback.textContent = 'Aucun code indiqué.';
-    feedback.style.color = '#475569';
-    updateEstimation();
-    return;
-  }
+  feedback.textContent = '';
+  if (!code) { updateEstimation(); return; }
 
   const start = document.getElementById('res-date-start').value;
   const end = document.getElementById('res-date-end').value;
   if (!start || !end) {
-    feedback.textContent = 'Sélectionnez vos dates avant le code promo.';
+    feedback.textContent = 'Choisissez vos dates avant d’appliquer un code.';
     feedback.style.color = '#e67e22';
     return;
   }
@@ -301,13 +275,12 @@ async function applyPromo() {
   if (error || !data) {
     feedback.textContent = 'Code invalide ou expiré.';
     feedback.style.color = '#e74c3c';
-    updateEstimation();
     return;
   }
 
-  const diff = calcDays(start, end);
-  if (diff < data.min_jours) {
-    feedback.textContent = `Minimum ${data.min_jours} nuit(s) requis.`;
+  const days = calcDays(start, end);
+  if (days < data.min_jours) {
+    feedback.textContent = `Minimum ${data.min_jours} jour(s).`;
     feedback.style.color = '#e67e22';
     return;
   }
@@ -316,9 +289,9 @@ async function applyPromo() {
   feedback.textContent = `Code appliqué : -${promoReduction}%`;
   feedback.style.color = '#16a34a';
   updateEstimation();
-}
+};
 
-function submitQuickReservation(event) {
+async function submitReservation(event) {
   event.preventDefault();
   if (!selectedCar) return;
 
@@ -326,9 +299,9 @@ function submitQuickReservation(event) {
   const end = document.getElementById('res-date-end').value;
   const days = calcDays(start, end);
   if (!days) {
-    document.getElementById('quick-reservation-feedback').textContent =
-      'Sélectionnez des dates valides.';
-    document.getElementById('quick-reservation-feedback').style.color = '#e74c3c';
+    const fb = document.getElementById('quick-reservation-feedback');
+    fb.textContent = 'Sélectionnez des dates valides.';
+    fb.style.color = '#e74c3c';
     return;
   }
 
@@ -339,13 +312,12 @@ function submitQuickReservation(event) {
   const passagers = document.getElementById('res-passagers').value || '1';
   const message = document.getElementById('res-message').value.trim();
   const codePromo = document.getElementById('res-promo').value.trim();
-
   const options = [];
   if (document.getElementById('opt-chauffeur').checked) options.push('Chauffeur');
   if (document.getElementById('opt-wifi').checked) options.push('Wi-Fi');
   if (document.getElementById('opt-assurance').checked) options.push('Assurance');
 
-  const txt = encodeURIComponent(
+  const text = encodeURIComponent(
     `Réservation via RentCarServices (page flotte)%0A%0A` +
     `Véhicule : ${selectedCar.nom}%0A` +
     `Période : ${start} -> ${end} (${days}j)%0A` +
@@ -360,34 +332,19 @@ function submitQuickReservation(event) {
   );
 
   const whatsapp = siteConfig.contact.whatsapp.replace(/\D/g, '');
-  window.open(`https://wa.me/${whatsapp}?text=${txt}`, '_blank');
+  window.open(`https://wa.me/${whatsapp}?text=${text}`, '_blank');
 
-  const feedback = document.getElementById('quick-reservation-feedback');
-  feedback.textContent = 'Votre demande est transmise sur WhatsApp. Merci !';
-  feedback.style.color = '#16a34a';
+  const fb = document.getElementById('quick-reservation-feedback');
+  fb.textContent = 'Votre demande est transmise sur WhatsApp. Merci !';
+  fb.style.color = '#16a34a';
   setTimeout(() => {
+    fb.textContent = '';
     closeReservationModal();
-    feedback.textContent = '';
-  }, 1500);
+  }, 1200);
 }
 
-/* ---------- CONTACT DIRECT ---------- */
-function openContactModal(voiture) {
-  document.getElementById('contact-car-name').textContent = voiture.nom;
-  document.getElementById('txt-modal-phone').textContent = siteConfig.contact.phoneDisplay;
-  document.getElementById('btn-modal-call').href = `tel:${siteConfig.contact.phoneCall}`;
-  const whatsapp = siteConfig.contact.whatsapp.replace(/\D/g, '');
-  const text = encodeURIComponent(`Bonjour, je souhaite plus d'informations sur ${voiture.nom}.`);
-  document.getElementById('btn-modal-wa').href = `https://wa.me/${whatsapp}?text=${text}`;
-  document.getElementById('modal-contact-only').style.display = 'flex';
-}
-
-function closeContactModal() {
-  document.getElementById('modal-contact-only').style.display = 'none';
-}
-
-/* ---------- EXPOSITION GLOBALE ---------- */
+/* exposition globale */
+window.toggleMenu = toggleMenu;
 window.reserverVoiture = reserverVoiture;
-window.closeReservationModal = closeReservationModal;
 window.closeContactModal = closeContactModal;
-window.applyPromo = applyPromo;
+window.closeReservationModal = closeReservationModal;
