@@ -5,6 +5,8 @@
   <title>Admin · Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="style-admin.css">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 <div id="admin-content">
@@ -34,7 +36,10 @@
 
       <div style="margin:30px 0; display:flex; justify-content:space-between; align-items:center;">
         <h3>Partenaires</h3>
-        <button class="btn-action btn-primaire" onclick="openPartnerModal()">+ Ajouter</button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn-action btn-sec" onclick="openCarModal()">+ Ajouter une voiture</button>
+          <button class="btn-action btn-primaire" onclick="openPartnerModal()">+ Ajouter partenaire</button>
+        </div>
       </div>
 
       <table>
@@ -49,6 +54,7 @@
   </main>
 </div>
 
+<!-- Modal Partenaire -->
 <div class="modal-overlay" id="partner-modal">
   <div class="modal-content">
     <span class="close-modal" onclick="closePartnerModal()">&times;</span>
@@ -87,7 +93,81 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" defer></script>
+<!-- Modal voiture -->
+<div class="modal-overlay" id="car-modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeCarModal()">&times;</span>
+    <h3 id="car-modal-title">Nouvelle voiture</h3>
+    <form id="car-form">
+      <input type="hidden" id="car-id">
+
+      <label>Nom du véhicule</label>
+      <input id="car-nom" required>
+
+      <label>Référence interne</label>
+      <input id="car-ref">
+
+      <label>Prix de base (Ar / jour)</label>
+      <input type="number" id="car-prix" min="0" required>
+
+      <label>Type</label>
+      <input id="car-type" placeholder="Citadine, SUV, Berline…">
+
+      <div class="grid-form" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:15px;">
+        <div>
+          <label>Transmission</label>
+          <select id="car-transmission">
+            <option value="Manuelle">Manuelle</option>
+            <option value="Automatique">Automatique</option>
+          </select>
+        </div>
+        <div>
+          <label>Carburant</label>
+          <select id="car-carburant">
+            <option value="Essence">Essence</option>
+            <option value="Diesel">Diesel</option>
+            <option value="Hybride">Hybride</option>
+            <option value="Électrique">Électrique</option>
+          </select>
+        </div>
+        <div>
+          <label>Places</label>
+          <input type="number" id="car-places" min="2" max="12">
+        </div>
+        <div>
+          <label>Chauffeur</label>
+          <select id="car-chauffeur">
+            <option value="oui">Oui (inclus)</option>
+            <option value="option" selected>En option</option>
+            <option value="non">Non proposé</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Image (URL)</label>
+      <input id="car-image" placeholder="https://…">
+
+      <label>Description</label>
+      <textarea id="car-description" rows="3"></textarea>
+
+      <label>Propriétaire (UUID partenaire)</label>
+      <input id="car-proprietaire" placeholder="Laissez vide pour le super-admin">
+
+      <div style="display:flex; gap:15px; flex-wrap:wrap;">
+        <label style="display:flex; gap:8px; align-items:center;">
+          <input type="checkbox" id="car-reservable" checked> Réservable
+        </label>
+        <label style="display:flex; gap:8px; align-items:center;">
+          <input type="checkbox" id="car-calendrier" checked> Calendrier visible
+        </label>
+      </div>
+
+      <button class="btn-full" type="submit"><i class="fas fa-save"></i> Enregistrer</button>
+      <p id="car-feedback"></p>
+    </form>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="admin.js"></script>
 </body>
