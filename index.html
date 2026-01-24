@@ -14,7 +14,9 @@
     <img src="" alt="Logo" class="nav-logo" id="header-logo">
     <span id="header-site-name">RentCarServices</span>
   </div>
-  <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+  <button class="menu-toggle" aria-label="Ouvrir le menu" onclick="toggleMenu()">
+    <i class="fas fa-bars"></i>
+  </button>
   <ul class="nav-links" id="nav-menu">
     <li><a href="index.html" class="active">Accueil</a></li>
     <li><a href="voitures.html">Nos voitures</a></li>
@@ -28,12 +30,23 @@
 <header class="hero-banner">
   <h1>Réservez votre véhicule en quelques minutes</h1>
   <p class="hero-description">
-    RentCarServices accompagne les entreprises, ONG et voyageurs à Madagascar
+    RentCarServices accompagne entreprises, ONG et voyageurs à Madagascar
     avec une flotte premium, chauffeurs sélectionnés et assistance 24/7.
   </p>
   <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
-    <a href="voitures.html"><button class="btn-hero"><i class="fas fa-car-side"></i> Voir la flotte</button></a>
-    <a href="#reservation"><button class="btn-hero" style="background:#0f172a;"><i class="fas fa-calendar-check"></i> Réserver maintenant</button></a>
+    <a href="voitures.html">
+      <button class="btn-hero"><i class="fas fa-car-side"></i> Voir la flotte</button>
+    </a>
+    <a href="voitures.html#partner">
+      <button class="btn-hero" style="background:#0f172a;">
+        <i class="fas fa-handshake"></i> Devenir partenaire
+      </button>
+    </a>
+    <a id="btn-whatsapp-hero" href="#" target="_blank" rel="noopener">
+      <button class="btn-hero" style="background:#22c55e;">
+        <i class="fab fa-whatsapp"></i> Discuter sur WhatsApp
+      </button>
+    </a>
   </div>
 </header>
 
@@ -57,131 +70,20 @@
 
   <section class="page-section">
     <h2 class="section-title">Nos engagements</h2>
-    <div class="features-container">
-      <div class="flip-card" onclick="this.classList.toggle('flipped')">
-        <div class="flip-card-inner">
-          <div class="flip-card-front">
-            <span class="feature-emoji">🚗</span>
-            <h3>Flotte premium</h3>
-          </div>
-          <div class="flip-card-back">
-            Véhicules entretenus chaque semaine, double contrôle qualité et options 4x4 pour les pistes.
-          </div>
-        </div>
-      </div>
-      <div class="flip-card" onclick="this.classList.toggle('flipped')">
-        <div class="flip-card-inner">
-          <div class="flip-card-front">
-            <span class="feature-emoji">🧭</span>
-            <h3>Chauffeurs experts</h3>
-          </div>
-          <div class="flip-card-back">
-            Conducteurs bilingues, formés sécurité et tourisme, couverture nationale avec relais régionaux.
-          </div>
-        </div>
-      </div>
-      <div class="flip-card" onclick="this.classList.toggle('flipped')">
-        <div class="flip-card-inner">
-          <div class="flip-card-front">
-            <span class="feature-emoji">⏱️</span>
-            <h3>Support 24/7</h3>
-          </div>
-          <div class="flip-card-back">
-            Hotline Antananarivo + WhatsApp, assistance en moins de 10 minutes sur la capitale.
-          </div>
-        </div>
-      </div>
-      <div class="flip-card" onclick="this.classList.toggle('flipped')">
-        <div class="flip-card-inner">
-          <div class="flip-card-front">
-            <span class="feature-emoji">🤝</span>
-            <h3>Partenaires locaux</h3>
-          </div>
-          <div class="flip-card-back">
-            Réseau d’agences affiliées, facturation centralisée et royalties automatiques.
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="page-section" id="reservation">
-    <h2 class="section-title">Réserver un véhicule</h2>
-    <div class="container-form" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:30px;">
-      <form id="reservation-form">
-        <label>Nom / société</label>
-        <input id="res-nom" required>
-
-        <label>Email</label>
-        <input type="email" id="res-email" required>
-
-        <label>Téléphone</label>
-        <input type="tel" id="res-tel" required>
-
-        <label>Date de prise en charge</label>
-        <input type="date" id="res-date-debut" required>
-
-        <label>Date de retour</label>
-        <input type="date" id="res-date-fin" required>
-
-        <label>Nombre de passagers</label>
-        <input type="number" id="res-passagers" min="1" max="12" value="1">
-
-        <label>Véhicule</label>
-        <select id="res-voiture" required>
-          <option value="">Sélection automatique</option>
-        </select>
-
-        <div class="options-grid">
-          <label><input type="checkbox" id="opt-chauffeur"> Chauffeur</label>
-          <label><input type="checkbox" id="opt-wifi"> Wi-Fi embarqué</label>
-          <label><input type="checkbox" id="opt-assurance"> Assurance premium</label>
-        </div>
-
-        <label>Message complémentaire</label>
-        <textarea id="res-message" rows="3"></textarea>
-
-        <button class="btn-dark" type="submit"><i class="fas fa-check"></i> Confirmer la demande</button>
-        <p id="reservation-feedback"></p>
-      </form>
-
-      <div class="resume-box" id="reservation-summary">
-        <h3>Résumé</h3>
-        <p id="summary-voiture">Véhicule : —</p>
-        <p id="summary-dates">Dates : —</p>
-        <p id="summary-options">Options : —</p>
-        <p id="summary-montant">Estimation : —</p>
-        <button class="btn-whatsapp" id="btn-whatsapp-reservation">
-          <i class="fab fa-whatsapp"></i> Envoyer sur WhatsApp
-        </button>
-      </div>
+    <div class="features-container" id="features-container-dynamic">
+      <!-- cartes dynamiques -->
     </div>
   </section>
 
   <section class="page-section">
-    <h2 class="section-title">Un process clair</h2>
-    <div class="card-grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));">
-      <article class="car-card">
-        <h4>1. Choix du véhicule</h4>
-        <p>Filtrez la flotte par type, prix ou carburant directement sur la page “Nos voitures”.</p>
-      </article>
-      <article class="car-card">
-        <h4>2. Validation</h4>
-        <p>Notre équipe confirme la disponibilité et envoie le contrat avec les options sélectionnées.</p>
-      </article>
-      <article class="car-card">
-        <h4>3. Suivi en ligne</h4>
-        <p>Accédez au portail pour suivre vos réservations, véhicules assignés et factures.</p>
-      </article>
-      <article class="car-card">
-        <h4>4. Assistance</h4>
-        <p>Hotline 24/7, relais régionaux, chauffeurs remplaçants en moins d’1h sur Tana.</p>
-      </article>
+    <h2 class="section-title">Flotte disponible</h2>
+    <div class="grid-voitures" id="container-voitures">
+      <p>Chargement du catalogue…</p>
     </div>
   </section>
 
   <section class="page-section">
-    <h2 class="section-title">Ils nous font confiance</h2>
+    <h2 class="section-title">Avis récents</h2>
     <div class="avis-section" id="avis-home">
       <p class="empty-state" style="grid-column:1/-1;">Chargement des avis…</p>
     </div>
@@ -194,19 +96,19 @@
 <footer class="site-footer">
   <div class="footer-content">
     <h3 id="footer-title">RentCarServices</h3>
-    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address">SIAE 33 Ambodifilao – Antananarivo</span></p>
-    <p class="footer-phone"><i class="fas fa-phone"></i> <span id="footer-phone">+261 34 91 207 26</span></p>
+    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address">—</span></p>
+    <p class="footer-phone"><i class="fas fa-phone"></i> <span id="footer-phone">—</span></p>
     <p class="footer-legal">NIF <span id="footer-nif">-</span> · STAT <span id="footer-stat">-</span></p>
     <div id="footer-socials" style="margin-top:15px;"></div>
   </div>
 </footer>
 
-<a class="floating-call-btn" id="cta-hotline" href="tel:+261349120726" aria-label="Appeler RentCarServices">
+<a class="floating-call-btn" id="cta-hotline" href="tel:+2610000000" aria-label="Appeler RentCarServices">
   <i class="fas fa-phone"></i>
   <span>Appeler</span>
 </a>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="script.js"></script>
+<script src="index.js"></script>
 </body>
 </html>
