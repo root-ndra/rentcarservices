@@ -18,7 +18,7 @@
       text-align: center;
       box-shadow: 0 18px 45px rgba(15,23,42,.35);
     }
-    .cars-hero h1 { margin: 0; font-size: 2.4rem; }
+    .cars-hero h1 { margin: 0; font-size: 2.3rem; }
     .cars-hero p { margin: 15px auto 25px; max-width: 680px; color: #dbeafe; }
     .cars-hero .btn-solid {
       border: none; border-radius: 999px; padding: 14px 28px;
@@ -33,53 +33,27 @@
       box-shadow: 0 16px 40px rgba(15,23,42,.12);
       display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 18px;
     }
-    .cars-filters .filter-group label {
-      font-weight: 600; color: #1f2a37; display: block; margin-bottom: 6px;
-    }
+    .cars-filters label { font-weight: 600; color:#1f2a37; display:block; margin-bottom:6px; }
     .cars-filters select,
     .cars-filters input {
       width: 100%; border: 1px solid #d4dbe5; border-radius: 12px;
       padding: 10px; background: #f8fafc; font-size: 0.95rem;
     }
-
-    .partner-section {
-      max-width: 1100px; margin: 50px auto;
-      background: white; border-radius: 20px; padding: 35px;
-      box-shadow: 0 18px 40px rgba(15,23,42,.12);
-    }
-    .partner-section h2 { margin-top: 0; color: #0f172a; }
-    .partner-card { display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: 20px; }
-    .partner-card label { font-weight: 600; color: #1f2a37; }
-    .partner-card input, .partner-card textarea, .partner-card select {
-      width: 100%; border: 1px solid #d4dbe5; border-radius: 10px;
-      padding: 12px; margin-top: 6px; font-size: 0.95rem; background: #f8fafc;
-    }
-    .partner-actions {
-      grid-column: 1 / -1; text-align: right; margin-top: 10px;
-    }
-    .partner-actions button {
-      border: none; border-radius: 999px; padding: 14px 28px;
-      background: #1abc9c; color: white; font-weight: 600;
-      cursor: pointer;
-    }
-    #partner-feedback { margin-top: 12px; font-weight: 600; }
   </style>
 </head>
 <body>
 <nav class="navbar">
   <div class="logo-container">
-    <img src="https://i.ibb.co/dw8gxWXL/1765001359376.png" alt="Logo" class="nav-logo">
-    <span>RentCarServices</span>
+    <img src="" alt="Logo" class="nav-logo" id="header-logo">
+    <span id="header-site-name">RentCarServices</span>
   </div>
-  <button class="menu-toggle" onclick="toggleMenu()">
-    <i class="fas fa-bars"></i>
-  </button>
+  <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
   <ul class="nav-links" id="nav-menu">
     <li><a href="index.html">Accueil</a></li>
     <li><a href="voitures.html" class="active">Nos voitures</a></li>
     <li><a href="divertissement.html">Divertissement</a></li>
-    <li><a href="contact.html">Contact & Avis</a></li>
     <li><a href="emplois.html">Emplois</a></li>
+    <li><a href="contact.html">Contact & Avis</a></li>
     <li><a href="login.html" class="btn-action btn-sec">Portail admin</a></li>
   </ul>
 </nav>
@@ -87,29 +61,24 @@
 <main>
   <section class="cars-hero" id="top">
     <h1>Découvrez la flotte RentCarServices</h1>
-    <p>Filtrez par type, énergie ou budget pour trouver le véhicule parfaitement adapté à votre mission.
-       Vous êtes une agence locale ? Proposez vos voitures et rejoignez le programme partenaire.</p>
+    <p>Filtrez par type, énergie ou budget pour trouver le véhicule parfait. Chaque fiche est mise à jour en temps réel depuis notre base Supabase.</p>
     <div>
-      <a href="#catalogue"><button class="btn-solid primary"><i class="fas fa-car-side"></i> Parc actuel</button></a>
-      <a href="#partner"><button class="btn-solid secondary"><i class="fas fa-handshake"></i> Devenir partenaire</button></a>
+      <a href="#catalogue"><button class="btn-solid primary"><i class="fas fa-car-side"></i> Voir le catalogue</button></a>
+      <a href="index.html"><button class="btn-solid secondary"><i class="fas fa-arrow-left"></i> Retour accueil</button></a>
     </div>
   </section>
 
   <section id="catalogue">
     <div class="cars-filters" aria-label="Filtres du catalogue">
-      <div class="filter-group">
+      <div>
         <label for="filter-type">Type</label>
-        <select id="filter-type">
-          <option value="">Tous</option>
-        </select>
+        <select id="filter-type"><option value="">Tous</option></select>
       </div>
-      <div class="filter-group">
+      <div>
         <label for="filter-carburant">Carburant</label>
-        <select id="filter-carburant">
-          <option value="">Tous</option>
-        </select>
+        <select id="filter-carburant"><option value="">Tous</option></select>
       </div>
-      <div class="filter-group">
+      <div>
         <label for="filter-places">Places</label>
         <select id="filter-places">
           <option value="">Toutes</option>
@@ -119,11 +88,11 @@
           <option value="7">7+</option>
         </select>
       </div>
-      <div class="filter-group">
+      <div>
         <label for="filter-prix-max">Budget max (Ar/J)</label>
         <input type="number" id="filter-prix-max" min="0" placeholder="ex : 150000">
       </div>
-      <div class="filter-group">
+      <div>
         <label for="sort-prix">Tri</label>
         <select id="sort-prix">
           <option value="prix-asc">Prix croissant</option>
@@ -138,68 +107,22 @@
       <p>Chargement du catalogue…</p>
     </section>
   </section>
-
-  <section id="partner" class="partner-section">
-    <h2><i class="fas fa-user-plus"></i> Devenir partenaire</h2>
-    <p style="color:#475569;">Inscrivez votre agence : un compte Supabase Auth est créé automatiquement
-       et vos véhicules apparaîtront dans le back-office après validation.</p>
-
-    <form id="form-partenaire" class="partner-card">
-      <div>
-        <label for="partner-prenom">Prénom *</label>
-        <input id="partner-prenom" name="prenom" autocomplete="given-name" required>
-      </div>
-      <div>
-        <label for="partner-nom">Nom *</label>
-        <input id="partner-nom" name="nom" autocomplete="family-name" required>
-      </div>
-      <div>
-        <label for="partner-email">Email de contact *</label>
-        <input type="email" id="partner-email" name="email" autocomplete="email" required>
-      </div>
-      <div>
-        <label for="partner-tel">Téléphone *</label>
-        <input type="tel" id="partner-tel" name="tel" placeholder="+261..." required>
-      </div>
-      <div>
-        <label for="partner-adresse">Adresse</label>
-        <input id="partner-adresse" name="adresse" placeholder="Agence, ville, quartier">
-      </div>
-      <div>
-        <label for="partner-commission">Commission souhaitée (%)</label>
-        <input type="number" id="partner-commission" name="commission" min="5" max="40" value="15">
-      </div>
-      <div>
-        <label for="partner-login-email">Login (email Supabase) *</label>
-        <input type="email" id="partner-login-email" placeholder="Identifiant de connexion" required>
-      </div>
-      <div>
-        <label for="partner-password">Mot de passe *</label>
-        <input type="password" id="partner-password" minlength="8" required>
-      </div>
-      <div>
-        <label for="partner-password-confirm">Confirmation *</label>
-        <input type="password" id="partner-password-confirm" minlength="8" required>
-      </div>
-      <div class="partner-actions">
-        <label style="display:flex; align-items:center; gap:8px; justify-content:flex-end;">
-          <input type="checkbox" id="partner-conditions" required>
-          <span>J’accepte la vérification manuelle de mon dossier.</span>
-        </label>
-        <button type="submit"><i class="fas fa-paper-plane"></i> Envoyer</button>
-        <p id="partner-feedback"></p>
-      </div>
-    </form>
-  </section>
 </main>
 
 <footer class="site-footer">
   <div class="footer-content">
-    <h3>RentCarServices</h3>
-    <p><i class="fas fa-map-marker-alt"></i> SIAE 33 Ambodifilao – Antananarivo</p>
-    <p class="footer-phone"><i class="fas fa-phone"></i> +261 34 91 207 26</p>
+    <h3 id="footer-title">RentCarServices</h3>
+    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address">—</span></p>
+    <p class="footer-phone"><i class="fas fa-phone"></i> <span id="footer-phone">—</span></p>
+    <p class="footer-legal">NIF <span id="footer-nif">-</span> · STAT <span id="footer-stat">-</span></p>
+    <div id="footer-socials" style="margin-top:15px;"></div>
   </div>
 </footer>
+
+<a class="floating-call-btn" id="cta-hotline" href="tel:+2610000000" aria-label="Appeler RentCarServices">
+  <i class="fas fa-phone"></i>
+  <span>Appeler</span>
+</a>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script-voitures.js"></script>
