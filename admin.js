@@ -190,7 +190,7 @@ async function toggleCarVisibility(carId, isVisible) {
     const { error } = await supabaseAdmin.from('voitures').update({ est_public: isVisible }).eq('id', carId);
     if (error) {
         alert(`Erreur lors de la mise à jour de la visibilité : ${error.message}\n\nVérifiez que la colonne 'est_public' existe bien dans votre table 'voitures'.`);
-        await loadCarDashboard(); // Recharge pour réinitialiser le toggle en cas d'échec
+        await loadCarDashboard();
     }
 }
 
@@ -219,25 +219,25 @@ function renderPartnerTable(list) {
       <td>${p.commission_taux || 0}%</td>
       <td>
         <label class="switch">
-          <input type="checkbox" ${p.est_gele ? '' : 'checked'} onchange="togglePartner('${p.id}', this.checked)">
+          <input type="checkbox" ${p.est_gele ? '' : 'checked'} onchange="togglePartner('${p.user_id}', this.checked)">
           <span class="slider"></span>
         </label>
       </td>
-      <td><button class="btn-small btn-sec" onclick="openPartnerModal('${p.id}')"><i class="fas fa-pen"></i></button></td>
+      <td><button class="btn-small btn-sec" onclick="openPartnerModal('${p.user_id}')"><i class="fas fa-pen"></i></button></td>
     </tr>
   `).join('');
 }
 
-function openPartnerModal(partnerId = null) {
+function openPartnerModal(userId = null) {
   const modal = document.getElementById('partner-modal');
   const form = document.getElementById('partner-form');
   form.reset();
   document.getElementById('partner-feedback').textContent = '';
-  document.getElementById('partner-id').value = partnerId || '';
-  document.querySelectorAll('.auth-only').forEach(el => el.style.display = partnerId ? 'none' : 'block');
+  document.getElementById('partner-user-id').value = userId || '';
+  document.querySelectorAll('.auth-only').forEach(el => el.style.display = userId ? 'none' : 'block');
   
-  if (partnerId) {
-    const partner = partenairesCache.find(p => p.id === partnerId);
+  if (userId) {
+    const partner = partenairesCache.find(p => p.user_id === userId);
     document.getElementById('partner-modal-title').textContent = 'Modifier partenaire';
     document.getElementById('new-prenom').value = partner?.prenom || '';
     const nomComplet = partner?.nom_complet || '';
@@ -255,7 +255,7 @@ async function submitPartner(event) {
   event.preventDefault();
   const feedback = document.getElementById('partner-feedback');
   feedback.textContent = 'Traitement…';
-  const partnerId = document.getElementById('partner-id').value;
+  const userId = document.getElementById('partner-user-id').value;
   const prenom = document.getElementById('new-prenom').value.trim();
   const nom = document.getElementById('new-nom').value.trim();
   const payload = {
@@ -266,8 +266,8 @@ async function submitPartner(event) {
     commission_taux: parseInt(document.getElementById('new-commission').value, 10) || 15
   };
 
-  if (partnerId) {
-    const { error } = await supabaseAdmin.from('partenaires').update(payload).eq('id', partnerId);
+  if (userId) {
+    const { error } = await supabaseAdmin.from('partenaires').update(payload).eq('user_id', userId);
     if (error) { feedback.textContent = error.message; return; }
     feedback.textContent = 'Partenaire mis à jour ✅';
   } else {
@@ -286,8 +286,8 @@ async function submitPartner(event) {
   setTimeout(() => closeModal('partner-modal'), 1000);
 }
 
-async function togglePartner(partnerId, isActive) {
-  const { error } = await supabaseAdmin.from('partenaires').update({ est_gele: !isActive }).eq('id', partnerId);
+async function togglePartner(userId, isActive) {
+  const { error } = await supabaseAdmin.from('partenaires').update({ est_gele: !isActive }).eq('user_id', userId);
   if (error) {
     alert(`Erreur: ${error.message}`);
   }
