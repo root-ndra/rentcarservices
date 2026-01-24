@@ -8,10 +8,42 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="style-ui.css">
   <style>
-    /* … styles identiques à la version précédente … */
+    /* Vous pouvez garder vos styles ici ou les déplacer dans style-ui.css */
+    .filters-section {
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .filters-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .filters-container select,
+    .filters-container input {
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+    .car-grid-section {
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .car-grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px;
+      max-width: 1200px;
+      margin: 20px auto 0;
+    }
   </style>
 </head>
 <body>
+
 <nav class="navbar">
   <div class="logo-container">
     <img src="" alt="Logo" class="nav-logo" id="header-logo">
@@ -29,7 +61,40 @@
 </nav>
 
 <main>
-  <!-- … sections hero + filtres + grid identiques … -->
+  <!-- SECTION DES FILTRES -->
+  <section class="filters-section">
+    <div class="filters-container">
+        <select id="filter-type">
+            <option value="">Tous les types</option>
+            <!-- Les options seront chargées par le JavaScript -->
+        </select>
+        <select id="filter-carburant">
+            <option value="">Tous les carburants</option>
+            <!-- Les options seront chargées par le JavaScript -->
+        </select>
+        <select id="filter-places">
+            <option value="">Toutes les places</option>
+            <option value="2">2 places</option>
+            <option value="4">4 places</option>
+            <option value="5">5 places</option>
+            <option value="7+">7 places et +</option>
+        </select>
+        <input type="number" id="filter-prix-max" placeholder="Prix max / jour">
+        <select id="sort-prix">
+            <option value="prix-asc">Trier par prix croissant</option>
+            <option value="prix-desc">Trier par prix décroissant</option>
+        </select>
+    </div>
+  </section>
+
+  <!-- SECTION DE LA GRILLE DES VOITURES -->
+  <section class="car-grid-section">
+    <h2>Notre Flotte de Véhicules</h2>
+    <!-- C'est ce conteneur qui était manquant. Le script l'utilise pour afficher les voitures. -->
+    <div id="container-voitures" class="car-grid-container">
+        <!-- Les fiches des voitures seront injectées ici par le script-voitures.js -->
+    </div>
+  </section>
 </main>
 
 <footer class="site-footer">
