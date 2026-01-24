@@ -1,41 +1,73 @@
-const SUPABASE_URL = 'https://ctijwjcjmbfmfhzwbguk.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+/* ---------- CHARGEMENT SUPABASE VIA JSON ---------- */
+let supabaseClient = null;
 
+async function initSupabase() {
+  if (supabaseClient) return;
+  try {
+    const response = await fetch('supabase-config.json');
+    if (!response.ok) throw new Error('supabase-config.json introuvable');
+    const { supabaseUrl, supabaseKey } = await response.json();
+    supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+  } catch (error) {
+    console.error("Erreur d'initialisation de Supabase:", error);
+    throw error; // Propage l'erreur pour la gérer dans le listener principal
+  }
+}
+
+/* ---------- DONNÉES GLOBALES ---------- */
+let siteConfig = null;
 let radiosCache = [];
 let playlistsCache = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await chargerConfigFooter();
-  await chargerRadios();
-  await chargerPlaylists();
+  try {
+    await initSupabase();
+    await loadSiteConfig();
+    await chargerRadios();
+    await chargerPlaylists();
+  } catch (error) {
+    console.error("Impossible de charger la page Divertissement:", error);
+    document.getElementById('radios-grid').innerHTML = '<p class="empty-state">Erreur de chargement.</p>';
+    document.getElementById('playlists-grid').innerHTML = '<p class="empty-state">Erreur de chargement.</p>';
+  }
 });
 
+/* ---------- UTILITAIRES UI ---------- */
 function toggleMenu() {
   document.getElementById('nav-menu')?.classList.toggle('active');
 }
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text ?? '';
+}
+function setAttr(id, attr, value) {
+  const el = document.getElementById(id);
+  if (el) el.setAttribute(attr, value ?? '');
+}
 
-async function chargerConfigFooter() {
-  try {
-    const resp = await fetch('site_config.json');
-    const config = await resp.json();
-    document.getElementById('header-logo').src = config.header.logoUrl;
-    document.getElementById('header-site-name').innerText = config.header.siteName;
-    document.getElementById('footer-title').innerText = config.header.siteName;
-    document.getElementById('footer-address').innerText = config.footer.address;
-    document.getElementById('footer-nif').innerText = config.footer.nif;
-    document.getElementById('footer-stat').innerText = config.footer.stat;
-    document.getElementById('footer-phone').innerText = config.contact.phoneDisplay;
+/* ---------- CONFIGURATION (logo, footer, contact) ---------- */
+async function loadSiteConfig() {
+  const resp = await fetch('site_config.json');
+  if (!resp.ok) throw new Error('site_config.json introuvable');
+  siteConfig = await resp.json();
 
-    const socials = document.getElementById('footer-socials');
-    const icons = { facebook: 'fab fa-facebook', instagram: 'fab fa-instagram', tiktok: 'fab fa-tiktok' };
+  const { header, footer } = siteConfig;
+  setText('header-site-name', header.siteName);
+  setAttr('header-logo', 'src', header.logoUrl);
+  setText('footer-title', header.siteName);
+  setText('footer-address', footer.address);
+  setText('footer-nif', footer.nif);
+  setText('footer-stat', footer.stat);
+  setText('footer-phone', siteConfig.contact.phoneDisplay);
+
+  const socials = document.getElementById('footer-socials');
+  if (socials) {
     socials.innerHTML = '';
-    Object.entries(config.footer.socials || {}).forEach(([network, url]) => {
+    const icons = { facebook: 'fab fa-facebook', instagram: 'fab fa-instagram', tiktok: 'fab fa-tiktok' };
+    Object.entries(footer.socials || {}).forEach(([network, url]) => {
       if (!url || url === '#') return;
-      socials.innerHTML += `<a href="${url}" target="_blank" style="color:white;margin:0 8px;font-size:1.3rem;"><i class="${icons[network] || 'fas fa-globe'}"></i></a>`;
+      socials.innerHTML += `<a href="${url}" target="_blank" rel="noopener" style="color:white;margin:0 8px;font-size:1.3rem;"><i class="${icons[network] || 'fas fa-globe'}"></i></a>`;
     });
-  } catch (err) {
-    console.error('Config divertissement', err);
   }
 }
 
@@ -43,7 +75,7 @@ async function chargerRadios() {
   const grid = document.getElementById('radios-grid');
   grid.innerHTML = '<p class="empty-state">Chargement des radios…</p>';
 
-  const { data, error } = await sb
+  const { data, error } = await supabaseClient
     .from('radios')
     .select('*')
     .eq('actif', true)
@@ -85,7 +117,7 @@ async function chargerPlaylists() {
   const grid = document.getElementById('playlists-grid');
   grid.innerHTML = '<p class="empty-state">Chargement des playlists…</p>';
 
-  const { data, error } = await sb
+  const { data, error } = await supabaseClient
     .from('playlists')
     .select('*')
     .eq('actif', true)
@@ -118,3 +150,8 @@ function filterPlaylists() {
   const filtered = !platform ? playlistsCache : playlistsCache.filter((pl) => pl.plateforme === platform);
   renderPlaylists(filtered);
 }
+
+// Exposer les fonctions nécessaires au HTML
+window.toggleMenu = toggleMenu;
+window.filterRadios = filterRadios;
+window.filterPlaylists = filterPlaylists;
