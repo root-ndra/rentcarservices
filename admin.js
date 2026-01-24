@@ -5,6 +5,7 @@ const supabaseAdmin = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentUser = null;
 let partenairesCache = [];
 let editingPartnerKey = null;
+let editingCarId = null;
 
 document.addEventListener('DOMContentLoaded', initAdmin);
 
@@ -24,6 +25,7 @@ async function initAdmin() {
   });
 
   document.getElementById('partner-form').addEventListener('submit', submitPartner);
+  document.getElementById('car-form').addEventListener('submit', submitCar);
 
   await loadStats();
   await loadPartenaires();
@@ -244,7 +246,93 @@ function viewPartner(partnerKey) {
   );
 }
 
+/* ------- Gestion des VOITURES ------- */
+
+function openCarModal(car = null) {
+  editingCarId = car?.id || null;
+  document.getElementById('car-modal').style.display = 'flex';
+  document.getElementById('car-modal-title').textContent = editingCarId ? 'Modifier la voiture' : 'Nouvelle voiture';
+  document.getElementById('car-feedback').textContent = '';
+
+  const fields = {
+    'car-id': car?.id || '',
+    'car-nom': car?.nom || '',
+    'car-ref': car?.ref_id || '',
+    'car-prix': car?.prix_base || '',
+    'car-type': car?.type || '',
+    'car-transmission': car?.transmission || 'Manuelle',
+    'car-carburant': car?.carburant || 'Essence',
+    'car-places': car?.places || '',
+    'car-chauffeur': car?.chauffeur_option || 'option',
+    'car-image': car?.image_url || '',
+    'car-description': car?.description || '',
+    'car-proprietaire': car?.proprietaire_id || ''
+  };
+
+  Object.entries(fields).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  });
+
+  document.getElementById('car-reservable').checked = car?.reservable !== false;
+  document.getElementById('car-calendrier').checked = car?.calendrier_public !== false;
+}
+
+function closeCarModal() {
+  document.getElementById('car-modal').style.display = 'none';
+  editingCarId = null;
+  document.getElementById('car-form').reset();
+  document.getElementById('car-feedback').textContent = '';
+}
+
+async function submitCar(event) {
+  event.preventDefault();
+  const feedback = document.getElementById('car-feedback');
+  feedback.textContent = 'Enregistrement…';
+  feedback.style.color = '#2563eb';
+
+  const payload = {
+    nom: document.getElementById('car-nom').value.trim(),
+    ref_id: document.getElementById('car-ref').value.trim() || null,
+    prix_base: parseInt(document.getElementById('car-prix').value, 10) || 0,
+    type: document.getElementById('car-type').value.trim() || null,
+    transmission: document.getElementById('car-transmission').value,
+    carburant: document.getElementById('car-carburant').value,
+    places: document.getElementById('car-places').value ? parseInt(document.getElementById('car-places').value, 10) : null,
+    chauffeur_option: document.getElementById('car-chauffeur').value,
+    image_url: document.getElementById('car-image').value.trim() || null,
+    description: document.getElementById('car-description').value.trim() || null,
+    proprietaire_id: document.getElementById('car-proprietaire').value.trim() || null,
+    reservable: document.getElementById('car-reservable').checked,
+    calendrier_public: document.getElementById('car-calendrier').checked,
+    afficher_calendrier: document.getElementById('car-calendrier').checked
+  };
+
+  try {
+    if (editingCarId) {
+      const { error } = await supabaseAdmin
+        .from('voitures')
+        .update(payload)
+        .eq('id', editingCarId);
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseAdmin.from('voitures').insert([payload]);
+      if (error) throw error;
+    }
+
+    feedback.textContent = 'Voiture enregistrée ✅';
+    feedback.style.color = '#16a34a';
+    setTimeout(closeCarModal, 800);
+    await loadStats();
+  } catch (err) {
+    feedback.textContent = err.message || 'Erreur inconnue';
+    feedback.style.color = '#e74c3c';
+  }
+}
+
 window.openPartnerModal = openPartnerModal;
 window.closePartnerModal = closePartnerModal;
 window.togglePartner = togglePartner;
 window.viewPartner = viewPartner;
+window.openCarModal = openCarModal;
+window.closeCarModal = closeCarModal;
