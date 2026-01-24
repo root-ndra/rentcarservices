@@ -1,75 +1,208 @@
-const SUPABASE_URL = 'https://ctijwjcjmbfmfhzwbguk.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk';
-const supabaseAdmin = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+let supabaseAdmin = null;
 let currentUser = null;
 let partenairesCache = [];
 let editingPartnerKey = null;
-let editingCarId = null;
 
 document.addEventListener('DOMContentLoaded', initAdmin);
 
+/* --------------------------------------------------- */
+/* --- 1. INITIALISATION ET AUTHENTIFICATION --- */
+/* --------------------------------------------------- */
+
+async function initSupabase() {
+    if (supabaseAdmin) return;
+    try {
+        const response = await fetch('supabase-config.json');
+        if (!response.ok) throw new Error('supabase-config.json introuvable');
+        const { supabaseUrl, supabaseKey } = await response.json();
+        supabaseAdmin = supabase.createClient(supabaseUrl, supabaseKey);
+    } catch (error) {
+        console.error("Erreur d'initialisation de Supabase:", error);
+        document.body.innerHTML = "<h1>Erreur de configuration. Contactez le support.</h1>";
+    }
+}
+
 async function initAdmin() {
-  const { data } = await supabaseAdmin.auth.getSession();
-  if (!data.session) {
-    window.location.href = 'login.html';
-    return;
-  }
-  currentUser = data.session.user;
-  document.getElementById('user-email').textContent = currentUser.email;
-  document.getElementById('user-role').textContent = (currentUser.user_metadata?.role || 'super_admin').toUpperCase();
+    await initSupabase();
+    if (!supabaseAdmin) return;
 
-  document.getElementById('btn-logout').addEventListener('click', async () => {
-    await supabaseAdmin.auth.signOut();
-    window.location.href = 'login.html';
-  });
+    const { data } = await supabaseAdmin.auth.getSession();
+    if (!data.session) {
+        window.location.href = 'login.html';
+        return;
+    }
+    currentUser = data.session.user;
+    document.getElementById('user-email').textContent = currentUser.email;
+    document.getElementById('user-role').textContent = (currentUser.user_metadata?.role || 'admin').toUpperCase();
 
-  document.getElementById('partner-form').addEventListener('submit', submitPartner);
-  document.getElementById('car-form').addEventListener('submit', submitCar);
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+        await supabaseAdmin.auth.signOut();
+        window.location.href = 'login.html';
+    });
 
-  await loadStats();
-  await loadPartenaires();
+    document.getElementById('partner-form').addEventListener('submit', submitPartner);
+
+    // Chargement des deux sections principales
+    await Promise.all([
+        loadCarDashboard(),
+        loadPartenaires()
+    ]);
 }
 
-async function loadStats() {
-  const statsGrid = document.getElementById('stats-grid');
-  statsGrid.innerHTML = '<p>Chargement…</p>';
+/* --------------------------------------------------- */
+/* --- 2. DASHBOARD VÉHICULES (Logique de admin1.html) --- */
+/* --------------------------------------------------- */
 
-  const [voitures, partenaires, reservations, offres] = await Promise.all([
-    supabaseAdmin.from('voitures').select('id'),
-    supabaseAdmin.from('partenaires').select('id, est_gele'),
-    supabaseAdmin.from('reservations').select('id', { head: true, count: 'exact' }),
-    supabaseAdmin.from('offres_emploi').select('id', { head: true, count: 'exact' })
-  ]);
+async function loadCarDashboard() {
+    const container = document.getElementById('grid-voitures');
+    container.innerHTML = '<p>Analyse des données en cours...</p>';
 
-  const stats = [
-    { label: 'Véhicules', value: voitures.data?.length || 0, icon: 'car' },
-    { label: 'Partenaires actifs', value: (partenaires.data || []).filter(p => !p.est_gele).length, icon: 'handshake' },
-    { label: 'Réservations', value: reservations.count || 0, icon: 'calendar-check' },
-    { label: 'Offres emploi', value: offres.count || 0, icon: 'briefcase' }
-  ];
-  statsGrid.innerHTML = stats.map(stat => `
-    <article class="car-card">
-      <h4><i class="fas fa-${stat.icon}"></i> ${stat.label}</h4>
-      <p style="font-size:2rem; margin:0;">${stat.value}</p>
-    </article>
-  `).join('');
+    const [voituresRes, resasRes, maintsRes] = await Promise.all([
+        supabaseAdmin.from('voitures').select('*').order('id'),
+        supabaseAdmin.from('reservations').select('*'),
+        supabaseAdmin.from('maintenances').select('*')
+    ]);
+
+    const voitures = voituresRes.data || [];
+    const resas = resasRes.data || [];
+    const maints = maintsRes.data || [];
+
+    if (voitures.length === 0) {
+        container.innerHTML = '<p>Aucun véhicule enregistré.</p>';
+        return;
+    }
+
+    container.innerHTML = '';
+    voitures.forEach(v => {
+        const today = new Date().toISOString().split('T')[0];
+        let statut = 'Dispo', badge = 'bg-green', border = 'status-dispo';
+        
+        const isMaint = maints.find(m => m.id_voiture === v.id && today >= m.date_debut && today <= m.date_fin);
+        const isLoc = resas.find(r => r.id_voiture === v.id && today >= r.date_debut && today <= r.date_fin && r.statut === 'valide');
+        
+        if (isMaint) { statut = 'Maintenance'; badge = 'bg-orange'; border = 'status-maintenance'; }
+        else if (isLoc) { statut = 'Louée'; badge = 'bg-red'; border = 'status-louee'; }
+
+        // Calculs de revenus et taux d'occupation (sur le mois en cours)
+        let revenus = 0, joursLoues = 0;
+        const now = new Date();
+        const debutPeriode = new Date(now.getFullYear(), now.getMonth(), 1);
+        const resasPeriode = resas.filter(r => r.id_voiture === v.id && r.statut === 'valide' && new Date(r.date_debut) >= debutPeriode);
+        
+        resasPeriode.forEach(r => {
+            revenus += r.montant_total || 0;
+            const d1 = new Date(r.date_debut), d2 = new Date(r.date_fin);
+            joursLoues += Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+        });
+        
+        const joursDansLeMois = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const tauxOccupation = Math.round((joursLoues / joursDansLeMois) * 100);
+
+        // Calcul pour la jauge de vidange
+        const kmActuel = v.kilometrage || 0;
+        const kmDepuisVidange = kmActuel % 6000;
+        const couleurJauge = kmDepuisVidange > 5500 ? '#e74c3c' : (kmDepuisVidange > 4500 ? '#f39c12' : '#2ecc71');
+        const pourcentageVidange = (kmDepuisVidange / 6000) * 100;
+
+        container.innerHTML += `
+            <div class="car-card ${border}">
+                <div class="card-header">
+                    <strong>${v.nom}</strong>
+                    <span class="badge ${badge}">${statut}</span>
+                </div>
+                <div class="card-body">
+                    <div class="kpi-row">
+                        <div class="kpi-item"><div class="kpi-val">${(revenus / 1000).toFixed(0)}k</div><div class="kpi-label">CA ce mois (Ar)</div></div>
+                        <div class="kpi-item"><div class="kpi-val">${tauxOccupation}%</div><div class="kpi-label">Taux d'occupation</div></div>
+                    </div>
+                    <div class="km-box"><span>Kilométrage: <strong>${kmActuel.toLocaleString('fr-FR')} km</strong></span></div>
+                    <div class="vidange-container">
+                        <div class="vidange-text"><span>Cycle Vidange (6000km)</span><span>${6000 - kmDepuisVidange} km restants</span></div>
+                        <div class="vidange-bar-bg"><div class="vidange-bar-fill" style="width: ${pourcentageVidange}%; background:${couleurJauge};"></div></div>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-action-card btn-maint" onclick="openMaint(${v.id})">Maintenance</button>
+                    <button class="btn-action-card btn-hist" onclick="voirHistorique(${v.id}, '${v.nom}')">Historique</button>
+                    <button class="btn-action-card btn-km" onclick="openKm(${v.id}, ${v.kilometrage || 0})">MàJ Km</button>
+                </div>
+            </div>`;
+    });
 }
+
+// --- Fonctions des modaux pour les voitures ---
+function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
+function openMaint(id) { document.getElementById('maint-id-voiture').value = id; document.getElementById('modal-maint').style.display = 'flex'; }
+function openKm(id, km) { document.getElementById('km-id-voiture').value = id; document.getElementById('km-valeur').value = km; document.getElementById('modal-km').style.display = 'flex'; }
+
+async function sauvegarderKm() {
+    const id = document.getElementById('km-id-voiture').value;
+    const km = document.getElementById('km-valeur').value;
+    await supabaseAdmin.from('voitures').update({ kilometrage: km }).eq('id', id);
+    fermerModal('modal-km');
+    loadCarDashboard();
+}
+
+async function sauvegarderMaintenance() {
+    const kmEntretien = document.getElementById('maint-km').value;
+    let details = document.getElementById('maint-details').value;
+    if (kmEntretien) details = `(À ${kmEntretien} km) ` + details;
+
+    const maint = {
+        id_voiture: document.getElementById('maint-id-voiture').value,
+        type_intervention: document.getElementById('maint-type').value,
+        details: details,
+        cout: document.getElementById('maint-cout').value,
+        date_debut: document.getElementById('maint-debut').value || new Date().toISOString().split('T')[0],
+        date_fin: document.getElementById('maint-fin').value || new Date().toISOString().split('T')[0]
+    };
+
+    await supabaseAdmin.from('maintenances').insert([maint]);
+    fermerModal('modal-maint');
+    loadCarDashboard();
+}
+
+async function voirHistorique(id, nom) {
+    document.getElementById('hist-titre-voiture').innerText = nom;
+    const ul = document.getElementById('historique-list');
+    ul.innerHTML = '<li>Chargement...</li>';
+    document.getElementById('modal-historique').style.display = 'flex';
+
+    const { data } = await supabaseAdmin.from('maintenances').select('*').eq('id_voiture', id).order('date_debut', { ascending: false });
+    
+    ul.innerHTML = '';
+    let total = 0;
+    if (data && data.length > 0) {
+        data.forEach(m => {
+            const cout = m.cout || 0;
+            total += cout;
+            ul.innerHTML += `<li class="history-item">
+                <div class="hist-date">${m.date_debut}</div>
+                <div class="hist-details"><strong>${m.type_intervention}</strong><br><small>${m.details || ''}</small></div>
+                <div class="hist-cout">${cout.toLocaleString('fr-FR')} Ar</div>
+            </li>`;
+        });
+    } else {
+        ul.innerHTML = '<li>Aucun historique de maintenance.</li>';
+    }
+    document.getElementById('hist-total').innerText = total.toLocaleString('fr-FR') + ' Ar';
+}
+
+
+/* --------------------------------------------------- */
+/* --- 3. GESTION DES PARTENAIRES (Logique de admin.js) --- */
+/* --------------------------------------------------- */
 
 async function loadPartenaires() {
   const tbody = document.getElementById('partners-body');
   tbody.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
 
-  const { data, error } = await supabaseAdmin
-    .from('partenaires')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const { data, error } = await supabaseAdmin.from('partenaires').select('*').order('created_at', { ascending: false });
 
   if (error) {
     tbody.innerHTML = `<tr><td colspan="6">${error.message}</td></tr>`;
     return;
   }
-
   partenairesCache = data || [];
   renderPartnerTable(partenairesCache);
 }
@@ -80,67 +213,46 @@ function renderPartnerTable(list) {
     tbody.innerHTML = '<tr><td colspan="6">Aucun partenaire pour le moment.</td></tr>';
     return;
   }
-  tbody.innerHTML = list.map(p => {
-    const partnerKey = p.id || p.user_id;
-    return `
-      <tr>
-        <td>${p.nom_complet || '-'}</td>
-        <td>${p.email}</td>
-        <td>${p.telephone || '-'}</td>
-        <td>${p.commission_taux || 0}%</td>
-        <td>
-          <label class="switch">
-            <input type="checkbox" ${p.est_gele ? '' : 'checked'} onchange="togglePartner('${partnerKey}', this.checked)">
-            <span class="slider"></span>
-          </label>
-        </td>
-        <td>
-          <button class="btn-small btn-sec" onclick="openPartnerModal('${partnerKey}')"><i class="fas fa-pen"></i></button>
-          <button class="btn-small" style="background:#6366f1;color:white;" onclick="viewPartner('${partnerKey}')"><i class="fas fa-eye"></i></button>
-        </td>
-      </tr>
-    `;
-  }).join('');
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td>${p.nom_complet || `${p.prenom || ''} ${p.nom || ''}`.trim() || '-'}</td>
+      <td>${p.email}</td>
+      <td>${p.telephone || '-'}</td>
+      <td>${p.commission_taux || 0}%</td>
+      <td>
+        <label class="switch">
+          <input type="checkbox" ${p.est_gele ? '' : 'checked'} onchange="togglePartner('${p.id}', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td>
+        <button class="btn-small btn-sec" onclick="openPartnerModal('${p.id}')"><i class="fas fa-pen"></i></button>
+      </td>
+    </tr>
+  `).join('');
 }
 
-function findPartnerByKey(key) {
-  return partenairesCache.find(p => (p.id && p.id === key) || (p.user_id && p.user_id === key));
-}
-
-function getPartnerIdentifier(key) {
-  const partner = findPartnerByKey(key);
-  if (partner?.id) return { column: 'id', value: partner.id };
-  if (partner?.user_id) return { column: 'user_id', value: partner.user_id };
-  return { column: 'id', value: key };
-}
-
-function openPartnerModal(partnerKey = null) {
+function openPartnerModal(partnerId = null) {
   const modal = document.getElementById('partner-modal');
-  const authOnly = document.querySelectorAll('.auth-only');
-  const title = document.getElementById('partner-modal-title');
   const form = document.getElementById('partner-form');
-
   form.reset();
-  document.getElementById('partner-id').value = partnerKey || '';
 
-  editingPartnerKey = partnerKey;
-  authOnly.forEach(bloc => bloc.style.display = partnerKey ? 'none' : 'block');
-  document.getElementById('new-login').disabled = !!partnerKey;
-  document.getElementById('new-password').disabled = !!partnerKey;
-
-  if (partnerKey) {
-    const partner = findPartnerByKey(partnerKey);
-    title.textContent = 'Modifier partenaire';
+  editingPartnerKey = partnerId;
+  document.getElementById('partner-id').value = partnerId || '';
+  document.querySelectorAll('.auth-only').forEach(el => el.style.display = partnerId ? 'none' : 'block');
+  
+  if (partnerId) {
+    const partner = partenairesCache.find(p => p.id === partnerId);
+    document.getElementById('partner-modal-title').textContent = 'Modifier partenaire';
     document.getElementById('new-prenom').value = partner?.prenom || '';
-    document.getElementById('new-nom').value = partner?.nom_complet?.split(' ').slice(-1).join(' ') || '';
+    const nomComplet = partner?.nom_complet || '';
+    document.getElementById('new-nom').value = nomComplet.replace(partner?.prenom, '').trim();
     document.getElementById('new-email').value = partner?.email || '';
     document.getElementById('new-tel').value = partner?.telephone || '';
     document.getElementById('new-commission').value = partner?.commission_taux || 15;
   } else {
-    title.textContent = 'Nouveau partenaire';
+    document.getElementById('partner-modal-title').textContent = 'Nouveau partenaire';
   }
-
-  document.getElementById('partner-feedback').textContent = '';
   modal.style.display = 'flex';
 }
 
@@ -153,186 +265,51 @@ async function submitPartner(event) {
   event.preventDefault();
   const feedback = document.getElementById('partner-feedback');
   feedback.textContent = 'Traitement…';
-  feedback.style.color = '#1e40af';
 
   const prenom = document.getElementById('new-prenom').value.trim();
   const nom = document.getElementById('new-nom').value.trim();
-  const email = document.getElementById('new-email').value.trim();
-  const tel = document.getElementById('new-tel').value.trim();
-  const commission = parseInt(document.getElementById('new-commission').value, 10) || 15;
-
-  if (editingPartnerKey) {
-    const { column, value } = getPartnerIdentifier(editingPartnerKey);
-    const payload = {
-      prenom,
-      nom_complet: `${prenom} ${nom}`.trim(),
-      email,
-      telephone: tel,
-      commission_taux: commission
-    };
-    const { error } = await supabaseAdmin.from('partenaires').update(payload).eq(column, value);
-    if (error) {
-      feedback.textContent = error.message;
-      feedback.style.color = '#e74c3c';
-      return;
-    }
-    feedback.textContent = 'Partenaire mis à jour ✅';
-    feedback.style.color = '#16a34a';
-    await loadPartenaires();
-    setTimeout(closePartnerModal, 800);
-    return;
-  }
-
-  const loginEmail = document.getElementById('new-login').value.trim();
-  let password = document.getElementById('new-password').value.trim();
-  if (!loginEmail) {
-    feedback.textContent = 'Le login Supabase est obligatoire pour créer un compte.';
-    feedback.style.color = '#e74c3c';
-    return;
-  }
-  if (!password) {
-    password = `RCS-${Math.random().toString(36).slice(2, 8)}!`;
-    document.getElementById('new-password').value = password;
-  }
-
-  const { data, error } = await supabaseAdmin.auth.signUp({
-    email: loginEmail,
-    password,
-    options: { data: { role: 'partenaire' } }
-  });
-  if (error) {
-    feedback.textContent = error.message;
-    feedback.style.color = '#e74c3c';
-    return;
-  }
-  const userId = data.user.id;
-  const { error: insertError } = await supabaseAdmin.from('partenaires').insert([{
-    user_id: userId,
+  const payload = {
     prenom,
     nom_complet: `${prenom} ${nom}`.trim(),
-    email,
-    telephone: tel,
-    commission_taux: commission,
-    est_gele: false
-  }]);
-  if (insertError) {
-    feedback.textContent = insertError.message;
-    feedback.style.color = '#e74c3c';
-    return;
-  }
-  feedback.textContent = 'Partenaire créé ✅ (pense à valider son email)';
-  feedback.style.color = '#16a34a';
-  await loadPartenaires();
-  setTimeout(closePartnerModal, 1200);
-}
-
-async function togglePartner(partnerKey, isActive) {
-  const { column, value } = getPartnerIdentifier(partnerKey);
-  await supabaseAdmin
-    .from('partenaires')
-    .update({ est_gele: !isActive })
-    .eq(column, value);
-  await loadPartenaires();
-}
-
-function viewPartner(partnerKey) {
-  const partner = findPartnerByKey(partnerKey);
-  if (!partner) return;
-  alert(
-    `Partenaire : ${partner.nom_complet}\n` +
-    `Email : ${partner.email}\n` +
-    `Téléphone : ${partner.telephone || '-'}\n` +
-    `Commission : ${partner.commission_taux || 0}%`
-  );
-}
-
-/* ------- Gestion des VOITURES ------- */
-
-function openCarModal(car = null) {
-  editingCarId = car?.id || null;
-  document.getElementById('car-modal').style.display = 'flex';
-  document.getElementById('car-modal-title').textContent = editingCarId ? 'Modifier la voiture' : 'Nouvelle voiture';
-  document.getElementById('car-feedback').textContent = '';
-
-  const fields = {
-    'car-id': car?.id || '',
-    'car-nom': car?.nom || '',
-    'car-ref': car?.ref_id || '',
-    'car-prix': car?.prix_base || '',
-    'car-type': car?.type || '',
-    'car-transmission': car?.transmission || 'Manuelle',
-    'car-carburant': car?.carburant || 'Essence',
-    'car-places': car?.places || '',
-    'car-chauffeur': car?.chauffeur_option || 'option',
-    'car-image': car?.image_url || '',
-    'car-description': car?.description || '',
-    'car-proprietaire': car?.proprietaire_id || ''
+    email: document.getElementById('new-email').value.trim(),
+    telephone: document.getElementById('new-tel').value.trim(),
+    commission_taux: parseInt(document.getElementById('new-commission').value, 10) || 15
   };
 
-  Object.entries(fields).forEach(([id, value]) => {
-    const el = document.getElementById(id);
-    if (el) el.value = value;
-  });
-
-  document.getElementById('car-reservable').checked = car?.reservable !== false;
-  document.getElementById('car-calendrier').checked = car?.calendrier_public !== false;
-}
-
-function closeCarModal() {
-  document.getElementById('car-modal').style.display = 'none';
-  editingCarId = null;
-  document.getElementById('car-form').reset();
-  document.getElementById('car-feedback').textContent = '';
-}
-
-async function submitCar(event) {
-  event.preventDefault();
-  const feedback = document.getElementById('car-feedback');
-  feedback.textContent = 'Enregistrement…';
-  feedback.style.color = '#2563eb';
-
-  const payload = {
-    nom: document.getElementById('car-nom').value.trim(),
-    ref_id: document.getElementById('car-ref').value.trim() || null,
-    prix_base: parseInt(document.getElementById('car-prix').value, 10) || 0,
-    type: document.getElementById('car-type').value.trim() || null,
-    transmission: document.getElementById('car-transmission').value,
-    carburant: document.getElementById('car-carburant').value,
-    places: document.getElementById('car-places').value ? parseInt(document.getElementById('car-places').value, 10) : null,
-    chauffeur_option: document.getElementById('car-chauffeur').value,
-    image_url: document.getElementById('car-image').value.trim() || null,
-    description: document.getElementById('car-description').value.trim() || null,
-    proprietaire_id: document.getElementById('car-proprietaire').value.trim() || null,
-    reservable: document.getElementById('car-reservable').checked,
-    calendrier_public: document.getElementById('car-calendrier').checked,
-    afficher_calendrier: document.getElementById('car-calendrier').checked
-  };
-
-  try {
-    if (editingCarId) {
-      const { error } = await supabaseAdmin
-        .from('voitures')
-        .update(payload)
-        .eq('id', editingCarId);
-      if (error) throw error;
-    } else {
-      const { error } = await supabaseAdmin.from('voitures').insert([payload]);
-      if (error) throw error;
-    }
-
-    feedback.textContent = 'Voiture enregistrée ✅';
-    feedback.style.color = '#16a34a';
-    setTimeout(closeCarModal, 800);
-    await loadStats();
-  } catch (err) {
-    feedback.textContent = err.message || 'Erreur inconnue';
-    feedback.style.color = '#e74c3c';
+  if (editingPartnerKey) {
+    const { error } = await supabaseAdmin.from('partenaires').update(payload).eq('id', editingPartnerKey);
+    if (error) { feedback.textContent = error.message; return; }
+    feedback.textContent = 'Partenaire mis à jour ✅';
+  } else {
+    const loginEmail = document.getElementById('new-login').value.trim();
+    let password = document.getElementById('new-password').value.trim();
+    if (!loginEmail) { feedback.textContent = 'Le login est obligatoire.'; return; }
+    if (!password) password = `RCS-${Math.random().toString(36).slice(2, 8)}!`;
+    
+    const { data, error: authError } = await supabaseAdmin.auth.signUp({ email: loginEmail, password, options: { data: { role: 'partenaire' } } });
+    if (authError) { feedback.textContent = authError.message; return; }
+    
+    payload.user_id = data.user.id;
+    const { error: insertError } = await supabaseAdmin.from('partenaires').insert([payload]);
+    if (insertError) { feedback.textContent = insertError.message; return; }
+    feedback.textContent = 'Partenaire créé ✅';
   }
+  await loadPartenaires();
+  setTimeout(closePartnerModal, 1000);
 }
 
+async function togglePartner(partnerId, isActive) {
+  await supabaseAdmin.from('partenaires').update({ est_gele: !isActive }).eq('id', partnerId);
+  await loadPartenaires();
+}
+
+// Exposer les fonctions à l'objet window pour les `onclick`
 window.openPartnerModal = openPartnerModal;
 window.closePartnerModal = closePartnerModal;
 window.togglePartner = togglePartner;
-window.viewPartner = viewPartner;
-window.openCarModal = openCarModal;
-window.closeCarModal = closeCarModal;
+window.fermerModal = fermerModal;
+window.openMaint = openMaint;
+window.openKm = openKm;
+window.sauvegarderKm = sauvegarderKm;
+window.sauvegarderMaintenance = sauvegarderMaintenance;
+window.voirHistorique = voirHistorique;
