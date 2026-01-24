@@ -72,8 +72,7 @@ function bindPartnerModal() {
   document.querySelectorAll('[data-open-partner]').forEach((btn) => {
     btn.addEventListener('click', openPartnerModal);
   });
-  const form = document.getElementById('partner-lead-form');
-  form?.addEventListener('submit', submitPartnerLead);
+  document.getElementById('partner-lead-form')?.addEventListener('submit', submitPartnerLead);
 }
 
 function openPartnerModal() {
@@ -87,33 +86,37 @@ function closePartnerModal() {
 async function submitPartnerLead(event) {
   event.preventDefault();
   const feedback = document.getElementById('partner-lead-feedback');
-  feedback.textContent = 'Transmission en cours…';
+  feedback.textContent = 'Ouverture de WhatsApp…';
   feedback.style.color = '#2563eb';
 
-  const payload = {
+  const data = {
     prenom: document.getElementById('lead-prenom').value.trim(),
     nom: document.getElementById('lead-nom').value.trim(),
     email: document.getElementById('lead-email').value.trim(),
     telephone: document.getElementById('lead-phone').value.trim(),
     agence: document.getElementById('lead-agence').value.trim(),
-    flotte_estimee: parseInt(document.getElementById('lead-fleet').value, 10) || 1,
+    flotte: document.getElementById('lead-fleet').value.trim() || '1',
     message: document.getElementById('lead-message').value.trim()
   };
 
-  try {
-    const { error } = await supabaseClient
-      .from('candidatures_partenaires')
-      .insert([payload]);
+  const waNumber = siteConfig?.contact?.whatsapp?.replace(/\D/g, '') || '2610000000';
+  const text = encodeURIComponent(
+    `Bonjour RentCarServices,%0A%0A` +
+    `Je souhaite devenir partenaire.%0A` +
+    `Nom : ${data.prenom} ${data.nom}%0A` +
+    `Email : ${data.email}%0A` +
+    `Téléphone : ${data.telephone}%0A` +
+    `Agence / Ville : ${data.agence}%0A` +
+    `Flotte estimée : ${data.flotte} véhicule(s)%0A%0A` +
+    `${data.message}`
+  );
 
-    if (error) throw error;
-    feedback.textContent = 'Merci ! Nous revenons vers vous rapidement.';
-    feedback.style.color = '#16a34a';
-    event.target.reset();
-    setTimeout(closePartnerModal, 1000);
-  } catch (err) {
-    feedback.textContent = err.message || 'Une erreur est survenue.';
-    feedback.style.color = '#e74c3c';
-  }
+  window.open(`https://wa.me/${waNumber}?text=${text}`, '_blank');
+
+  feedback.textContent = 'Redirection effectuée. Merci !';
+  feedback.style.color = '#16a34a';
+  event.target.reset();
+  setTimeout(closePartnerModal, 1200);
 }
 
 /* ---------- UTILITAIRES ---------- */
