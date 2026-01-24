@@ -74,13 +74,13 @@ async function loadCarDashboard() {
     container.innerHTML = '';
     voituresCache.forEach(v => {
         const today = new Date().toISOString().split('T')[0];
-        let statut = 'Dispo', badge = 'bg-green', border = 'status-dispo';
+        let statut = 'Dispo', badgeClass = 'bg-green', borderClass = 'status-dispo';
         
         const isMaint = maints.find(m => m.id_voiture === v.id && today >= m.date_debut && today <= m.date_fin);
         const isLoc = resas.find(r => r.id_voiture === v.id && today >= r.date_debut && today <= r.date_fin && r.statut === 'valide');
         
-        if (isMaint) { statut = 'Maintenance'; badge = 'bg-orange'; border = 'status-maintenance'; }
-        else if (isLoc) { statut = 'Louée'; badge = 'bg-red'; border = 'status-louee'; }
+        if (isMaint) { statut = 'Maintenance'; badgeClass = 'bg-orange'; borderClass = 'status-maintenance'; }
+        else if (isLoc) { statut = 'Louée'; badgeClass = 'bg-red'; borderClass = 'status-louee'; }
 
         let revenus = 0, joursLoues = 0;
         const now = new Date();
@@ -97,7 +97,7 @@ async function loadCarDashboard() {
         const tauxOccupation = Math.round((joursLoues / joursDansLeMois) * 100);
 
         container.innerHTML += `
-            <div class="car-card ${border}">
+            <div class="car-card ${borderClass}">
                 <div class="card-header">
                     <strong>${v.nom}</strong>
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -105,7 +105,7 @@ async function loadCarDashboard() {
                             <input type="checkbox" ${v.est_public !== false ? 'checked' : ''} onchange="toggleCarVisibility('${v.id}', this.checked)">
                             <span class="slider"></span>
                         </label>
-                        <span class="badge ${badge}">${statut}</span>
+                        <span class="badge ${badgeClass}">${statut}</span>
                     </div>
                 </div>
                 <div class="card-body">
@@ -189,11 +189,10 @@ async function submitCar(event) {
 async function toggleCarVisibility(carId, isVisible) {
     const { error } = await supabaseAdmin.from('voitures').update({ est_public: isVisible }).eq('id', carId);
     if (error) {
-        alert(`Erreur lors de la mise à jour de la visibilité : ${error.message}`);
+        alert(`Erreur lors de la mise à jour de la visibilité : ${error.message}\n\nVérifiez que la colonne 'est_public' existe bien dans votre table 'voitures'.`);
         await loadCarDashboard(); // Recharge pour réinitialiser le toggle en cas d'échec
     }
 }
-
 
 /* --------------------------------------------------- */
 /* --- 3. GESTION DES PARTENAIRES (CORRIGÉ) --- */
@@ -304,10 +303,8 @@ async function loadMaintenanceOptions() {
         const response = await fetch('maintenances.json');
         const data = await response.json();
         maintenanceConfig = data.maintenanceCategories;
-
         const categorieSelect = document.getElementById('maint-categorie');
         categorieSelect.innerHTML = maintenanceConfig.map(cat => `<option value="${cat.label}">${cat.label}</option>`).join('');
-        
         updateMotifs();
     } catch (error) {
         console.error("Erreur chargement maintenances.json:", error);
@@ -319,7 +316,6 @@ function updateMotifs() {
     const categorieSelect = document.getElementById('maint-categorie');
     const motifSelect = document.getElementById('maint-motif');
     const selectedCategory = maintenanceConfig.find(cat => cat.label === categorieSelect.value);
-
     motifSelect.innerHTML = '';
     if (selectedCategory) {
         selectedCategory.subcategories.forEach(sub => {
