@@ -96,11 +96,6 @@ async function loadCarDashboard() {
         const joursDansLeMois = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         const tauxOccupation = Math.round((joursLoues / joursDansLeMois) * 100);
 
-        const kmActuel = v.kilometrage || 0;
-        const kmDepuisVidange = kmActuel % 6000;
-        const couleurJauge = kmDepuisVidange > 5500 ? '#e74c3c' : (kmDepuisVidange > 4500 ? '#f39c12' : '#2ecc71');
-        const pourcentageVidange = (kmDepuisVidange / 6000) * 100;
-
         container.innerHTML += `
             <div class="car-card ${border}">
                 <div class="card-header">
@@ -111,11 +106,6 @@ async function loadCarDashboard() {
                     <div class="kpi-row">
                         <div class="kpi-item"><div class="kpi-val">${(revenus / 1000).toFixed(0)}k</div><div class="kpi-label">CA ce mois (Ar)</div></div>
                         <div class="kpi-item"><div class="kpi-val">${tauxOccupation}%</div><div class="kpi-label">Taux d'occupation</div></div>
-                    </div>
-                    <div class="km-box"><span>Kilométrage: <strong>${kmActuel.toLocaleString('fr-FR')} km</strong></span></div>
-                    <div class="vidange-container">
-                        <div class="vidange-text"><span>Cycle Vidange (6000km)</span><span>${6000 - kmDepuisVidange} km restants</span></div>
-                        <div class="vidange-bar-bg"><div class="vidange-bar-fill" style="width: ${pourcentageVidange}%; background:${couleurJauge};"></div></div>
                     </div>
                 </div>
                 <div class="card-actions">
@@ -146,6 +136,7 @@ function openCarModal(carId = null) {
             document.getElementById('car-carburant').value = car.carburant;
             document.getElementById('car-image-url').value = car.image_url;
             document.getElementById('car-description').value = car.description;
+            // Gère le cas où 'reservable' est null ou undefined comme 'true'
             document.getElementById('car-reservable').checked = car.reservable !== false;
         }
     } else {
@@ -301,7 +292,7 @@ async function loadMaintenanceOptions() {
         const categorieSelect = document.getElementById('maint-categorie');
         categorieSelect.innerHTML = maintenanceConfig.map(cat => `<option value="${cat.label}">${cat.label}</option>`).join('');
         
-        updateMotifs(); // Appel initial pour peupler les motifs de la première catégorie
+        updateMotifs(); // Appel initial pour peupler les motifs
     } catch (error) {
         console.error("Erreur chargement maintenances.json:", error);
         document.getElementById('maint-categorie').innerHTML = '<option>Erreur</option>';
@@ -373,14 +364,6 @@ async function voirHistorique(id, nom) {
 /* --------------------------------------------------- */
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-function openKm(id, km) { document.getElementById('km-id-voiture').value = id; document.getElementById('km-valeur').value = km; document.getElementById('modal-km').style.display = 'flex'; }
-async function sauvegarderKm() {
-    const id = document.getElementById('km-id-voiture').value;
-    const km = document.getElementById('km-valeur').value;
-    await supabaseAdmin.from('voitures').update({ kilometrage: km }).eq('id', id);
-    closeModal('modal-km');
-    await loadCarDashboard();
-}
 
 // Exposer les fonctions à l'objet window pour les `onclick`
 window.closeModal = closeModal;
@@ -393,5 +376,3 @@ window.updateMotifs = updateMotifs;
 window.openMaint = openMaint;
 window.sauvegarderMaintenance = sauvegarderMaintenance;
 window.voirHistorique = voirHistorique;
-window.openKm = openKm;
-window.sauvegarderKm = sauvegarderKm;
