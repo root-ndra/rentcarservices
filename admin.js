@@ -100,7 +100,13 @@ async function loadCarDashboard() {
             <div class="car-card ${border}">
                 <div class="card-header">
                     <strong>${v.nom}</strong>
-                    <span class="badge ${badge}">${statut}</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label class="switch" title="Afficher/Masquer sur le site public">
+                            <input type="checkbox" ${v.est_public !== false ? 'checked' : ''} onchange="toggleCarVisibility('${v.id}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="badge ${badge}">${statut}</span>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="kpi-row">
@@ -136,7 +142,6 @@ function openCarModal(carId = null) {
             document.getElementById('car-carburant').value = car.carburant;
             document.getElementById('car-image-url').value = car.image_url;
             document.getElementById('car-description').value = car.description;
-            // Gère le cas où 'reservable' est null ou undefined comme 'true'
             document.getElementById('car-reservable').checked = car.reservable !== false;
         }
     } else {
@@ -181,8 +186,17 @@ async function submitCar(event) {
     }
 }
 
+async function toggleCarVisibility(carId, isVisible) {
+    const { error } = await supabaseAdmin.from('voitures').update({ est_public: isVisible }).eq('id', carId);
+    if (error) {
+        alert(`Erreur lors de la mise à jour de la visibilité : ${error.message}`);
+        await loadCarDashboard(); // Recharge pour réinitialiser le toggle en cas d'échec
+    }
+}
+
+
 /* --------------------------------------------------- */
-/* --- 3. GESTION DES PARTENAIRES --- */
+/* --- 3. GESTION DES PARTENAIRES (CORRIGÉ) --- */
 /* --------------------------------------------------- */
 
 async function loadPartenaires() {
@@ -274,8 +288,10 @@ async function submitPartner(event) {
 }
 
 async function togglePartner(partnerId, isActive) {
-  await supabaseAdmin.from('partenaires').update({ est_gele: !isActive }).eq('id', partnerId);
-  // Recharger la table pour refléter le changement
+  const { error } = await supabaseAdmin.from('partenaires').update({ est_gele: !isActive }).eq('id', partnerId);
+  if (error) {
+    alert(`Erreur: ${error.message}`);
+  }
   await loadPartenaires();
 }
 
@@ -292,7 +308,7 @@ async function loadMaintenanceOptions() {
         const categorieSelect = document.getElementById('maint-categorie');
         categorieSelect.innerHTML = maintenanceConfig.map(cat => `<option value="${cat.label}">${cat.label}</option>`).join('');
         
-        updateMotifs(); // Appel initial pour peupler les motifs
+        updateMotifs();
     } catch (error) {
         console.error("Erreur chargement maintenances.json:", error);
         document.getElementById('maint-categorie').innerHTML = '<option>Erreur</option>';
@@ -372,6 +388,7 @@ window.submitPartner = submitPartner;
 window.togglePartner = togglePartner;
 window.openCarModal = openCarModal;
 window.submitCar = submitCar;
+window.toggleCarVisibility = toggleCarVisibility;
 window.updateMotifs = updateMotifs;
 window.openMaint = openMaint;
 window.sauvegarderMaintenance = sauvegarderMaintenance;
