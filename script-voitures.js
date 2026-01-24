@@ -71,7 +71,8 @@ async function chargerVoitures() {
   if (!container) return;
   container.innerHTML = '<p>Chargement du catalogue...</p>';
 
-  const { data, error } = await supabaseClient.from('voitures').select('*').order('prix_base', { ascending: true });
+ const { data, error } = await supabaseClient.from('voitures').select('*').eq('est_public', true).order('prix_base', { ascending: true });
+
 
   if (error) {
     container.innerHTML = `<p class="empty-state">Erreur : ${error.message}</p>`;
@@ -292,3 +293,4 @@ window.closeContactModal = closeContactModal;
 window.closeReservationModal = closeReservationModal;
 window.applyPromo = applyPromo;
 window.submitReservation = submitReservation;
+
