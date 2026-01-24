@@ -1,55 +1,52 @@
 let supabaseClient = null;
 let siteConfig = null;
 
-document.addEventListener('DOMContentLoaded', bootstrap);
-
-async function bootstrap() {
-  await initSupabase();
-  await loadSiteConfig();
-  setupHeroButtons();
-  await Promise.all([loadStats(), loadCars(), loadAvis()]);
-  restoreSelectedCar();
-}
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await initSupabase();
+    await loadSiteConfig();
+    setupHeroButtons();
+    bindPartnerModal();
+  } catch (error) {
+    console.error('Initialisation impossible :', error);
+  }
+});
 
 async function initSupabase() {
   const response = await fetch('supabase-config.json');
-  if (!response.ok) throw new Error('Impossible de charger supabase-config.json');
+  if (!response.ok) throw new Error('supabase-config.json introuvable');
   const { supabaseUrl, supabaseKey } = await response.json();
   supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 }
 
 async function loadSiteConfig() {
   const response = await fetch('site_config.json');
+  if (!response.ok) throw new Error('site_config.json introuvable');
   siteConfig = await response.json();
 
-  const {
-    header,
-    contact,
-    footer,
-    features = []
-  } = siteConfig;
-
-  setText('header-site-name', header.siteName);
-  setAttr('header-logo', 'src', header.logoUrl);
-  setText('footer-title', header.siteName);
-  setText('footer-address', footer.address);
-  setText('footer-nif', footer.nif);
-  setText('footer-stat', footer.stat);
-  setText('footer-phone', contact.phoneDisplay);
-  setAttr('cta-hotline', 'href', `tel:${contact.phoneCall}`);
+  setText('header-site-name', siteConfig.header.siteName);
+  setAttr('header-logo', 'src', siteConfig.header.logoUrl);
+  setText('footer-title', siteConfig.header.siteName);
+  setText('footer-address', siteConfig.footer.address);
+  setText('footer-nif', siteConfig.footer.nif);
+  setText('footer-stat', siteConfig.footer.stat);
+  setText('footer-phone', siteConfig.contact.phoneDisplay);
+  setAttr('cta-hotline', 'href', `tel:${siteConfig.contact.phoneCall}`);
 
   const socials = document.getElementById('footer-socials');
   socials.innerHTML = '';
   const icons = { facebook: 'fab fa-facebook', instagram: 'fab fa-instagram', tiktok: 'fab fa-tiktok' };
-  Object.entries(footer.socials || {}).forEach(([network, url]) => {
+  Object.entries(siteConfig.footer.socials || {}).forEach(([network, url]) => {
     if (!url || url === '#') return;
     socials.innerHTML += `
-      <a href="${url}" target="_blank" rel="noopener" style="color:white;margin:0 8px;font-size:1.3rem;">
+      <a href="${url}" target="_blank" rel="noopener"
+         style="color:white;margin:0 8px;font-size:1.3rem;">
         <i class="${icons[network] || 'fas fa-globe'}"></i>
       </a>`;
   });
 
   const featuresContainer = document.getElementById('features-container-dynamic');
+  const features = siteConfig.features || [];
   featuresContainer.innerHTML = features.map((feat) => `
     <div class="flip-card" onclick="this.classList.toggle('flipped')">
       <div class="flip-card-inner">
@@ -67,105 +64,59 @@ async function loadSiteConfig() {
 
 function setupHeroButtons() {
   if (!siteConfig?.contact) return;
-  const whatsappLink = `https://wa.me/${siteConfig.contact.whatsapp.replace(/\D/g, '')}`;
-  setAttr('btn-whatsapp-hero', 'href', whatsappLink);
+  const whatsapp = siteConfig.contact.whatsapp.replace(/\D/g, '');
+  setAttr('btn-whatsapp-hero', 'href', `https://wa.me/${whatsapp}`);
 }
 
-async function loadStats() {
-  if (!supabaseClient) return;
-  const [{ data: cars }, { data: partners }, { count: reservationsCount }] = await Promise.all([
-    supabaseClient.from('voitures').select('id'),
-    supabaseClient.from('partenaires').select('id'),
-    supabaseClient.from('reservations').select('id', { count: 'exact', head: true })
-  ]);
-
-  setText('stat-voitures', cars?.length ?? 0);
-  setText('stat-partenaires', partners?.length ?? 0);
-  setText('stat-reservations', reservationsCount ?? 0);
+function bindPartnerModal() {
+  document.querySelectorAll('[data-open-partner]').forEach((btn) => {
+    btn.addEventListener('click', openPartnerModal);
+  });
+  const form = document.getElementById('partner-lead-form');
+  form?.addEventListener('submit', submitPartnerLead);
 }
 
-async function loadCars() {
-  const container = document.getElementById('container-voitures');
-  container.innerHTML = '<p>Chargement…</p>';
-
-  const { data, error } = await supabaseClient
-    .from('voitures')
-    .select('*')
-    .order('prix_base', { ascending: true });
-
-  if (error || !data?.length) {
-    container.innerHTML = '<p class="empty-state">Aucune voiture disponible pour le moment.</p>';
-    return;
-  }
-
-  container.innerHTML = data.map((car) => {
-    const desc = (car.description || '').slice(0, 120);
-    const reservable = car.reservable !== false;
-    return `
-      <article class="carte-voiture">
-        <img src="${car.image_url || 'https://placehold.co/600x400?text=Voiture'}" alt="${car.nom}">
-        <h3>${car.nom}</h3>
-        <div style="padding:0 20px; color:#555; font-size:.9rem; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-          <span><i class="fas fa-cogs"></i> ${car.transmission || '-'}</span>
-          <span><i class="fas fa-gas-pump"></i> ${car.carburant || '-'}</span>
-          <span><i class="fas fa-user-friends"></i> ${car.places || '-'} places</span>
-        </div>
-        <p class="carte-desc">${desc}${car.description?.length > 120 ? '…' : ''}</p>
-        <p class="prix">${(car.prix_base || 0).toLocaleString('fr-FR')} Ar / jour</p>
-        <button ${reservable ? '' : 'class="btn-disabled" disabled'}
-          onclick='selectCar(${JSON.stringify({
-            id: car.id,
-            nom: car.nom,
-            prix: car.prix_base,
-            ref: car.ref_id || '',
-            description: car.description || '',
-            reservable
-          })})'>
-          ${reservable ? 'Réserver' : 'Contact direct'}
-        </button>
-      </article>`;
-  }).join('');
+function openPartnerModal() {
+  document.getElementById('partner-modal').style.display = 'flex';
 }
 
-function selectCar(data) {
-  sessionStorage.setItem('voitureSelectionnee', JSON.stringify(data));
-  if (data.reservable) {
-    window.location.href = 'index.html#reservation';
-  } else {
-    alert(`Merci de contacter notre équipe pour ${data.nom}.`);
+function closePartnerModal() {
+  document.getElementById('partner-modal').style.display = 'none';
+}
+
+async function submitPartnerLead(event) {
+  event.preventDefault();
+  const feedback = document.getElementById('partner-lead-feedback');
+  feedback.textContent = 'Transmission en cours…';
+  feedback.style.color = '#2563eb';
+
+  const payload = {
+    prenom: document.getElementById('lead-prenom').value.trim(),
+    nom: document.getElementById('lead-nom').value.trim(),
+    email: document.getElementById('lead-email').value.trim(),
+    telephone: document.getElementById('lead-phone').value.trim(),
+    agence: document.getElementById('lead-agence').value.trim(),
+    flotte_estimee: parseInt(document.getElementById('lead-fleet').value, 10) || 1,
+    message: document.getElementById('lead-message').value.trim()
+  };
+
+  try {
+    const { error } = await supabaseClient
+      .from('candidatures_partenaires')
+      .insert([payload]);
+
+    if (error) throw error;
+    feedback.textContent = 'Merci ! Nous revenons vers vous rapidement.';
+    feedback.style.color = '#16a34a';
+    event.target.reset();
+    setTimeout(closePartnerModal, 1000);
+  } catch (err) {
+    feedback.textContent = err.message || 'Une erreur est survenue.';
+    feedback.style.color = '#e74c3c';
   }
 }
 
-function restoreSelectedCar() {
-  const stored = sessionStorage.getItem('voitureSelectionnee');
-  if (!stored) return;
-  const { nom } = JSON.parse(stored);
-  console.info(`Véhicule sélectionné précédemment : ${nom}`);
-}
-
-async function loadAvis() {
-  const container = document.getElementById('avis-home');
-  const { data, error } = await supabaseClient
-    .from('avis')
-    .select('*')
-    .eq('visible', true)
-    .order('created_at', { ascending: false })
-    .limit(6);
-
-  if (error || !data?.length) {
-    container.innerHTML = '<p class="empty-state" style="grid-column:1/-1;">Aucun avis publié pour le moment.</p>';
-    return;
-  }
-
-  container.innerHTML = data.map((avis) => `
-    <article class="avis-card">
-      <div class="note">${'⭐'.repeat(avis.note || 0)}</div>
-      <p>${avis.commentaire || ''}</p>
-      <strong>${avis.nom || 'Anonyme'}</strong>
-      <small style="color:#94a3b8;">${new Date(avis.created_at).toLocaleDateString('fr-FR')}</small>
-    </article>`).join('');
-}
-
+/* ---------- UTILITAIRES ---------- */
 function toggleMenu() {
   document.getElementById('nav-menu')?.classList.toggle('active');
 }
@@ -177,5 +128,10 @@ function setText(id, text) {
 
 function setAttr(id, attr, value) {
   const el = document.getElementById(id);
-  if (el) el.setAttribute(attr, value);
+  if (el) el.setAttribute(attr, value ?? '');
 }
+
+/* Exposition globale pour le HTML inline */
+window.toggleMenu = toggleMenu;
+window.openPartnerModal = openPartnerModal;
+window.closePartnerModal = closePartnerModal;
