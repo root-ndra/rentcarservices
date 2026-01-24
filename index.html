@@ -50,25 +50,37 @@
   <section class="page-section">
     <h2 class="section-title">Nos engagements</h2>
     <div class="features-container" id="features-container-dynamic">
-      <!-- Cartes dynamiques -->
+      <!-- contenu injecté -->
     </div>
   </section>
 
   <section class="page-section">
     <h2 class="section-title">Tout est prêt pour votre mission</h2>
-    <div class="card-grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));">
-      <article class="car-card">
-        <h4>Procédure simple</h4>
-        <p>Demande en ligne, confirmation par email et suivi depuis le portail sécurisé.</p>
-      </article>
-      <article class="car-card">
-        <h4>Couverture nationale</h4>
-        <p>Chauffeurs, relais carburant et maintenance disponible sur l’ensemble du territoire.</p>
-      </article>
-      <article class="car-card">
-        <h4>Options sur mesure</h4>
-        <p>Wifi embarqué, assurances additionnelles et gestion multi-sites pour les ONG.</p>
-      </article>
+    <div class="features-container" style="gap:18px;">
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-card-front"><h3>Procédure simple</h3></div>
+          <div class="flip-card-back">
+            <p>Demande en ligne, confirmation par email et suivi depuis le portail sécurisé.</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-card-front"><h3>Couverture nationale</h3></div>
+          <div class="flip-card-back">
+            <p>Chauffeurs, relais carburant et maintenance disponible sur l’ensemble du territoire.</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-card-front"><h3>Options sur mesure</h3></div>
+          <div class="flip-card-back">
+            <p>Wifi embarqué, assurances additionnelles et gestion multi-sites pour les ONG.</p>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -106,8 +118,8 @@
     <span class="close-modal" onclick="closePartnerModal()">&times;</span>
     <h3>Devenir partenaire RentCarServices</h3>
     <p style="color:#475569;">
-      Présentez votre agence et ajoutez jusqu’à trois véhicules de démonstration.
-      L’équipe back-office vous recontacte sous 24h ouvrées.
+      Présentez votre agence et envoyez-nous vos informations directement sur WhatsApp.
+      L’équipe back-office vous répond sous 24h ouvrées.
     </p>
     <form id="partner-lead-form">
       <div class="grid-form" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
@@ -140,7 +152,7 @@
       <textarea id="lead-message" rows="3"
         placeholder="Décrivez brièvement votre flotte, vos clients et vos attentes."
         required></textarea>
-      <button class="btn-full" type="submit"><i class="fas fa-paper-plane"></i> Envoyer</button>
+      <button class="btn-full" type="submit"><i class="fab fa-whatsapp"></i> Envoyer sur WhatsApp</button>
       <p id="partner-lead-feedback"></p>
     </form>
   </div>
