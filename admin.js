@@ -1,7 +1,8 @@
-let supabaseClient = null;
+let supabaseAdmin = null;
 let currentUser = null;
-let reservationsCache = [];
+let partenairesCache = [];
 let voituresCache = [];
+let maintenanceConfig = [];
 
 document.addEventListener('DOMContentLoaded', initAdmin);
 
@@ -10,12 +11,12 @@ document.addEventListener('DOMContentLoaded', initAdmin);
 /* --------------------------------------------------- */
 
 async function initSupabase() {
-    if (supabaseClient) return;
+    if (supabaseAdmin) return;
     try {
         const response = await fetch('supabase-config.json');
         if (!response.ok) throw new Error('supabase-config.json introuvable');
         const { supabaseUrl, supabaseKey } = await response.json();
-        supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        supabaseAdmin = supabase.createClient(supabaseUrl, supabaseKey);
     } catch (error) {
         console.error("Erreur d'initialisation de Supabase:", error);
         document.body.innerHTML = "<h1>Erreur de configuration. Contactez le support.</h1>";
@@ -24,9 +25,9 @@ async function initSupabase() {
 
 async function initAdmin() {
     await initSupabase();
-    if (!supabaseClient) return;
+    if (!supabaseAdmin) return;
 
-    const { data } = await supabaseClient.auth.getSession();
+    const { data } = await supabaseAdmin.auth.getSession();
     if (!data.session) {
         window.location.href = 'login.html';
         return;
@@ -34,295 +35,357 @@ async function initAdmin() {
     currentUser = data.session.user;
     document.getElementById('user-email').textContent = currentUser.email;
     document.getElementById('user-role').textContent = (currentUser.user_metadata?.role || 'admin').toUpperCase();
+
     document.getElementById('btn-logout').addEventListener('click', async () => {
-        await supabaseClient.auth.signOut();
+        await supabaseAdmin.auth.signOut();
         window.location.href = 'login.html';
     });
 
-    await Promise.all([loadVoitures(), loadReservations()]);
-    await loadCarDashboard();
-
-    document.getElementById('filter-status').addEventListener('change', renderReservations);
-    document.getElementById('filter-voiture').addEventListener('change', renderReservations);
-    document.getElementById('filter-date').addEventListener('change', renderReservations);
-}
-
-function switchTab(tabName) {
-    document.querySelectorAll('.content-area').forEach(sec => sec.style.display = 'none');
-    document.getElementById(`view-${tabName}`).style.display = 'block';
-
-    document.querySelectorAll('#main-tabs .tab-btn').forEach(btn => btn.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+    await Promise.all([
+        loadMaintenanceOptions(),
+        loadCarDashboard(),
+        loadPartenaires()
+    ]);
 }
 
 /* --------------------------------------------------- */
-/* --- 2. DASHBOARD VOITURES --- */
+/* --- 2. DASHBOARD VÉHICULES --- */
 /* --------------------------------------------------- */
 
 async function loadCarDashboard() {
     const container = document.getElementById('grid-voitures');
-    container.innerHTML = '<p>Chargement...</p>';
+    container.innerHTML = '<p>Analyse des données en cours...</p>';
 
-    const { data: maints } = await supabaseClient.from('maintenances').select('*');
-    
+    const [voituresRes, resasRes, maintsRes] = await Promise.all([
+        supabaseAdmin.from('voitures').select('*').order('id'),
+        supabaseAdmin.from('reservations').select('*'),
+        supabaseAdmin.from('maintenances').select('*')
+    ]);
+
+    voituresCache = voituresRes.data || [];
+    const resas = resasRes.data || [];
+    const maints = maintsRes.data || [];
+
+    if (voituresCache.length === 0) {
+        container.innerHTML = '<p>Aucun véhicule enregistré.</p>';
+        return;
+    }
+
     container.innerHTML = '';
     voituresCache.forEach(v => {
         const today = new Date().toISOString().split('T')[0];
         let statut = 'Dispo', badgeClass = 'bg-green', borderClass = 'status-dispo';
         
-        const isMaint = maints?.find(m => m.id_voiture === v.id && today >= m.date_debut && today <= m.date_fin);
-        const isLoc = reservationsCache.find(r => r.id_voiture === v.id && today >= r.date_debut && today <= r.date_fin && r.statut === 'valide');
+        const isMaint = maints.find(m => m.id_voiture === v.id && today >= m.date_debut && today <= m.date_fin);
+        const isLoc = resas.find(r => r.id_voiture === v.id && today >= r.date_debut && today <= r.date_fin && r.statut === 'valide');
         
         if (isMaint) { statut = 'Maintenance'; badgeClass = 'bg-orange'; borderClass = 'status-maintenance'; }
         else if (isLoc) { statut = 'Louée'; badgeClass = 'bg-red'; borderClass = 'status-louee'; }
 
-        let revenus = 0;
-        reservationsCache.filter(r => r.id_voiture === v.id && r.statut === 'valide').forEach(r => {
+        let revenus = 0, joursLoues = 0;
+        const now = new Date();
+        const debutPeriode = new Date(now.getFullYear(), now.getMonth(), 1);
+        const resasPeriode = resas.filter(r => r.id_voiture === v.id && r.statut === 'valide' && new Date(r.date_debut) >= debutPeriode);
+        
+        resasPeriode.forEach(r => {
             revenus += r.montant_total || 0;
+            const d1 = new Date(r.date_debut), d2 = new Date(r.date_fin);
+            joursLoues += Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
         });
+        
+        const joursDansLeMois = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const tauxOccupation = Math.round((joursLoues / joursDansLeMois) * 100);
 
         container.innerHTML += `
             <div class="car-card ${borderClass}">
                 <div class="card-header">
                     <strong>${v.nom}</strong>
-                    <span class="badge ${badgeClass}">${statut}</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label class="switch" title="Afficher/Masquer sur le site public">
+                            <input type="checkbox" ${v.est_public !== false ? 'checked' : ''} onchange="toggleCarVisibility('${v.id}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="badge ${badgeClass}">${statut}</span>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="kpi-row">
-                        <div class="kpi-item">
-                            <div class="kpi-val">${(revenus / 1000).toFixed(0)}k Ar</div>
-                            <div class="kpi-label">Revenus totaux</div>
-                        </div>
+                        <div class="kpi-item"><div class="kpi-val">${(revenus / 1000).toFixed(0)}k</div><div class="kpi-label">CA ce mois (Ar)</div></div>
+                        <div class="kpi-item"><div class="kpi-val">${tauxOccupation}%</div><div class="kpi-label">Taux d'occupation</div></div>
                     </div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-action-card btn-edit-car" onclick="openCarModal(${v.id})">Modifier</button>
+                    <button class="btn-action-card btn-maint" onclick="openMaint(${v.id})">Maintenance</button>
+                    <button class="btn-action-card btn-hist" onclick="voirHistorique(${v.id}, '${v.nom}')">Historique</button>
                 </div>
             </div>`;
     });
 }
 
+function openCarModal(carId = null) {
+    const modal = document.getElementById('car-modal');
+    const form = document.getElementById('car-form');
+    form.reset();
+    document.getElementById('car-feedback').textContent = '';
+    document.getElementById('car-id').value = carId || '';
 
-/* --------------------------------------------------- */
-/* --- 3. GESTION DES RÉSERVATIONS --- */
-/* --------------------------------------------------- */
-
-async function loadVoitures() {
-    const { data, error } = await supabaseClient.from('voitures').select('id, nom, prix_base');
-    if (error) { console.error("Erreur chargement voitures:", error); return; }
-
-    voituresCache = data || [];
-    const selectFilter = document.getElementById('filter-voiture');
-    const selectNewResa = document.getElementById('new-resa-voiture');
-    selectFilter.innerHTML = '<option value="">Toutes les voitures</option>';
-    selectNewResa.innerHTML = '<option value="">-- Choisir une voiture --</option>';
-
-    voituresCache.forEach((v) => {
-        selectFilter.innerHTML += `<option value="${v.id}">${v.nom}</option>`;
-        selectNewResa.innerHTML += `<option value="${v.id}">${v.nom}</option>`;
-    });
-}
-
-async function loadReservations() {
-    const { data, error } = await supabaseClient
-        .from('reservations')
-        .select('*, voitures(nom)')
-        .order('created_at', { ascending: false });
-
-    if (error) { alert(error.message); return; }
-    reservationsCache = data || [];
-    renderReservations();
-}
-
-function renderReservations() {
-    const status = document.getElementById('filter-status').value;
-    const voitureId = document.getElementById('filter-voiture').value;
-    const date = document.getElementById('filter-date').value;
-
-    const filtered = reservationsCache.filter((r) => {
-        const matchStatus = !status || r.statut === status;
-        const matchCar = !voitureId || r.id_voiture == voitureId;
-        const matchDate = !date || (r.date_debut <= date && r.date_fin >= date);
-        return matchStatus && matchCar && matchDate;
-    });
-
-    const tbody = document.querySelector('#table-reservations tbody');
-    if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="7">Aucune réservation ne correspond à vos filtres.</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = filtered.map((r) => {
-        const jours = Math.ceil(Math.abs(new Date(r.date_fin) - new Date(r.date_debut)) / 86400000) + 1;
-        const paye = r.paiement_montant_declare || 0;
-        const reste = (r.montant_total || 0) - paye;
-
-        let statutHtml;
-        switch (r.statut) {
-            case 'valide': statutHtml = '<span style="color:green;">● Validé</span>'; break;
-            case 'annulee': statutHtml = '<span style="color:red;">● Annulé</span>'; break;
-            default: statutHtml = '<span style="color:orange;">● En attente</span>'; break;
+    if (carId) {
+        const car = voituresCache.find(v => v.id === carId);
+        if (car) {
+            document.getElementById('car-modal-title').textContent = 'Modifier le véhicule';
+            document.getElementById('car-nom').value = car.nom;
+            document.getElementById('car-prix').value = car.prix_base;
+            document.getElementById('car-type').value = car.type;
+            document.getElementById('car-transmission').value = car.transmission;
+            document.getElementById('car-places').value = car.places;
+            document.getElementById('car-carburant').value = car.carburant;
+            document.getElementById('car-image-url').value = car.image_url;
+            document.getElementById('car-description').value = car.description;
+            document.getElementById('car-reservable').checked = car.reservable !== false;
         }
-
-        const otpDisplay = r.statut === 'valide' ? `<strong style="color:green; font-size:1.1rem;">${r.code_otp || '-'}</strong>` : `<input type="text" id="otp-${r.id}" placeholder="Code" style="width:70px; padding:5px; text-align:center;">`;
-        const btnAction = r.statut === 'valide' ? `<button class="btn-action-small" style="background:#ccc; cursor:not-allowed;">Validé</button>` : `<button class="btn-action-small btn-publish" onclick="validerResa(${r.id})"><i class="fas fa-check"></i> Valider</button>`;
-
-        return `
-            <tr>
-                <td><strong>#${r.id}</strong><br>${statutHtml}</td>
-                <td><strong>${r.nom}</strong><br><small>${r.tel || 'N/A'}</small></td>
-                <td><strong>${r.voitures?.nom || 'Inconnue'}</strong><br>Du ${r.date_debut} au ${r.date_fin}<br><small>(${jours} jours)</small></td>
-                <td><span class="badge" style="background-color: #3498db;">${r.paiement_methode || 'N/A'}</span><br><strong>${r.paiement_titulaire || 'Non précisé'}</strong></td>
-                <td>Payé: <strong style="color:green;">${paye.toLocaleString()}</strong><br>Reste: <strong style="color:${reste > 0 ? 'red' : 'green'};">${reste.toLocaleString()}</strong><br><small>Total: ${(r.montant_total || 0).toLocaleString()}</small></td>
-                <td>${otpDisplay}</td>
-                <td>
-                    <div style="display:flex; gap:5px; flex-wrap:wrap;">
-                        ${btnAction}
-                        <button class="btn-action-small btn-edit" onclick="ouvrirModifResa(${r.id})"><i class="fas fa-edit"></i></button>
-                        <button class="btn-action-small btn-delete" onclick="annulerResa(${r.id})"><i class="fas fa-trash"></i></button>
-                    </div>
-                </td>
-            </tr>`;
-    }).join('');
-}
-
-function toggleNewResaForm() {
-    const form = document.getElementById('form-new-resa');
-    form.style.display = (form.style.display === 'none') ? 'block' : 'none';
-}
-
-function calculerPrixAdmin() {
-    const idVoiture = document.getElementById('new-resa-voiture').value;
-    const debut = document.getElementById('new-resa-debut').value;
-    const fin = document.getElementById('new-resa-fin').value;
-    if (!idVoiture || !debut || !fin) return;
-
-    const voiture = voituresCache.find(v => v.id == idVoiture);
-    if (!voiture) return;
-
-    const d1 = new Date(debut), d2 = new Date(fin);
-    if (d2 < d1) return;
-
-    const diffDays = Math.ceil(Math.abs(d2 - d1) / 86400000) + 1;
-    const total = voiture.prix_base * diffDays;
-    document.getElementById('new-resa-montant').value = total;
-    document.getElementById('new-resa-paye').value = total;
-    updateResteAdmin();
-}
-
-function updateResteAdmin() {
-    const total = parseFloat(document.getElementById('new-resa-montant').value) || 0;
-    const paye = parseFloat(document.getElementById('new-resa-paye').value) || 0;
-    document.getElementById('new-resa-reste').value = total - paye;
-}
-
-async function creerReservationAdmin() {
-    const resaData = {
-        id_voiture: document.getElementById('new-resa-voiture').value,
-        nom: document.getElementById('new-resa-nom').value,
-        tel: document.getElementById('new-resa-tel').value,
-        date_debut: document.getElementById('new-resa-debut').value,
-        date_fin: document.getElementById('new-resa-fin').value,
-        montant_total: document.getElementById('new-resa-montant').value || 0,
-        statut: document.getElementById('new-resa-statut').value,
-        paiement_methode: 'espece',
-        paiement_montant_declare: document.getElementById('new-resa-paye').value || 0,
-        paiement_titulaire: document.getElementById('new-resa-nom').value
-    };
-
-    if (!resaData.id_voiture || !resaData.nom || !resaData.date_debut || !resaData.date_fin) {
-        return alert("Veuillez remplir tous les champs obligatoires.");
-    }
-
-    const { error } = await supabaseClient.from('reservations').insert([resaData]);
-    if (error) {
-        alert("Erreur lors de la création : " + error.message);
     } else {
-        alert("Réservation créée avec succès !");
-        toggleNewResaForm();
-        loadReservations();
+        document.getElementById('car-modal-title').textContent = 'Ajouter un véhicule';
     }
+    modal.style.display = 'flex';
 }
 
-async function ouvrirModifResa(id) {
-    const resa = reservationsCache.find(r => r.id === id);
-    if (resa) {
-        document.getElementById('edit-resa-id').value = resa.id;
-        document.getElementById('edit-resa-client').innerText = `${resa.nom} (${resa.tel || 'N/A'})`;
-        document.getElementById('edit-resa-debut').value = resa.date_debut;
-        document.getElementById('edit-resa-fin').value = resa.date_fin;
-        document.getElementById('edit-resa-montant').value = resa.montant_total;
-        document.getElementById('edit-resa-statut').value = resa.statut;
-        document.getElementById('modal-edit-resa').style.display = 'flex';
-    }
-}
+async function submitCar(event) {
+    event.preventDefault();
+    const feedback = document.getElementById('car-feedback');
+    feedback.textContent = 'Enregistrement...';
 
-async function sauvegarderModificationResa() {
-    const id = document.getElementById('edit-resa-id').value;
+    const carId = document.getElementById('car-id').value;
     const payload = {
-        date_debut: document.getElementById('edit-resa-debut').value,
-        date_fin: document.getElementById('edit-resa-fin').value,
-        montant_total: document.getElementById('edit-resa-montant').value,
-        statut: document.getElementById('edit-resa-statut').value
+        nom: document.getElementById('car-nom').value,
+        prix_base: parseInt(document.getElementById('car-prix').value, 10),
+        type: document.getElementById('car-type').value,
+        transmission: document.getElementById('car-transmission').value,
+        places: parseInt(document.getElementById('car-places').value, 10),
+        carburant: document.getElementById('car-carburant').value,
+        image_url: document.getElementById('car-image-url').value,
+        description: document.getElementById('car-description').value,
+        reservable: document.getElementById('car-reservable').checked
     };
-    const { error } = await supabaseClient.from('reservations').update(payload).eq('id', id);
-    if (error) {
-        alert("Erreur de mise à jour : " + error.message);
+
+    let error;
+    if (carId) {
+        ({ error } = await supabaseAdmin.from('voitures').update(payload).eq('id', carId));
     } else {
-        closeModal('modal-edit-resa');
-        await loadReservations();
+        ({ error } = await supabaseAdmin.from('voitures').insert([payload]));
+    }
+
+    if (error) {
+        feedback.textContent = `Erreur: ${error.message}`;
+        feedback.style.color = 'red';
+    } else {
+        feedback.textContent = 'Succès !';
+        feedback.style.color = 'green';
+        await loadCarDashboard();
+        setTimeout(() => closeModal('car-modal'), 1000);
     }
 }
 
-async function validerResa(id) {
-    const code = document.getElementById('otp-' + id).value;
-    if (!code) return alert("Veuillez entrer un code OTP pour valider.");
-    await supabaseClient.from('reservations').update({ statut: 'valide', code_otp: code }).eq('id', id);
-    await loadReservations();
-}
-
-async function annulerResa(id) {
-    if (confirm('⚠️ Voulez-vous vraiment supprimer définitivement cette réservation ?')) {
-        await supabaseClient.from('reservations').delete().eq('id', id);
-        await loadReservations();
+async function toggleCarVisibility(carId, isVisible) {
+    const { error } = await supabaseAdmin.from('voitures').update({ est_public: isVisible }).eq('id', carId);
+    if (error) {
+        alert(`Erreur lors de la mise à jour de la visibilité : ${error.message}\n\nVérifiez que la colonne 'est_public' existe bien dans votre table 'voitures'.`);
+        await loadCarDashboard();
     }
 }
 
 /* --------------------------------------------------- */
-/* --- 4. UTILITAIRES --- */
+/* --- 3. GESTION DES PARTENAIRES (CORRIGÉ) --- */
 /* --------------------------------------------------- */
 
-function closeModal(id) {
-    document.getElementById(id).style.display = 'none';
+async function loadPartenaires() {
+  const tbody = document.getElementById('partners-body');
+  tbody.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
+  const { data, error } = await supabaseAdmin.from('partenaires').select('*').order('created_at', { ascending: false });
+
+  if (error) { tbody.innerHTML = `<tr><td colspan="6">${error.message}</td></tr>`; return; }
+  partenairesCache = data || [];
+  renderPartnerTable(partenairesCache);
 }
 
-function exportReservations() {
-    const rows = [
-        ['ID', 'Client', 'Téléphone', 'Voiture', 'Départ', 'Retour', 'Montant', 'Payé', 'Statut']
-    ];
-    reservationsCache.forEach((res) => {
-        rows.push([
-            res.id, res.nom, res.tel || '', res.voitures?.nom || '',
-            res.date_debut, res.date_fin, res.montant_total || 0,
-            res.paiement_montant_declare || 0, res.statut
-        ]);
-    });
-    const csv = rows.map((row) => row.map((v) => `"${v ?? ''}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `reservations_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+function renderPartnerTable(list) {
+  const tbody = document.getElementById('partners-body');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="6">Aucun partenaire.</td></tr>'; return; }
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td>${p.nom_complet || `${p.prenom || ''} ${p.nom || ''}`.trim() || '-'}</td>
+      <td>${p.email}</td>
+      <td>${p.telephone || '-'}</td>
+      <td>${p.commission_taux || 0}%</td>
+      <td>
+        <label class="switch">
+          <input type="checkbox" ${p.est_gele ? '' : 'checked'} onchange="togglePartner('${p.user_id}', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td><button class="btn-small btn-sec" onclick="openPartnerModal('${p.user_id}')"><i class="fas fa-pen"></i></button></td>
+    </tr>
+  `).join('');
 }
 
-// Exposer les fonctions nécessaires au HTML
-window.switchTab = switchTab;
-window.toggleNewResaForm = toggleNewResaForm;
-window.calculerPrixAdmin = calculerPrixAdmin;
-window.updateResteAdmin = updateResteAdmin;
-window.creerReservationAdmin = creerReservationAdmin;
-window.ouvrirModifResa = ouvrirModifResa;
-window.sauvegarderModificationResa = sauvegarderModificationResa;
-window.validerResa = validerResa;
-window.annulerResa = annulerResa;
+function openPartnerModal(userId = null) {
+  const modal = document.getElementById('partner-modal');
+  const form = document.getElementById('partner-form');
+  form.reset();
+  document.getElementById('partner-feedback').textContent = '';
+  document.getElementById('partner-user-id').value = userId || '';
+  document.querySelectorAll('.auth-only').forEach(el => el.style.display = userId ? 'none' : 'block');
+  
+  if (userId) {
+    const partner = partenairesCache.find(p => p.user_id === userId);
+    document.getElementById('partner-modal-title').textContent = 'Modifier partenaire';
+    document.getElementById('new-prenom').value = partner?.prenom || '';
+    const nomComplet = partner?.nom_complet || '';
+    document.getElementById('new-nom').value = nomComplet.replace(partner?.prenom, '').trim();
+    document.getElementById('new-email').value = partner?.email || '';
+    document.getElementById('new-tel').value = partner?.telephone || '';
+    document.getElementById('new-commission').value = partner?.commission_taux || 15;
+  } else {
+    document.getElementById('partner-modal-title').textContent = 'Nouveau partenaire';
+  }
+  modal.style.display = 'flex';
+}
+
+async function submitPartner(event) {
+  event.preventDefault();
+  const feedback = document.getElementById('partner-feedback');
+  feedback.textContent = 'Traitement…';
+  const userId = document.getElementById('partner-user-id').value;
+  const prenom = document.getElementById('new-prenom').value.trim();
+  const nom = document.getElementById('new-nom').value.trim();
+  const payload = {
+    prenom,
+    nom_complet: `${prenom} ${nom}`.trim(),
+    email: document.getElementById('new-email').value.trim(),
+    telephone: document.getElementById('new-tel').value.trim(),
+    commission_taux: parseInt(document.getElementById('new-commission').value, 10) || 15
+  };
+
+  if (userId) {
+    const { error } = await supabaseAdmin.from('partenaires').update(payload).eq('user_id', userId);
+    if (error) { feedback.textContent = error.message; return; }
+    feedback.textContent = 'Partenaire mis à jour ✅';
+  } else {
+    const loginEmail = document.getElementById('new-login').value.trim();
+    let password = document.getElementById('new-password').value.trim();
+    if (!loginEmail) { feedback.textContent = 'Le login est obligatoire.'; return; }
+    if (!password) password = `RCS-${Math.random().toString(36).slice(2, 8)}!`;
+    const { data, error: authError } = await supabaseAdmin.auth.signUp({ email: loginEmail, password, options: { data: { role: 'partenaire' } } });
+    if (authError) { feedback.textContent = authError.message; return; }
+    payload.user_id = data.user.id;
+    const { error: insertError } = await supabaseAdmin.from('partenaires').insert([payload]);
+    if (insertError) { feedback.textContent = insertError.message; return; }
+    feedback.textContent = 'Partenaire créé ✅';
+  }
+  await loadPartenaires();
+  setTimeout(() => closeModal('partner-modal'), 1000);
+}
+
+async function togglePartner(userId, isActive) {
+  const { error } = await supabaseAdmin.from('partenaires').update({ est_gele: !isActive }).eq('user_id', userId);
+  if (error) {
+    alert(`Erreur: ${error.message}`);
+  }
+  await loadPartenaires();
+}
+
+/* --------------------------------------------------- */
+/* --- 4. GESTION DE LA MAINTENANCE --- */
+/* --------------------------------------------------- */
+
+async function loadMaintenanceOptions() {
+    try {
+        const response = await fetch('maintenances.json');
+        const data = await response.json();
+        maintenanceConfig = data.maintenanceCategories;
+        const categorieSelect = document.getElementById('maint-categorie');
+        categorieSelect.innerHTML = maintenanceConfig.map(cat => `<option value="${cat.label}">${cat.label}</option>`).join('');
+        updateMotifs();
+    } catch (error) {
+        console.error("Erreur chargement maintenances.json:", error);
+        document.getElementById('maint-categorie').innerHTML = '<option>Erreur</option>';
+    }
+}
+
+function updateMotifs() {
+    const categorieSelect = document.getElementById('maint-categorie');
+    const motifSelect = document.getElementById('maint-motif');
+    const selectedCategory = maintenanceConfig.find(cat => cat.label === categorieSelect.value);
+    motifSelect.innerHTML = '';
+    if (selectedCategory) {
+        selectedCategory.subcategories.forEach(sub => {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = sub.label;
+            sub.motifs.forEach(motif => {
+                const option = document.createElement('option');
+                option.value = motif;
+                option.textContent = motif;
+                optgroup.appendChild(option);
+            });
+            motifSelect.appendChild(optgroup);
+        });
+    }
+}
+
+function openMaint(id) { document.getElementById('maint-id-voiture').value = id; document.getElementById('modal-maint').style.display = 'flex'; }
+
+async function sauvegarderMaintenance() {
+    const typeIntervention = `${document.getElementById('maint-categorie').value} - ${document.getElementById('maint-motif').value}`;
+    const maint = {
+        id_voiture: document.getElementById('maint-id-voiture').value,
+        type_intervention: typeIntervention,
+        details: document.getElementById('maint-details').value,
+        cout: document.getElementById('maint-cout').value,
+        date_debut: document.getElementById('maint-debut').value || new Date().toISOString().split('T')[0],
+        date_fin: document.getElementById('maint-fin').value || new Date().toISOString().split('T')[0]
+    };
+    await supabaseAdmin.from('maintenances').insert([maint]);
+    closeModal('modal-maint');
+    await loadCarDashboard();
+}
+
+async function voirHistorique(id, nom) {
+    document.getElementById('hist-titre-voiture').innerText = nom;
+    const ul = document.getElementById('historique-list');
+    ul.innerHTML = '<li>Chargement...</li>';
+    document.getElementById('modal-historique').style.display = 'flex';
+    const { data } = await supabaseAdmin.from('maintenances').select('*').eq('id_voiture', id).order('date_debut', { ascending: false });
+    ul.innerHTML = '';
+    let total = 0;
+    if (data && data.length > 0) {
+        data.forEach(m => {
+            const cout = m.cout || 0;
+            total += cout;
+            ul.innerHTML += `<li class="history-item">
+                <div class="hist-date">${m.date_debut}</div>
+                <div class="hist-details">${m.type_intervention}</div>
+                <div class="hist-cout">${cout.toLocaleString('fr-FR')} Ar</div>
+            </li>`;
+        });
+    } else { ul.innerHTML = '<li>Aucun historique.</li>'; }
+    document.getElementById('hist-total').innerText = total.toLocaleString('fr-FR') + ' Ar';
+}
+
+/* --------------------------------------------------- */
+/* --- 5. UTILITAIRES --- */
+/* --------------------------------------------------- */
+
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+// Exposer les fonctions à l'objet window pour les `onclick`
 window.closeModal = closeModal;
-window.exportReservations = exportReservations;
+window.openPartnerModal = openPartnerModal;
+window.submitPartner = submitPartner;
+window.togglePartner = togglePartner;
+window.openCarModal = openCarModal;
+window.submitCar = submitCar;
+window.toggleCarVisibility = toggleCarVisibility;
+window.updateMotifs = updateMotifs;
+window.openMaint = openMaint;
+window.sauvegarderMaintenance = sauvegarderMaintenance;
+window.voirHistorique = voirHistorique;
