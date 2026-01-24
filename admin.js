@@ -1,7 +1,8 @@
 let supabaseAdmin = null;
 let currentUser = null;
 let partenairesCache = [];
-let editingPartnerKey = null;
+let voituresCache = [];
+let maintenanceConfig = [];
 
 document.addEventListener('DOMContentLoaded', initAdmin);
 
@@ -40,17 +41,15 @@ async function initAdmin() {
         window.location.href = 'login.html';
     });
 
-    document.getElementById('partner-form').addEventListener('submit', submitPartner);
-
-    // Chargement des deux sections principales
     await Promise.all([
+        loadMaintenanceOptions(),
         loadCarDashboard(),
         loadPartenaires()
     ]);
 }
 
 /* --------------------------------------------------- */
-/* --- 2. DASHBOARD VÉHICULES (Logique de admin1.html) --- */
+/* --- 2. DASHBOARD VÉHICULES --- */
 /* --------------------------------------------------- */
 
 async function loadCarDashboard() {
@@ -63,17 +62,17 @@ async function loadCarDashboard() {
         supabaseAdmin.from('maintenances').select('*')
     ]);
 
-    const voitures = voituresRes.data || [];
+    voituresCache = voituresRes.data || [];
     const resas = resasRes.data || [];
     const maints = maintsRes.data || [];
 
-    if (voitures.length === 0) {
+    if (voituresCache.length === 0) {
         container.innerHTML = '<p>Aucun véhicule enregistré.</p>';
         return;
     }
 
     container.innerHTML = '';
-    voitures.forEach(v => {
+    voituresCache.forEach(v => {
         const today = new Date().toISOString().split('T')[0];
         let statut = 'Dispo', badge = 'bg-green', border = 'status-dispo';
         
@@ -83,7 +82,6 @@ async function loadCarDashboard() {
         if (isMaint) { statut = 'Maintenance'; badge = 'bg-orange'; border = 'status-maintenance'; }
         else if (isLoc) { statut = 'Louée'; badge = 'bg-red'; border = 'status-louee'; }
 
-        // Calculs de revenus et taux d'occupation (sur le mois en cours)
         let revenus = 0, joursLoues = 0;
         const now = new Date();
         const debutPeriode = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -98,7 +96,6 @@ async function loadCarDashboard() {
         const joursDansLeMois = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         const tauxOccupation = Math.round((joursLoues / joursDansLeMois) * 100);
 
-        // Calcul pour la jauge de vidange
         const kmActuel = v.kilometrage || 0;
         const kmDepuisVidange = kmActuel % 6000;
         const couleurJauge = kmDepuisVidange > 5500 ? '#e74c3c' : (kmDepuisVidange > 4500 ? '#f39c12' : '#2ecc71');
@@ -122,97 +119,94 @@ async function loadCarDashboard() {
                     </div>
                 </div>
                 <div class="card-actions">
+                    <button class="btn-action-card btn-edit-car" onclick="openCarModal(${v.id})">Modifier</button>
                     <button class="btn-action-card btn-maint" onclick="openMaint(${v.id})">Maintenance</button>
                     <button class="btn-action-card btn-hist" onclick="voirHistorique(${v.id}, '${v.nom}')">Historique</button>
-                    <button class="btn-action-card btn-km" onclick="openKm(${v.id}, ${v.kilometrage || 0})">MàJ Km</button>
                 </div>
             </div>`;
     });
 }
 
-// --- Fonctions des modaux pour les voitures ---
-function fermerModal(id) { document.getElementById(id).style.display = 'none'; }
-function openMaint(id) { document.getElementById('maint-id-voiture').value = id; document.getElementById('modal-maint').style.display = 'flex'; }
-function openKm(id, km) { document.getElementById('km-id-voiture').value = id; document.getElementById('km-valeur').value = km; document.getElementById('modal-km').style.display = 'flex'; }
+function openCarModal(carId = null) {
+    const modal = document.getElementById('car-modal');
+    const form = document.getElementById('car-form');
+    form.reset();
+    document.getElementById('car-feedback').textContent = '';
+    document.getElementById('car-id').value = carId || '';
 
-async function sauvegarderKm() {
-    const id = document.getElementById('km-id-voiture').value;
-    const km = document.getElementById('km-valeur').value;
-    await supabaseAdmin.from('voitures').update({ kilometrage: km }).eq('id', id);
-    fermerModal('modal-km');
-    loadCarDashboard();
+    if (carId) {
+        const car = voituresCache.find(v => v.id === carId);
+        if (car) {
+            document.getElementById('car-modal-title').textContent = 'Modifier le véhicule';
+            document.getElementById('car-nom').value = car.nom;
+            document.getElementById('car-prix').value = car.prix_base;
+            document.getElementById('car-type').value = car.type;
+            document.getElementById('car-transmission').value = car.transmission;
+            document.getElementById('car-places').value = car.places;
+            document.getElementById('car-carburant').value = car.carburant;
+            document.getElementById('car-image-url').value = car.image_url;
+            document.getElementById('car-description').value = car.description;
+            document.getElementById('car-reservable').checked = car.reservable !== false;
+        }
+    } else {
+        document.getElementById('car-modal-title').textContent = 'Ajouter un véhicule';
+    }
+    modal.style.display = 'flex';
 }
 
-async function sauvegarderMaintenance() {
-    const kmEntretien = document.getElementById('maint-km').value;
-    let details = document.getElementById('maint-details').value;
-    if (kmEntretien) details = `(À ${kmEntretien} km) ` + details;
+async function submitCar(event) {
+    event.preventDefault();
+    const feedback = document.getElementById('car-feedback');
+    feedback.textContent = 'Enregistrement...';
 
-    const maint = {
-        id_voiture: document.getElementById('maint-id-voiture').value,
-        type_intervention: document.getElementById('maint-type').value,
-        details: details,
-        cout: document.getElementById('maint-cout').value,
-        date_debut: document.getElementById('maint-debut').value || new Date().toISOString().split('T')[0],
-        date_fin: document.getElementById('maint-fin').value || new Date().toISOString().split('T')[0]
+    const carId = document.getElementById('car-id').value;
+    const payload = {
+        nom: document.getElementById('car-nom').value,
+        prix_base: parseInt(document.getElementById('car-prix').value, 10),
+        type: document.getElementById('car-type').value,
+        transmission: document.getElementById('car-transmission').value,
+        places: parseInt(document.getElementById('car-places').value, 10),
+        carburant: document.getElementById('car-carburant').value,
+        image_url: document.getElementById('car-image-url').value,
+        description: document.getElementById('car-description').value,
+        reservable: document.getElementById('car-reservable').checked
     };
 
-    await supabaseAdmin.from('maintenances').insert([maint]);
-    fermerModal('modal-maint');
-    loadCarDashboard();
-}
-
-async function voirHistorique(id, nom) {
-    document.getElementById('hist-titre-voiture').innerText = nom;
-    const ul = document.getElementById('historique-list');
-    ul.innerHTML = '<li>Chargement...</li>';
-    document.getElementById('modal-historique').style.display = 'flex';
-
-    const { data } = await supabaseAdmin.from('maintenances').select('*').eq('id_voiture', id).order('date_debut', { ascending: false });
-    
-    ul.innerHTML = '';
-    let total = 0;
-    if (data && data.length > 0) {
-        data.forEach(m => {
-            const cout = m.cout || 0;
-            total += cout;
-            ul.innerHTML += `<li class="history-item">
-                <div class="hist-date">${m.date_debut}</div>
-                <div class="hist-details"><strong>${m.type_intervention}</strong><br><small>${m.details || ''}</small></div>
-                <div class="hist-cout">${cout.toLocaleString('fr-FR')} Ar</div>
-            </li>`;
-        });
+    let error;
+    if (carId) {
+        ({ error } = await supabaseAdmin.from('voitures').update(payload).eq('id', carId));
     } else {
-        ul.innerHTML = '<li>Aucun historique de maintenance.</li>';
+        ({ error } = await supabaseAdmin.from('voitures').insert([payload]));
     }
-    document.getElementById('hist-total').innerText = total.toLocaleString('fr-FR') + ' Ar';
-}
 
+    if (error) {
+        feedback.textContent = `Erreur: ${error.message}`;
+        feedback.style.color = 'red';
+    } else {
+        feedback.textContent = 'Succès !';
+        feedback.style.color = 'green';
+        await loadCarDashboard();
+        setTimeout(() => closeModal('car-modal'), 1000);
+    }
+}
 
 /* --------------------------------------------------- */
-/* --- 3. GESTION DES PARTENAIRES (Logique de admin.js) --- */
+/* --- 3. GESTION DES PARTENAIRES --- */
 /* --------------------------------------------------- */
 
 async function loadPartenaires() {
   const tbody = document.getElementById('partners-body');
   tbody.innerHTML = '<tr><td colspan="6">Chargement…</td></tr>';
-
   const { data, error } = await supabaseAdmin.from('partenaires').select('*').order('created_at', { ascending: false });
 
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan="6">${error.message}</td></tr>`;
-    return;
-  }
+  if (error) { tbody.innerHTML = `<tr><td colspan="6">${error.message}</td></tr>`; return; }
   partenairesCache = data || [];
   renderPartnerTable(partenairesCache);
 }
 
 function renderPartnerTable(list) {
   const tbody = document.getElementById('partners-body');
-  if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="6">Aucun partenaire pour le moment.</td></tr>';
-    return;
-  }
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="6">Aucun partenaire.</td></tr>'; return; }
   tbody.innerHTML = list.map(p => `
     <tr>
       <td>${p.nom_complet || `${p.prenom || ''} ${p.nom || ''}`.trim() || '-'}</td>
@@ -225,9 +219,7 @@ function renderPartnerTable(list) {
           <span class="slider"></span>
         </label>
       </td>
-      <td>
-        <button class="btn-small btn-sec" onclick="openPartnerModal('${p.id}')"><i class="fas fa-pen"></i></button>
-      </td>
+      <td><button class="btn-small btn-sec" onclick="openPartnerModal('${p.id}')"><i class="fas fa-pen"></i></button></td>
     </tr>
   `).join('');
 }
@@ -236,8 +228,7 @@ function openPartnerModal(partnerId = null) {
   const modal = document.getElementById('partner-modal');
   const form = document.getElementById('partner-form');
   form.reset();
-
-  editingPartnerKey = partnerId;
+  document.getElementById('partner-feedback').textContent = '';
   document.getElementById('partner-id').value = partnerId || '';
   document.querySelectorAll('.auth-only').forEach(el => el.style.display = partnerId ? 'none' : 'block');
   
@@ -256,16 +247,11 @@ function openPartnerModal(partnerId = null) {
   modal.style.display = 'flex';
 }
 
-function closePartnerModal() {
-  document.getElementById('partner-modal').style.display = 'none';
-  editingPartnerKey = null;
-}
-
 async function submitPartner(event) {
   event.preventDefault();
   const feedback = document.getElementById('partner-feedback');
   feedback.textContent = 'Traitement…';
-
+  const partnerId = document.getElementById('partner-id').value;
   const prenom = document.getElementById('new-prenom').value.trim();
   const nom = document.getElementById('new-nom').value.trim();
   const payload = {
@@ -276,8 +262,8 @@ async function submitPartner(event) {
     commission_taux: parseInt(document.getElementById('new-commission').value, 10) || 15
   };
 
-  if (editingPartnerKey) {
-    const { error } = await supabaseAdmin.from('partenaires').update(payload).eq('id', editingPartnerKey);
+  if (partnerId) {
+    const { error } = await supabaseAdmin.from('partenaires').update(payload).eq('id', partnerId);
     if (error) { feedback.textContent = error.message; return; }
     feedback.textContent = 'Partenaire mis à jour ✅';
   } else {
@@ -285,31 +271,127 @@ async function submitPartner(event) {
     let password = document.getElementById('new-password').value.trim();
     if (!loginEmail) { feedback.textContent = 'Le login est obligatoire.'; return; }
     if (!password) password = `RCS-${Math.random().toString(36).slice(2, 8)}!`;
-    
     const { data, error: authError } = await supabaseAdmin.auth.signUp({ email: loginEmail, password, options: { data: { role: 'partenaire' } } });
     if (authError) { feedback.textContent = authError.message; return; }
-    
     payload.user_id = data.user.id;
     const { error: insertError } = await supabaseAdmin.from('partenaires').insert([payload]);
     if (insertError) { feedback.textContent = insertError.message; return; }
     feedback.textContent = 'Partenaire créé ✅';
   }
   await loadPartenaires();
-  setTimeout(closePartnerModal, 1000);
+  setTimeout(() => closeModal('partner-modal'), 1000);
 }
 
 async function togglePartner(partnerId, isActive) {
   await supabaseAdmin.from('partenaires').update({ est_gele: !isActive }).eq('id', partnerId);
+  // Recharger la table pour refléter le changement
   await loadPartenaires();
 }
 
+/* --------------------------------------------------- */
+/* --- 4. GESTION DE LA MAINTENANCE --- */
+/* --------------------------------------------------- */
+
+async function loadMaintenanceOptions() {
+    try {
+        const response = await fetch('maintenances.json');
+        const data = await response.json();
+        maintenanceConfig = data.maintenanceCategories;
+
+        const categorieSelect = document.getElementById('maint-categorie');
+        categorieSelect.innerHTML = maintenanceConfig.map(cat => `<option value="${cat.label}">${cat.label}</option>`).join('');
+        
+        updateMotifs(); // Appel initial pour peupler les motifs de la première catégorie
+    } catch (error) {
+        console.error("Erreur chargement maintenances.json:", error);
+        document.getElementById('maint-categorie').innerHTML = '<option>Erreur</option>';
+    }
+}
+
+function updateMotifs() {
+    const categorieSelect = document.getElementById('maint-categorie');
+    const motifSelect = document.getElementById('maint-motif');
+    const selectedCategory = maintenanceConfig.find(cat => cat.label === categorieSelect.value);
+
+    motifSelect.innerHTML = '';
+    if (selectedCategory) {
+        selectedCategory.subcategories.forEach(sub => {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = sub.label;
+            sub.motifs.forEach(motif => {
+                const option = document.createElement('option');
+                option.value = motif;
+                option.textContent = motif;
+                optgroup.appendChild(option);
+            });
+            motifSelect.appendChild(optgroup);
+        });
+    }
+}
+
+function openMaint(id) { document.getElementById('maint-id-voiture').value = id; document.getElementById('modal-maint').style.display = 'flex'; }
+
+async function sauvegarderMaintenance() {
+    const typeIntervention = `${document.getElementById('maint-categorie').value} - ${document.getElementById('maint-motif').value}`;
+    const maint = {
+        id_voiture: document.getElementById('maint-id-voiture').value,
+        type_intervention: typeIntervention,
+        details: document.getElementById('maint-details').value,
+        cout: document.getElementById('maint-cout').value,
+        date_debut: document.getElementById('maint-debut').value || new Date().toISOString().split('T')[0],
+        date_fin: document.getElementById('maint-fin').value || new Date().toISOString().split('T')[0]
+    };
+    await supabaseAdmin.from('maintenances').insert([maint]);
+    closeModal('modal-maint');
+    await loadCarDashboard();
+}
+
+async function voirHistorique(id, nom) {
+    document.getElementById('hist-titre-voiture').innerText = nom;
+    const ul = document.getElementById('historique-list');
+    ul.innerHTML = '<li>Chargement...</li>';
+    document.getElementById('modal-historique').style.display = 'flex';
+    const { data } = await supabaseAdmin.from('maintenances').select('*').eq('id_voiture', id).order('date_debut', { ascending: false });
+    ul.innerHTML = '';
+    let total = 0;
+    if (data && data.length > 0) {
+        data.forEach(m => {
+            const cout = m.cout || 0;
+            total += cout;
+            ul.innerHTML += `<li class="history-item">
+                <div class="hist-date">${m.date_debut}</div>
+                <div class="hist-details">${m.type_intervention}</div>
+                <div class="hist-cout">${cout.toLocaleString('fr-FR')} Ar</div>
+            </li>`;
+        });
+    } else { ul.innerHTML = '<li>Aucun historique.</li>'; }
+    document.getElementById('hist-total').innerText = total.toLocaleString('fr-FR') + ' Ar';
+}
+
+/* --------------------------------------------------- */
+/* --- 5. UTILITAIRES --- */
+/* --------------------------------------------------- */
+
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function openKm(id, km) { document.getElementById('km-id-voiture').value = id; document.getElementById('km-valeur').value = km; document.getElementById('modal-km').style.display = 'flex'; }
+async function sauvegarderKm() {
+    const id = document.getElementById('km-id-voiture').value;
+    const km = document.getElementById('km-valeur').value;
+    await supabaseAdmin.from('voitures').update({ kilometrage: km }).eq('id', id);
+    closeModal('modal-km');
+    await loadCarDashboard();
+}
+
 // Exposer les fonctions à l'objet window pour les `onclick`
+window.closeModal = closeModal;
 window.openPartnerModal = openPartnerModal;
-window.closePartnerModal = closePartnerModal;
+window.submitPartner = submitPartner;
 window.togglePartner = togglePartner;
-window.fermerModal = fermerModal;
+window.openCarModal = openCarModal;
+window.submitCar = submitCar;
+window.updateMotifs = updateMotifs;
 window.openMaint = openMaint;
-window.openKm = openKm;
-window.sauvegarderKm = sauvegarderKm;
 window.sauvegarderMaintenance = sauvegarderMaintenance;
 window.voirHistorique = voirHistorique;
+window.openKm = openKm;
+window.sauvegarderKm = sauvegarderKm;
