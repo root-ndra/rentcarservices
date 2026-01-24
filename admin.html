@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="style-admin.css">
   
   <style>
-    /* Styles repris de admin1.html pour le dashboard des voitures */
+    /* Styles pour le dashboard des voitures */
     .grid-dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 25px; }
     .car-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; position: relative; border-top: 5px solid transparent; }
     .car-card:hover { transform: translateY(-5px); }
@@ -23,7 +23,6 @@
     .kpi-item { text-align: center; flex: 1; }
     .kpi-val { font-weight: bold; font-size: 1.1rem; color: #2c3e50; }
     .kpi-label { font-size: 0.8rem; color: #7f8c8d; }
-    .km-box { font-size: 0.9rem; color: #555; margin-bottom: 15px; display: flex; justify-content: space-between; }
     
     .vidange-container { margin-top: 10px; padding: 10px; background: #f0f3f4; border-radius: 8px; font-size: 0.85rem; }
     .vidange-bar-bg { height: 8px; background: #ddd; border-radius: 4px; overflow: hidden; margin: 5px 0; }
@@ -32,13 +31,10 @@
 
     .card-actions { padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; gap: 10px; }
     .btn-action-card { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.85rem; font-weight: 600; text-align:center; }
-    .btn-maint { background: #f39c12; color: white; } .btn-km { background: #34495e; color: white; } .btn-hist { background: #95a5a6; color: white; } .btn-edit-car { background: #3498db; color: white; }
-
+    .btn-maint { background: #f39c12; color: white; } .btn-hist { background: #95a5a6; color: white; } .btn-edit-car { background: #3498db; color: white; }
+    
     .history-list { list-style: none; padding: 0; margin: 0; }
     .history-item { border-bottom: 1px solid #eee; padding: 12px 5px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-    .hist-date { color: #7f8c8d; font-size: 0.85rem; width: 80px; flex-shrink: 0; }
-    .hist-details { flex: 1; font-weight: 500; color: #2c3e50; }
-    .hist-cout { font-weight: bold; color: #e74c3c; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -110,7 +106,10 @@
             </div>
             <label>URL de l'image</label><input id="car-image-url">
             <label>Description</label><textarea id="car-description" rows="3"></textarea>
-            <label><input type="checkbox" id="car-reservable" checked> Réservable en ligne</label>
+            <label style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="car-reservable" checked> 
+                <span>Réservable en ligne (affiche le bouton "Réserver" sur le site public)</span>
+            </label>
             <button class="btn-full" type="submit">Enregistrer</button>
             <p id="car-feedback"></p>
         </form>
@@ -162,17 +161,6 @@
         <h3>Historique de <span id="hist-titre-voiture" style="color:#2563eb;"></span></h3>
         <div style="max-height:400px; overflow-y:auto; border:1px solid #eee; border-radius:5px; padding:5px;"><ul id="historique-list" class="history-list"></ul></div>
         <div style="margin-top:15px; text-align:right; font-weight:bold;">Total des coûts : <span id="hist-total">0 Ar</span></div>
-    </div>
-</div>
-
-<!-- Modal Kilométrage -->
-<div id="modal-km" class="modal-overlay">
-    <div class="modal-content" style="width:90%; max-width:400px;">
-        <span class="close-modal" onclick="closeModal('modal-km')">×</span>
-        <h3>Mettre à jour le Kilométrage</h3>
-        <input type="hidden" id="km-id-voiture">
-        <input type="number" id="km-valeur" style="font-size: 1.2rem; padding: 10px; text-align: center;">
-        <button onclick="sauvegarderKm()" class="btn-action btn-primaire" style="margin-top:10px; width:100%;">Valider</button>
     </div>
 </div>
 
