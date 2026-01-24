@@ -2,18 +2,55 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Admin · Dashboard</title>
+  <title>Admin · Dashboard Unifié</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="style-admin.css">
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Script pour FullCalendar (mini-calendriers) -->
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+  
+  <style>
+    /* Styles repris de admin1.html pour le dashboard des voitures */
+    .grid-dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 25px; }
+    .car-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; position: relative; border-top: 5px solid transparent; }
+    .car-card:hover { transform: translateY(-5px); }
+    
+    .status-dispo { border-top-color: #2ecc71; } .status-louee { border-top-color: #e74c3c; } .status-maintenance { border-top-color: #f39c12; }
+    .bg-green { background: #2ecc71; } .bg-red { background: #e74c3c; } .bg-orange { background: #f39c12; }
+    .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; color: white; text-transform: uppercase; }
+
+    .card-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
+    .card-body { padding: 20px; }
+    .kpi-row { display: flex; justify-content: space-between; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px; }
+    .kpi-item { text-align: center; flex: 1; }
+    .kpi-val { font-weight: bold; font-size: 1.1rem; color: #2c3e50; }
+    .kpi-label { font-size: 0.8rem; color: #7f8c8d; }
+    .km-box { font-size: 0.9rem; color: #555; margin-bottom: 15px; display: flex; justify-content: space-between; }
+    
+    .vidange-container { margin-top: 10px; padding: 10px; background: #f0f3f4; border-radius: 8px; font-size: 0.85rem; }
+    .vidange-bar-bg { height: 8px; background: #ddd; border-radius: 4px; overflow: hidden; margin: 5px 0; }
+    .vidange-bar-fill { height: 100%; transition: width 0.5s; }
+    .vidange-text { display: flex; justify-content: space-between; color: #555; font-size: 0.75rem; }
+
+    .card-actions { padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; gap: 10px; }
+    .btn-action-card { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.85rem; font-weight: 600; text-align:center; }
+    .btn-maint { background: #f39c12; color: white; } 
+    .btn-km { background: #34495e; color: white; }
+    .btn-hist { background: #95a5a6; color: white; }
+
+    .history-list { list-style: none; padding: 0; margin: 0; }
+    .history-item { border-bottom: 1px solid #eee; padding: 12px 5px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .hist-date { color: #7f8c8d; font-size: 0.85rem; width: 80px; flex-shrink: 0; }
+    .hist-details { flex: 1; font-weight: 500; color: #2c3e50; }
+    .hist-cout { font-weight: bold; color: #e74c3c; white-space: nowrap; }
+  </style>
 </head>
 <body>
 <div id="admin-content">
   <header>
     <div>
       <h2>Dashboard général</h2>
-      <p>Vue synthétique partenaires & indicateurs</p>
+      <p>Vue synthétique de l'activité</p>
     </div>
     <div class="header-user">
       <span id="user-email"></span>
@@ -25,23 +62,25 @@
   <main>
     <nav>
       <button class="tab-btn active"><i class="fas fa-chart-line"></i>Dashboard</button>
-      <button class="tab-btn" onclick="window.location='admin-reservations.html'">Réservations</button>
-      <button class="tab-btn" onclick="window.location='admin-maintenance.html'">Maintenance</button>
-      <button class="tab-btn" onclick="window.location='admin-communication.html'">Communication</button>
-      <button class="tab-btn" onclick="window.location='admin-emplois.html'">Emplois</button>
+      <!-- Les autres boutons de navigation restent pour la cohérence -->
+      <button class="tab-btn" onclick="alert('Page non implémentée')">Réservations</button>
+      <button class="tab-btn" onclick="alert('Page non implémentée')">Maintenance</button>
+      <button class="tab-btn" onclick="alert('Page non implémentée')">Communication</button>
+      <button class="tab-btn" onclick="alert('Page non implémentée')">Emplois</button>
     </nav>
 
     <section class="content-area">
-      <div class="card-grid" id="stats-grid"></div>
-
-      <div style="margin:30px 0; display:flex; justify-content:space-between; align-items:center;">
-        <h3>Partenaires</h3>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="btn-action btn-sec" onclick="openCarModal()">+ Ajouter une voiture</button>
-          <button class="btn-action btn-primaire" onclick="openPartnerModal()">+ Ajouter partenaire</button>
-        </div>
+      <!-- Section Voitures (reprise de admin1.html) -->
+      <h3><i class="fas fa-car"></i> Tableau de bord des véhicules</h3>
+      <div class="grid-dashboard" id="grid-voitures">
+        <p>Chargement du tableau de bord...</p>
       </div>
 
+      <!-- Section Partenaires (conservée de admin.html) -->
+      <div style="margin:40px 0 20px; display:flex; justify-content:space-between; align-items:center;">
+        <h3><i class="fas fa-handshake"></i> Gestion des Partenaires</h3>
+        <button class="btn-action btn-primaire" onclick="openPartnerModal()">+ Ajouter Partenaire</button>
+      </div>
       <table>
         <thead>
           <tr>
@@ -54,118 +93,59 @@
   </main>
 </div>
 
-<!-- Modal Partenaire -->
+<!-- Modal Partenaires (conservé de admin.html) -->
 <div class="modal-overlay" id="partner-modal">
   <div class="modal-content">
     <span class="close-modal" onclick="closePartnerModal()">&times;</span>
     <h3 id="partner-modal-title">Nouveau partenaire</h3>
     <form id="partner-form">
       <input type="hidden" id="partner-id">
-
-      <label>Prénom</label>
-      <input id="new-prenom" required>
-
-      <label>Nom</label>
-      <input id="new-nom" required>
-
-      <label>Email</label>
-      <input type="email" id="new-email" required>
-
-      <label>Téléphone</label>
-      <input id="new-tel">
-
-      <label>Commission (%)</label>
-      <input type="number" id="new-commission" min="5" max="40" value="15">
-
-      <div class="auth-only">
-        <label>Login Supabase (email)</label>
-        <input type="email" id="new-login">
-      </div>
-
-      <div class="auth-only">
-        <label>Mot de passe provisoire</label>
-        <input id="new-password" placeholder="Généré si vide">
-      </div>
-
+      <label>Prénom</label><input id="new-prenom" required>
+      <label>Nom</label><input id="new-nom" required>
+      <label>Email</label><input type="email" id="new-email" required>
+      <label>Téléphone</label><input id="new-tel">
+      <label>Commission (%)</label><input type="number" id="new-commission" min="5" max="40" value="15">
+      <div class="auth-only"><label>Login Supabase (email)</label><input type="email" id="new-login"></div>
+      <div class="auth-only"><label>Mot de passe provisoire</label><input id="new-password" placeholder="Généré si vide"></div>
       <button class="btn-full" type="submit">Enregistrer</button>
       <p id="partner-feedback"></p>
     </form>
   </div>
 </div>
 
-<!-- Modal voiture -->
-<div class="modal-overlay" id="car-modal">
-  <div class="modal-content">
-    <span class="close-modal" onclick="closeCarModal()">&times;</span>
-    <h3 id="car-modal-title">Nouvelle voiture</h3>
-    <form id="car-form">
-      <input type="hidden" id="car-id">
+<!-- Modaux pour la gestion des voitures (repris de admin1.html) -->
+<div id="modal-maint" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <span class="close-modal" onclick="fermerModal('modal-maint')">×</span>
+        <h3><i class="fas fa-tools"></i> Ajouter une Maintenance</h3>
+        <input type="hidden" id="maint-id-voiture">
+        <label>Pièce / Intervention</label>
+        <select id="maint-type"><option value="Vidange">Vidange Moteur</option><option value="Revision">Révision</option><option value="Pneu">Pneu</option><option value="Freins">Freins</option><option value="Batterie">Batterie</option><option value="Autre">Autre</option></select>
+        <label>Kilométrage Compteur</label><input type="number" id="maint-km" placeholder="Ex: 56000">
+        <label>Détails / Garage</label><textarea id="maint-details" rows="2"></textarea>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;"><div><label>Début</label><input type="date" id="maint-debut"></div><div><label>Fin</label><input type="date" id="maint-fin"></div></div>
+        <label>Coût (Ar)</label><input type="number" id="maint-cout" placeholder="0">
+        <button onclick="sauvegarderMaintenance()" class="btn-action btn-primaire" style="margin-top:20px; width:100%;">Enregistrer</button>
+    </div>
+</div>
 
-      <label>Nom du véhicule</label>
-      <input id="car-nom" required>
+<div id="modal-historique" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="max-width:500px;">
+        <span class="close-modal" onclick="fermerModal('modal-historique')">×</span>
+        <h3>Historique de <span id="hist-titre-voiture" style="color:#2563eb;"></span></h3>
+        <div style="max-height:400px; overflow-y:auto; border:1px solid #eee; border-radius:5px; padding:5px;"><ul id="historique-list" class="history-list"></ul></div>
+        <div style="margin-top:15px; text-align:right; font-weight:bold;">Total des coûts : <span id="hist-total">0 Ar</span></div>
+    </div>
+</div>
 
-      <label>Référence interne</label>
-      <input id="car-ref">
-
-      <label>Prix de base (Ar / jour)</label>
-      <input type="number" id="car-prix" min="0" required>
-
-      <label>Type</label>
-      <input id="car-type" placeholder="Citadine, SUV, Berline…">
-
-      <div class="grid-form" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:15px;">
-        <div>
-          <label>Transmission</label>
-          <select id="car-transmission">
-            <option value="Manuelle">Manuelle</option>
-            <option value="Automatique">Automatique</option>
-          </select>
-        </div>
-        <div>
-          <label>Carburant</label>
-          <select id="car-carburant">
-            <option value="Essence">Essence</option>
-            <option value="Diesel">Diesel</option>
-            <option value="Hybride">Hybride</option>
-            <option value="Électrique">Électrique</option>
-          </select>
-        </div>
-        <div>
-          <label>Places</label>
-          <input type="number" id="car-places" min="2" max="12">
-        </div>
-        <div>
-          <label>Chauffeur</label>
-          <select id="car-chauffeur">
-            <option value="oui">Oui (inclus)</option>
-            <option value="option" selected>En option</option>
-            <option value="non">Non proposé</option>
-          </select>
-        </div>
-      </div>
-
-      <label>Image (URL)</label>
-      <input id="car-image" placeholder="https://…">
-
-      <label>Description</label>
-      <textarea id="car-description" rows="3"></textarea>
-
-      <label>Propriétaire (UUID partenaire)</label>
-      <input id="car-proprietaire" placeholder="Laissez vide pour le super-admin">
-
-      <div style="display:flex; gap:15px; flex-wrap:wrap;">
-        <label style="display:flex; gap:8px; align-items:center;">
-          <input type="checkbox" id="car-reservable" checked> Réservable
-        </label>
-        <label style="display:flex; gap:8px; align-items:center;">
-          <input type="checkbox" id="car-calendrier" checked> Calendrier visible
-        </label>
-      </div>
-
-      <button class="btn-full" type="submit"><i class="fas fa-save"></i> Enregistrer</button>
-      <p id="car-feedback"></p>
-    </form>
-  </div>
+<div id="modal-km" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="width:90%; max-width:400px;">
+        <span class="close-modal" onclick="fermerModal('modal-km')">×</span>
+        <h3>Mettre à jour le Kilométrage</h3>
+        <input type="hidden" id="km-id-voiture">
+        <input type="number" id="km-valeur" style="font-size: 1.2rem; padding: 10px; text-align: center;">
+        <button onclick="sauvegarderKm()" class="btn-action btn-primaire" style="margin-top:10px; width:100%;">Valider</button>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
