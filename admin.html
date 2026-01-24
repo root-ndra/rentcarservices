@@ -14,8 +14,8 @@
     .car-card:hover { transform: translateY(-5px); }
     
     .status-dispo { border-top-color: #2ecc71; } .status-louee { border-top-color: #e74c3c; } .status-maintenance { border-top-color: #f39c12; }
-    .bg-green { background: #2ecc71; } .bg-red { background: #e74c3c; } .bg-orange { background: #f39c12; }
     .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; color: white; text-transform: uppercase; }
+    .bg-green { background: #2ecc71; } .bg-red { background: #e74c3c; } .bg-orange { background: #f39c12; }
 
     .card-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
     .card-body { padding: 20px; }
@@ -23,18 +23,10 @@
     .kpi-item { text-align: center; flex: 1; }
     .kpi-val { font-weight: bold; font-size: 1.1rem; color: #2c3e50; }
     .kpi-label { font-size: 0.8rem; color: #7f8c8d; }
-    
-    .vidange-container { margin-top: 10px; padding: 10px; background: #f0f3f4; border-radius: 8px; font-size: 0.85rem; }
-    .vidange-bar-bg { height: 8px; background: #ddd; border-radius: 4px; overflow: hidden; margin: 5px 0; }
-    .vidange-bar-fill { height: 100%; transition: width 0.5s; }
-    .vidange-text { display: flex; justify-content: space-between; color: #555; font-size: 0.75rem; }
 
     .card-actions { padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; gap: 10px; }
     .btn-action-card { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.85rem; font-weight: 600; text-align:center; }
     .btn-maint { background: #f39c12; color: white; } .btn-hist { background: #95a5a6; color: white; } .btn-edit-car { background: #3498db; color: white; }
-    
-    .history-list { list-style: none; padding: 0; margin: 0; }
-    .history-item { border-bottom: 1px solid #eee; padding: 12px 5px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
   </style>
 </head>
 <body>
@@ -56,8 +48,6 @@
       <button class="tab-btn active"><i class="fas fa-chart-line"></i>Dashboard</button>
       <button class="tab-btn" onclick="alert('Page non implémentée')">Réservations</button>
       <button class="tab-btn" onclick="alert('Page non implémentée')">Maintenance</button>
-      <button class="tab-btn" onclick="alert('Page non implémentée')">Communication</button>
-      <button class="tab-btn" onclick="alert('Page non implémentée')">Emplois</button>
     </nav>
 
     <section class="content-area">
@@ -146,7 +136,6 @@
             <div><label>Catégorie</label><select id="maint-categorie" onchange="updateMotifs()"><option>Chargement...</option></select></div>
             <div><label>Motif</label><select id="maint-motif"></select></div>
         </div>
-        <label>Kilométrage Compteur</label><input type="number" id="maint-km" placeholder="Ex: 56000">
         <label>Détails / Garage</label><textarea id="maint-details" rows="2"></textarea>
         <div class="form-grid"><div><label>Début</label><input type="date" id="maint-debut"></div><div><label>Fin</label><input type="date" id="maint-fin"></div></div>
         <label>Coût (Ar)</label><input type="number" id="maint-cout" placeholder="0">
