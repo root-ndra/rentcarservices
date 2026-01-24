@@ -5,11 +5,19 @@
   <title>Carrières – RentCarServices</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- CSS commun pour l'en-tête et le pied de page -->
+  <link rel="stylesheet" href="style-ui.css">
   <style>
-    body { margin:0; font-family:'Montserrat',sans-serif; background:#f2f5f9; color:#1f2a37; }
-    header { background:#0f172a; color:white; padding:40px 20px; text-align:center; }
-    header h1 { margin:0 0 10px; font-size:2.2rem; }
-    header p { margin:0; color:#cbd5f5; }
+    body { background:#f2f5f9; color:#1f2a37; }
+    
+    .hero-emplois { 
+      background: linear-gradient(135deg, #0f172a, #334155); 
+      color:white; 
+      padding:60px 20px; 
+      text-align:center; 
+    }
+    .hero-emplois h1 { margin:0 0 10px; font-size:2.5rem; }
+    .hero-emplois p { margin:0; color:#cbd5e1; max-width: 700px; margin-inline: auto; }
 
     .filters-bar {
       max-width:1100px;
@@ -56,6 +64,7 @@
       position:absolute;
       width:100%;
       height:100%;
+      -webkit-backface-visibility:hidden;
       backface-visibility:hidden;
       background:white;
       border-radius:18px;
@@ -107,25 +116,36 @@
       font-size:.9rem;
     }
     .empty-state {
+      grid-column: 1 / -1;
       max-width:600px;
       margin:50px auto;
       text-align:center;
       color:#94a3b8;
       font-size:1.1rem;
     }
-
-    @media (max-width:768px) {
-      .jobs-grid { grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); }
-    }
-    @media (max-width:480px) {
-      .filters-bar { flex-direction:column; }
-      .jobs-grid { grid-template-columns:1fr; }
-    }
   </style>
 </head>
 <body>
 
-  <header>
+<!-- En-tête standard -->
+<nav class="navbar">
+  <div class="logo-container">
+    <img src="" alt="Logo" class="nav-logo" id="header-logo">
+    <span id="header-site-name">RentCarServices</span>
+  </div>
+  <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+  <ul class="nav-links" id="nav-menu">
+    <li><a href="index.html">Accueil</a></li>
+    <li><a href="voitures.html">Nos voitures</a></li>
+    <li><a href="divertissement.html">Divertissement</a></li>
+    <li><a href="emplois.html" class="active">Emplois</a></li>
+    <li><a href="contact.html">Contact & Avis</a></li>
+    <li><a href="login.html" class="btn-action btn-sec">Portail admin</a></li>
+  </ul>
+</nav>
+
+<main>
+  <header class="hero-emplois">
     <h1>Carrières chez RentCarServices</h1>
     <p>Faites partie de l’équipe : découvrez nos opportunités.</p>
   </header>
@@ -140,8 +160,20 @@
   <section class="jobs-grid" id="jobs-grid">
     <p class="empty-state">Chargement des offres…</p>
   </section>
+</main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="emplois.js"></script>
+<!-- Pied de page standard -->
+<footer class="site-footer">
+  <div class="footer-content">
+    <h3 id="footer-title">RentCarServices</h3>
+    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address">—</span></p>
+    <p class="footer-phone"><i class="fas fa-phone"></i> <span id="footer-phone">—</span></p>
+    <p class="footer-legal">NIF <span id="footer-nif">-</span> · STAT <span id="footer-stat">-</span></p>
+    <div id="footer-socials" style="margin-top:15px;"></div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="emplois.js"></script>
 </body>
 </html>
