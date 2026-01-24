@@ -14,9 +14,7 @@
     <img src="" alt="Logo" class="nav-logo" id="header-logo">
     <span id="header-site-name">RentCarServices</span>
   </div>
-  <button class="menu-toggle" aria-label="Ouvrir le menu" onclick="toggleMenu()">
-    <i class="fas fa-bars"></i>
-  </button>
+  <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
   <ul class="nav-links" id="nav-menu">
     <li><a href="index.html" class="active">Accueil</a></li>
     <li><a href="voitures.html">Nos voitures</a></li>
@@ -37,11 +35,9 @@
     <a href="voitures.html">
       <button class="btn-hero"><i class="fas fa-car-side"></i> Voir la flotte</button>
     </a>
-    <a href="voitures.html#partner">
-      <button class="btn-hero" style="background:#0f172a;">
-        <i class="fas fa-handshake"></i> Devenir partenaire
-      </button>
-    </a>
+    <button class="btn-hero" data-open-partner style="background:#0f172a;">
+      <i class="fas fa-handshake"></i> Devenir partenaire
+    </button>
     <a id="btn-whatsapp-hero" href="#" target="_blank" rel="noopener">
       <button class="btn-hero" style="background:#22c55e;">
         <i class="fab fa-whatsapp"></i> Discuter sur WhatsApp
@@ -51,44 +47,40 @@
 </header>
 
 <main>
-  <section class="page-section" id="stats">
-    <div class="card-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
-      <article class="car-card">
-        <h4>Partenaires</h4>
-        <p id="stat-partenaires" style="font-size:2rem;">—</p>
-      </article>
-      <article class="car-card">
-        <h4>Véhicules actifs</h4>
-        <p id="stat-voitures" style="font-size:2rem;">—</p>
-      </article>
-      <article class="car-card">
-        <h4>Réservations en cours</h4>
-        <p id="stat-reservations" style="font-size:2rem;">—</p>
-      </article>
-    </div>
-  </section>
-
   <section class="page-section">
     <h2 class="section-title">Nos engagements</h2>
     <div class="features-container" id="features-container-dynamic">
-      <!-- cartes dynamiques -->
+      <!-- Cartes dynamiques -->
     </div>
   </section>
 
   <section class="page-section">
-    <h2 class="section-title">Flotte disponible</h2>
-    <div class="grid-voitures" id="container-voitures">
-      <p>Chargement du catalogue…</p>
+    <h2 class="section-title">Tout est prêt pour votre mission</h2>
+    <div class="card-grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));">
+      <article class="car-card">
+        <h4>Procédure simple</h4>
+        <p>Demande en ligne, confirmation par email et suivi depuis le portail sécurisé.</p>
+      </article>
+      <article class="car-card">
+        <h4>Couverture nationale</h4>
+        <p>Chauffeurs, relais carburant et maintenance disponible sur l’ensemble du territoire.</p>
+      </article>
+      <article class="car-card">
+        <h4>Options sur mesure</h4>
+        <p>Wifi embarqué, assurances additionnelles et gestion multi-sites pour les ONG.</p>
+      </article>
     </div>
   </section>
 
   <section class="page-section">
-    <h2 class="section-title">Avis récents</h2>
-    <div class="avis-section" id="avis-home">
-      <p class="empty-state" style="grid-column:1/-1;">Chargement des avis…</p>
-    </div>
-    <div style="text-align:center; margin-top:20px;">
-      <a href="contact.html" class="btn-hero" style="background:#2563eb;">Lire / poster un avis</a>
+    <h2 class="section-title">Prêt à choisir votre véhicule ?</h2>
+    <div class="container-form" style="text-align:center;">
+      <p>Consultez la disponibilité temps réel, filtrez par type et budgétisez en quelques clics.</p>
+      <a href="voitures.html">
+        <button class="btn-hero" style="margin-top:20px;">
+          <i class="fas fa-arrow-right"></i> Accéder au catalogue
+        </button>
+      </a>
     </div>
   </section>
 </main>
@@ -107,6 +99,52 @@
   <i class="fas fa-phone"></i>
   <span>Appeler</span>
 </a>
+
+<!-- Modal devenir partenaire -->
+<div class="modal-overlay" id="partner-modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closePartnerModal()">&times;</span>
+    <h3>Devenir partenaire RentCarServices</h3>
+    <p style="color:#475569;">
+      Présentez votre agence et ajoutez jusqu’à trois véhicules de démonstration.
+      L’équipe back-office vous recontacte sous 24h ouvrées.
+    </p>
+    <form id="partner-lead-form">
+      <div class="grid-form" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+        <div>
+          <label>Prénom</label>
+          <input id="lead-prenom" required>
+        </div>
+        <div>
+          <label>Nom</label>
+          <input id="lead-nom" required>
+        </div>
+        <div>
+          <label>Email</label>
+          <input type="email" id="lead-email" required>
+        </div>
+        <div>
+          <label>Téléphone</label>
+          <input type="tel" id="lead-phone" placeholder="+261…" required>
+        </div>
+        <div>
+          <label>Agence / Ville</label>
+          <input id="lead-agence" required>
+        </div>
+        <div>
+          <label>Nombre de véhicules</label>
+          <input type="number" id="lead-fleet" min="1" value="1">
+        </div>
+      </div>
+      <label>Message</label>
+      <textarea id="lead-message" rows="3"
+        placeholder="Décrivez brièvement votre flotte, vos clients et vos attentes."
+        required></textarea>
+      <button class="btn-full" type="submit"><i class="fas fa-paper-plane"></i> Envoyer</button>
+      <p id="partner-lead-feedback"></p>
+    </form>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="index.js"></script>
