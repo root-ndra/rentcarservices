@@ -47,7 +47,7 @@ async function initAdminReservations() {
 }
 
 /* --------------------------------------------------- */
-/* --- 2. CHARGEMENT DES DONNÉES --- */
+/* --- 2. CHARGEMENT ET AFFICHAGE DES DONNÉES --- */
 /* --------------------------------------------------- */
 
 async function loadVoitures() {
@@ -75,12 +75,7 @@ async function loadReservations() {
     if (error) { alert(error.message); return; }
     reservationsCache = data || [];
     renderReservations();
-    renderReservationKPIs();
 }
-
-/* --------------------------------------------------- */
-/* --- 3. AFFICHAGE (RENDER) --- */
-/* --------------------------------------------------- */
 
 function renderReservations() {
     const status = document.getElementById('filter-status').value;
@@ -89,7 +84,7 @@ function renderReservations() {
 
     const filtered = reservationsCache.filter((r) => {
         const matchStatus = !status || r.statut === status;
-        const matchCar = !voitureId || r.id_voiture == voitureId; // Utiliser id_voiture
+        const matchCar = !voitureId || r.id_voiture == voitureId;
         const matchDate = !date || (r.date_debut <= date && r.date_fin >= date);
         return matchStatus && matchCar && matchDate;
     });
@@ -105,7 +100,7 @@ function renderReservations() {
         const paye = r.paiement_montant_declare || 0;
         const reste = (r.montant_total || 0) - paye;
 
-        let statutHtml = '';
+        let statutHtml;
         switch (r.statut) {
             case 'valide': statutHtml = '<span style="color:green;">● Validé</span>'; break;
             case 'annulee': statutHtml = '<span style="color:red;">● Annulé</span>'; break;
@@ -134,20 +129,8 @@ function renderReservations() {
     }).join('');
 }
 
-function renderReservationKPIs() {
-    const total = reservationsCache.length;
-    const confirmed = reservationsCache.filter((r) => r.statut === 'valide').length;
-    const pending = reservationsCache.filter((r) => r.statut === 'en_attente').length;
-
-    document.getElementById('kpi-reservations').innerHTML = `
-        <div class="card kpi-card"><h4><i class="fas fa-calendar"></i> Total</h4><p>${total}</p></div>
-        <div class="card kpi-card"><h4><i class="fas fa-check"></i> Confirmées</h4><p>${confirmed}</p></div>
-        <div class="card kpi-card"><h4><i class="fas fa-hourglass-half"></i> En attente</h4><p>${pending}</p></div>
-    `;
-}
-
 /* --------------------------------------------------- */
-/* --- 4. ACTIONS SUR LES RÉSERVATIONS --- */
+/* --- 3. ACTIONS SUR LES RÉSERVATIONS --- */
 /* --------------------------------------------------- */
 
 function toggleNewResaForm() {
@@ -190,7 +173,6 @@ async function creerReservationAdmin() {
         montant_total: document.getElementById('new-resa-montant').value || 0,
         statut: document.getElementById('new-resa-statut').value,
         paiement_methode: 'espece',
-        paiement_type_montant: '100',
         paiement_montant_declare: document.getElementById('new-resa-paye').value || 0,
         paiement_titulaire: document.getElementById('new-resa-nom').value
     };
@@ -235,7 +217,7 @@ async function sauvegarderModificationResa() {
         alert("Erreur de mise à jour : " + error.message);
     } else {
         closeModal('modal-edit-resa');
-        loadReservations();
+        await loadReservations();
     }
 }
 
@@ -243,18 +225,18 @@ async function validerResa(id) {
     const code = document.getElementById('otp-' + id).value;
     if (!code) return alert("Veuillez entrer un code OTP pour valider.");
     await supabaseClient.from('reservations').update({ statut: 'valide', code_otp: code }).eq('id', id);
-    loadReservations();
+    await loadReservations();
 }
 
 async function annulerResa(id) {
     if (confirm('⚠️ Voulez-vous vraiment supprimer définitivement cette réservation ?')) {
         await supabaseClient.from('reservations').delete().eq('id', id);
-        loadReservations();
+        await loadReservations();
     }
 }
 
 /* --------------------------------------------------- */
-/* --- 5. UTILITAIRES --- */
+/* --- 4. UTILITAIRES --- */
 /* --------------------------------------------------- */
 
 function closeModal(id) {
@@ -267,15 +249,9 @@ function exportReservations() {
     ];
     reservationsCache.forEach((res) => {
         rows.push([
-            res.id,
-            res.nom,
-            res.tel || '',
-            res.voitures?.nom || '',
-            res.date_debut,
-            res.date_retour,
-            res.montant_total || 0,
-            res.paiement_montant_declare || 0,
-            res.statut
+            res.id, res.nom, res.tel || '', res.voitures?.nom || '',
+            res.date_debut, res.date_fin, res.montant_total || 0,
+            res.paiement_montant_declare || 0, res.statut
         ]);
     });
     const csv = rows.map((row) => row.map((v) => `"${v ?? ''}"`).join(',')).join('\n');
