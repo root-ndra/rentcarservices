@@ -27,6 +27,9 @@
     .card-actions { padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; gap: 10px; }
     .btn-action-card { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.85rem; font-weight: 600; text-align:center; }
     .btn-maint { background: #f39c12; color: white; } .btn-hist { background: #95a5a6; color: white; } .btn-edit-car { background: #3498db; color: white; }
+    
+    .history-list { list-style: none; padding: 0; margin: 0; }
+    .history-item { border-bottom: 1px solid #eee; padding: 12px 5px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
   </style>
 </head>
 <body>
@@ -112,7 +115,7 @@
     <span class="close-modal" onclick="closeModal('partner-modal')">&times;</span>
     <h3 id="partner-modal-title">Nouveau partenaire</h3>
     <form id="partner-form" onsubmit="submitPartner(event)">
-      <input type="hidden" id="partner-id">
+      <input type="hidden" id="partner-user-id">
       <label>Prénom</label><input id="new-prenom" required>
       <label>Nom</label><input id="new-nom" required>
       <label>Email</label><input type="email" id="new-email" required>
