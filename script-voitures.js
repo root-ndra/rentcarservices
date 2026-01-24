@@ -11,43 +11,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     initFilterListeners();
     bindQuickReservation();
     await chargerVoitures();
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error('Initialisation impossible :', error);
     document.getElementById('container-voitures').innerHTML =
       '<p class="empty-state">Impossible de charger le catalogue.</p>';
   }
 });
 
 async function initSupabase() {
-  const resp = await fetch('supabase-config.json');
-  if (!resp.ok) throw new Error('supabase-config.json introuvable');
-  const { supabaseUrl, supabaseKey } = await resp.json();
+  const response = await fetch('supabase-config.json');
+  if (!response.ok) throw new Error('supabase-config.json introuvable');
+  const { supabaseUrl, supabaseKey } = await response.json();
   supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 }
 
 async function loadSiteConfig() {
-  const resp = await fetch('site_config.json');
-  if (!resp.ok) throw new Error('site_config.json introuvable');
-  siteConfig = await resp.json();
+  const response = await fetch('site_config.json');
+  if (!response.ok) throw new Error('site_config.json introuvable');
+  siteConfig = await response.json();
 
-  setText('header-site-name', siteConfig.header.siteName);
-  setAttr('header-logo', 'src', siteConfig.header.logoUrl);
-  setText('footer-title', siteConfig.header.siteName);
-  setText('footer-address', siteConfig.footer.address);
-  setText('footer-phone', siteConfig.contact.phoneDisplay);
-  setText('footer-nif', siteConfig.footer.nif);
-  setText('footer-stat', siteConfig.footer.stat);
-  setAttr('cta-hotline', 'href', `tel:${siteConfig.contact.phoneCall}`);
+  const { header, contact, footer } = siteConfig;
+  setText('header-site-name', header.siteName);
+  setAttr('header-logo', 'src', header.logoUrl);
+  setText('footer-title', header.siteName);
+  setText('footer-address', footer.address);
+  setText('footer-phone', contact.phoneDisplay);
+  setText('footer-nif', footer.nif);
+  setText('footer-stat', footer.stat);
+  setAttr('cta-hotline', 'href', `tel:${contact.phoneCall}`);
 
   const socials = document.getElementById('footer-socials');
   socials.innerHTML = '';
   const icons = { facebook: 'fab fa-facebook', instagram: 'fab fa-instagram', tiktok: 'fab fa-tiktok' };
-  Object.entries(siteConfig.footer.socials || {}).forEach(([network, url]) => {
+  Object.entries(footer.socials || {}).forEach(([network, url]) => {
     if (!url || url === '#') return;
-    socials.innerHTML += `<a href="${url}" target="_blank" rel="noopener"
-      style="color:white;margin:0 8px;font-size:1.3rem;">
-      <i class="${icons[network] || 'fas fa-globe'}"></i>
-    </a>`;
+    socials.innerHTML += `
+      <a href="${url}" target="_blank" rel="noopener"
+         style="color:white;margin:0 8px;font-size:1.3rem;">
+        <i class="${icons[network] || 'fas fa-globe'}"></i>
+      </a>`;
   });
 }
 
@@ -106,13 +108,20 @@ function peuplerFiltresDynamiques(list) {
 }
 
 function initFilterListeners() {
-  ['filter-type', 'filter-carburant', 'filter-places', 'filter-prix-max', 'sort-prix']
-    .forEach((id) => document.getElementById(id)?.addEventListener('input', appliquerFiltres));
+  [
+    'filter-type',
+    'filter-carburant',
+    'filter-chauffeur',
+    'filter-places',
+    'filter-prix-max',
+    'sort-prix'
+  ].forEach((id) => document.getElementById(id)?.addEventListener('input', appliquerFiltres));
 }
 
 function appliquerFiltres() {
   const type = document.getElementById('filter-type').value;
   const carburant = document.getElementById('filter-carburant').value;
+  const chauffeur = document.getElementById('filter-chauffeur').value;
   const places = document.getElementById('filter-places').value;
   const prixMax = parseInt(document.getElementById('filter-prix-max').value, 10);
   const sort = document.getElementById('sort-prix').value;
@@ -120,11 +129,12 @@ function appliquerFiltres() {
   let resultat = voituresCache.filter((v) => {
     const matchType = !type || v.type === type;
     const matchCarb = !carburant || v.carburant === carburant;
+    const matchChauffeur = !chauffeur || (v.chauffeur_option || 'option') === chauffeur;
     const matchPlaces =
       !places ||
       (places === '7+' ? (v.places || 0) >= 7 : String(v.places || '') === places);
     const matchPrix = !prixMax || (v.prix_base || 0) <= prixMax;
-    return matchType && matchCarb && matchPlaces && matchPrix;
+    return matchType && matchCarb && matchChauffeur && matchPlaces && matchPrix;
   });
 
   resultat = trierVoitures(resultat, sort);
@@ -157,6 +167,11 @@ function renderVoitures(list) {
       const type = v.type || '—';
       const desc = (v.description || '').slice(0, 140);
       const isReservable = v.reservable !== false;
+      const chauffeurLabel = {
+        oui: 'Chauffeur inclus',
+        non: 'Sans chauffeur',
+        option: 'Chauffeur en option'
+      }[v.chauffeur_option || 'option'];
 
       return `
         <article class="carte-voiture">
@@ -166,6 +181,7 @@ function renderVoitures(list) {
             <span><i class="fas fa-tags"></i> ${type}</span>
             <span><i class="fas fa-gas-pump"></i> ${carbu}</span>
             <span><i class="fas fa-user-friends"></i> ${places}</span>
+            <span><i class="fas fa-id-card"></i> ${chauffeurLabel}</span>
           </div>
           <p class="carte-desc">${desc}${v.description?.length > 140 ? '…' : ''}</p>
           <p class="prix">${prix} Ar / jour</p>
@@ -179,7 +195,6 @@ function renderVoitures(list) {
 }
 
 /* ---------- RÉSERVATION EXPRESS ---------- */
-
 function bindQuickReservation() {
   ['res-date-start', 'res-date-end', 'opt-chauffeur', 'opt-wifi', 'opt-assurance'].forEach((id) => {
     document.getElementById(id)?.addEventListener('input', updateEstimation);
@@ -214,55 +229,6 @@ function openReservationModal(voiture) {
 function closeReservationModal() {
   document.getElementById('reservation-modal').style.display = 'none';
   selectedCar = null;
-}
-
-async function applyPromo() {
-  const code = document.getElementById('res-promo').value.trim().toUpperCase();
-  const feedback = document.getElementById('promo-feedback');
-  promoReduction = 0;
-
-  if (!code) {
-    feedback.textContent = 'Aucun code indiqué.';
-    feedback.style.color = '#475569';
-    updateEstimation();
-    return;
-  }
-
-  const today = new Date().toISOString().split('T')[0];
-  const { data, error } = await supabaseClient
-    .from('codes_promo')
-    .select('*')
-    .eq('code', code)
-    .eq('actif', true)
-    .lte('date_debut', today)
-    .gte('date_fin', today)
-    .maybeSingle();
-
-  if (error || !data) {
-    feedback.textContent = 'Code invalide ou expiré.';
-    feedback.style.color = '#e74c3c';
-    updateEstimation();
-    return;
-  }
-
-  const start = document.getElementById('res-date-start').value;
-  const end = document.getElementById('res-date-end').value;
-  if (!start || !end) {
-    feedback.textContent = 'Sélectionnez vos dates avant le code promo.';
-    feedback.style.color = '#e67e22';
-    return;
-  }
-  const diff = calcDays(start, end);
-  if (diff < data.min_jours) {
-    feedback.textContent = `Minimum ${data.min_jours} nuit(s) requis.`;
-    feedback.style.color = '#e67e22';
-    return;
-  }
-
-  promoReduction = data.reduction_pourcent || 0;
-  feedback.textContent = `Code appliqué : -${promoReduction}%`;
-  feedback.style.color = '#16a34a';
-  updateEstimation();
 }
 
 function calcDays(start, end) {
@@ -300,6 +266,56 @@ function updateEstimation() {
 
   summaryDays.textContent = `${days} jour(s)`;
   summaryTotal.textContent = `${Math.round(total).toLocaleString('fr-FR')} Ar`;
+}
+
+async function applyPromo() {
+  const code = document.getElementById('res-promo').value.trim().toUpperCase();
+  const feedback = document.getElementById('promo-feedback');
+  promoReduction = 0;
+
+  if (!code) {
+    feedback.textContent = 'Aucun code indiqué.';
+    feedback.style.color = '#475569';
+    updateEstimation();
+    return;
+  }
+
+  const start = document.getElementById('res-date-start').value;
+  const end = document.getElementById('res-date-end').value;
+  if (!start || !end) {
+    feedback.textContent = 'Sélectionnez vos dates avant le code promo.';
+    feedback.style.color = '#e67e22';
+    return;
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const { data, error } = await supabaseClient
+    .from('codes_promo')
+    .select('*')
+    .eq('code', code)
+    .eq('actif', true)
+    .lte('date_debut', today)
+    .gte('date_fin', today)
+    .maybeSingle();
+
+  if (error || !data) {
+    feedback.textContent = 'Code invalide ou expiré.';
+    feedback.style.color = '#e74c3c';
+    updateEstimation();
+    return;
+  }
+
+  const diff = calcDays(start, end);
+  if (diff < data.min_jours) {
+    feedback.textContent = `Minimum ${data.min_jours} nuit(s) requis.`;
+    feedback.style.color = '#e67e22';
+    return;
+  }
+
+  promoReduction = data.reduction_pourcent || 0;
+  feedback.textContent = `Code appliqué : -${promoReduction}%`;
+  feedback.style.color = '#16a34a';
+  updateEstimation();
 }
 
 function submitQuickReservation(event) {
