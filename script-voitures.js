@@ -7,11 +7,13 @@ let currentReservationId = null;
 let realTimeSubscription = null;
 let reductionActive = 0;
 let currentResaData = null;
+let voituresCache = [];
+let siteConfig = null;
 
 async function initSupabase() {
   if (sb) return;
   const response = await fetch('supabase-config.json');
-  if (!response.ok) throw new Error('supabase-config introuvable');
+  if (!response.ok) throw new Error('supabase-config.json introuvable');
   const { supabaseUrl, supabaseKey } = await response.json();
   sb = supabase.createClient(supabaseUrl, supabaseKey);
 }
@@ -21,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initSupabase();
     await chargerVoitures();
     bindFiltres();
+    await loadSiteConfig();
   } catch (e) {
     console.error(e);
     const container = document.getElementById('container-voitures');
@@ -28,18 +31,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-/* ---------- UI ---------- */
-function toggleMenu() { document.getElementById('nav-menu')?.classList.toggle('active'); }
-function afficherSection(id) {
-  document.querySelectorAll('.page-section').forEach(sec => sec.style.display = 'none');
-  document.getElementById(id).style.display = 'block';
-  window.scrollTo(0, 0);
+/* ---------- CONFIG SITE ---------- */
+async function loadSiteConfig() {
+  const resp = await fetch('site_config.json');
+  if (!resp.ok) return;
+  siteConfig = await resp.json();
+  setText('header-site-name', siteConfig.header?.siteName || 'RIJA NIAINA CAR SERVICES');
+  setAttr('header-logo', 'src', siteConfig.header?.logoUrl || 'https://i.ibb.co/dw8gxWXL/1765001359376.png');
+  setText('footer-title', siteConfig.header?.siteName || 'Rija NIAINA Car Services');
+  setText('footer-address', siteConfig.footer?.address || 'Siae 33 Ambodifilao, Analakely, Antananarivo 101');
+  setText('footer-phone', siteConfig.contact?.phoneDisplay || '+261 38 85 524 32');
+  setText('footer-nif', siteConfig.footer?.nif || '5012357932');
+  setText('footer-stat', siteConfig.footer?.stat || '70209 11 2025 0 06328');
+  setAttr('cta-hotline', 'href', `tel:${siteConfig.contact?.phoneCall || '+261388552432'}`);
+  setText('txt-modal-phone', siteConfig.contact?.phoneDisplay || '+261 38 85 524 32');
+  if (siteConfig.footer?.socials) {
+    const socials = document.getElementById('footer-socials');
+    socials.innerHTML = '';
+    Object.entries(siteConfig.footer.socials).forEach(([k, url]) => {
+      if (url) socials.innerHTML += `<a href="${url}" target="_blank" style="color:white;margin:0 8px;"><i class="fab fa-${k}"></i></a>`;
+    });
+  }
 }
+function setText(id, txt) { const el = document.getElementById(id); if (el) el.textContent = txt; }
+function setAttr(id, attr, val) { const el = document.getElementById(id); if (el) el.setAttribute(attr, val); }
+
+/* ---------- UI UTILS ---------- */
+function toggleMenu() { document.getElementById('nav-menu')?.classList.toggle('active'); }
+function afficherSection(id) { window.scrollTo(0, 0); }
 function formatPrix(val) { return (val || 0).toLocaleString('fr-FR'); }
 
 /* ---------- CHARGEMENT VOITURES ---------- */
-let voituresCache = [];
-
 async function chargerVoitures() {
   const container = document.getElementById('container-voitures');
   container.innerHTML = '<p>Chargement...</p>';
@@ -82,7 +104,6 @@ function bindFiltres() {
   ['filter-type', 'filter-carburant', 'filter-places', 'filter-prix-max', 'sort-prix']
     .forEach(id => document.getElementById(id)?.addEventListener('input', appliquerFiltres));
 }
-
 function remplirFiltres(list) {
   const remplir = (id, values) => {
     const select = document.getElementById(id);
@@ -95,7 +116,6 @@ function remplirFiltres(list) {
   remplir('filter-type', list.map(v => v.type));
   remplir('filter-carburant', list.map(v => v.carburant));
 }
-
 function appliquerFiltres() {
   const type = document.getElementById('filter-type').value;
   const carburant = document.getElementById('filter-carburant').value;
@@ -119,7 +139,7 @@ function appliquerFiltres() {
   renderVoitures(resultat);
 }
 
-/* ---------- ROUTAGE BOUTON ---------- */
+/* ---------- ROUTAGE BOUTONS ---------- */
 function gererClickVoiture(idVoiture, isReservable) {
   const voiture = voituresCache.find(v => v.id == idVoiture);
   if (!voiture) return;
@@ -129,12 +149,12 @@ function gererClickVoiture(idVoiture, isReservable) {
     ouvrirModalContact(voiture);
   }
 }
-
 function ouvrirModalContact(voiture) {
   document.getElementById('contact-car-name').innerText = voiture.nom;
-  document.getElementById('btn-modal-call').href = 'tel:+261388552432';
+  document.getElementById('btn-modal-call').href = `tel:${siteConfig?.contact?.phoneCall || '+261388552432'}`;
   const message = encodeURIComponent(`Bonjour, je souhaite louer ${voiture.nom}.`);
-  document.getElementById('btn-modal-wa').href = `https://wa.me/261388552432?text=${message}`;
+  const wa = siteConfig?.contact?.whatsapp?.replace(/\D/g, '') || '261388552432';
+  document.getElementById('btn-modal-wa').href = `https://wa.me/${wa}?text=${message}`;
   document.getElementById('modal-contact-only').style.display = 'flex';
 }
 function closeContactModal() { document.getElementById('modal-contact-only').style.display = 'none'; }
@@ -148,10 +168,9 @@ function selectionnerVoiture(id, nom, prix, ref) {
   document.getElementById('prix-base-input').value = prix;
 
   resetReservationForm();
-  afficherSection('reservation');
+  document.getElementById('reservation').style.display = 'block';
   initCalendar(id);
 }
-
 function resetReservationForm() {
   ['date-debut', 'date-fin', 'code-promo', 'loueur-nom', 'loueur-prenom',
    'loueur-adresse', 'loueur-tel', 'loueur-tel2', 'loueur-cin',
@@ -218,7 +237,6 @@ async function initCalendar(idVoiture) {
   });
   calendar.render();
 }
-
 function verifierDisponibilite(debut, fin) {
   const d1 = new Date(debut);
   const d2 = new Date(fin);
@@ -227,5 +245,222 @@ function verifierDisponibilite(debut, fin) {
 
 /* ---------- CALCUL PRIX & PROMO ---------- */
 function calculerPrix() {
-  const prixBase = parseInt(document.getElementById('prix-base ছাড়া').value || 0, 10); // keep as-is? but original code not truncated? we'll assume original.
+  const prixBase = parseInt(document.getElementById('prix-base-input').value || 0, 10);
+  const dateDebut = document.getElementById('date-debut').value;
+  const dateFin = document.getElementById('date-fin').value;
+  if (!prixBase || !dateDebut || !dateFin) return;
 
+  const d1 = new Date(dateDebut);
+  const d2 = new Date(dateFin);
+  if (d2 < d1) return;
+
+  const jours = Math.ceil((d2 - d1) / 86400000) + 1;
+  const formule = document.querySelector('input[name="offre"]:checked').value;
+  let multiplicateur = 1;
+  if (formule === 'nuit') multiplicateur = 0.8;
+  if (formule === '24h') multiplicateur = 1.3;
+
+  let total = prixBase * jours * multiplicateur;
+  if (document.getElementById('opt-livraison').checked) total += 15000;
+  if (document.getElementById('opt-recuperation').checked) total += 15000;
+
+  if (reductionActive > 0) total = total * (1 - reductionActive / 100);
+
+  const acompte = Math.round(total * 0.5);
+
+  document.getElementById('txt-jours').innerText = jours;
+  document.getElementById('txt-formule').innerText = formule.toUpperCase();
+  document.getElementById('prix-total').innerText = formatPrix(Math.round(total));
+  document.getElementById('prix-acompte').innerText = formatPrix(acompte);
+  document.getElementById('pay-reste').innerText = formatPrix(Math.round(total) - acompte);
+}
+async function verifierPromo() {
+  const code = document.getElementById('code-promo').value.trim().toUpperCase();
+  const msg = document.getElementById('msg-promo');
+  const dateDebut = document.getElementById('date-debut').value;
+  const dateFin = document.getElementById('date-fin').value;
+  if (!dateDebut || !dateFin) {
+    msg.innerText = 'Sélectionnez vos dates.';
+    msg.style.color = 'red';
+    return;
+  }
+
+  const diffDays = Math.ceil((new Date(dateFin) - new Date(dateDebut)) / 86400000) + 1;
+  const { data } = await sb.from('codes_promo').select('*').eq('code', code).eq('actif', true).single();
+
+  if (!data) {
+    reductionActive = 0;
+    msg.innerText = 'Code invalide.';
+    msg.style.color = 'red';
+  } else if (dateDebut < data.date_debut || dateDebut > data.date_fin) {
+    reductionActive = 0;
+    msg.innerText = 'Code expiré/non actif.';
+    msg.style.color = 'red';
+  } else if (diffDays < data.min_jours) {
+    reductionActive = 0;
+    msg.innerText = `Minimum ${data.min_jours} jours requis.`;
+    msg.style.color = 'red';
+  } else {
+    reductionActive = data.reduction_pourcent;
+    msg.innerText = `-${reductionActive}% appliqué.`;
+    msg.style.color = 'green';
+  }
+  calculerPrix();
+}
+
+/* ---------- WORKFLOW ---------- */
+function faireLeCalculMathematique() {
+  const prixTotal = parseInt(document.getElementById('prix-total').innerText.replace(/\s/g, ''), 10);
+  const jours = parseInt(document.getElementById('txt-jours').innerText, 10);
+  if (!prixTotal || !jours) return { ok: false };
+
+  return {
+    ok: true,
+    total: prixTotal,
+    acompte: Math.round(prixTotal / 2),
+    offre: document.querySelector('input[name="offre"]:checked').value
+  };
+}
+async function lancerReservationWhatsApp() {
+  if (!document.getElementById('check-conditions-step1').checked) {
+    alert('Merci d’accepter les conditions.');
+    return;
+  }
+
+  const payload = construirePayloadClient();
+  if (!payload) return;
+
+  if (!verifierDisponibilite(payload.date_debut, payload.date_fin)) {
+    alert('Ces dates ne sont plus disponibles.');
+    return;
+  }
+
+  await sb.from('clients').upsert({ nom: payload.nom, tel: payload.tel }, { onConflict: 'tel' });
+  const { data, error } = await sb.from('reservations').insert([payload]).select();
+  if (error) {
+    alert('Erreur : ' + error.message);
+    return;
+  }
+
+  currentReservationId = data[0].id;
+  currentResaData = data[0];
+
+  ouvrirWhatsApp(payload);
+  document.getElementById('step-1-actions').style.display = 'none';
+  document.getElementById('step-2-paiement').style.display = 'block';
+  document.getElementById('step-2-paiement').scrollIntoView({ behavior: 'smooth' });
+}
+function construirePayloadClient() {
+  const dateDebut = document.getElementById('date-debut').value;
+  const dateFin = document.getElementById('date-fin').value;
+  if (!dateDebut || !dateFin) {
+    alert('Choisissez vos dates.');
+    return null;
+  }
+
+  const nom = document.getElementById('loueur-nom').value.trim();
+  const prenom = document.getElementById('loueur-prenom').value.trim();
+  const tel = document.getElementById('loueur-tel').value.trim();
+  const cin = document.getElementById('loueur-cin').value.trim();
+  if (!nom || !tel || !cin) {
+    alert('Nom, téléphone et CIN sont obligatoires.');
+    return null;
+  }
+
+  const calcul = faireLeCalculMathematique();
+  if (!calcul.ok) {
+    alert('Vérifiez vos dates.');
+    return null;
+  }
+
+  return {
+    id_voiture: document.getElementById('id-voiture-input').value,
+    date_debut: dateDebut,
+    date_fin: dateFin,
+    nom,
+    prenom,
+    adresse: document.getElementById('loueur-adresse').value,
+    tel,
+    tel2: document.getElementById('loueur-tel2').value,
+    cin_passeport: cin,
+    urgence_nom: document.getElementById('urgence-nom').value,
+    urgence_prenom: document.getElementById('urgence-prenom').value,
+    urgence_tel: document.getElementById('urgence-tel').value,
+    type_offre: calcul.offre,
+    montant_total: calcul.total,
+    statut: 'en_attente'
+  };
+}
+function ouvrirWhatsApp(payload) {
+  const message = [
+    `Bonjour Rija,`,
+    `Réservation *${document.getElementById('nom-voiture-selectionnee').innerText}* (#${currentReservationId})`,
+    `Du ${payload.date_debut} au ${payload.date_fin}`,
+    `Total : ${formatPrix(payload.montant_total)} Ar`,
+    `Client : ${payload.nom} ${payload.prenom}`,
+    `CIN : ${payload.cin_passeport}`,
+    `Tel : ${payload.tel}`,
+    `Je procède au paiement.`,
+  ].join('\n');
+  window.open(`https://wa.me/261388552432?text=${encodeURIComponent(message)}`, '_blank');
+}
+
+/* ---------- PAIEMENT & OTP ---------- */
+function togglePaymentFields() {
+  const method = document.getElementById('pay-method').value;
+  document.getElementById('fields-mvola').style.display = method === 'mvola' ? 'block' : 'none';
+  document.getElementById('fields-espece').style.display = method === 'espece' ? 'block' : 'none';
+}
+function toggleAutreMontant() {
+  const choix = document.getElementById('pay-choix-montant').value;
+  document.getElementById('pay-valeur-autre').style.display = (choix === 'autre') ? 'block' : 'none';
+}
+async function envoyerInfosPaiement() {
+  if (!currentReservationId) {
+    alert('Aucune réservation en cours.');
+    return;
+  }
+  const method = document.getElementById('pay-method').value;
+  if (!method) return alert('Choisissez un mode de paiement.');
+
+  const paiement = {
+    methode: method,
+    titulaire_nom: method === 'mvola' ? document.getElementById('pay-mvola-nom').value.trim() : document.getElementById('pay-cash-nom').value.trim(),
+    titulaire_prenom: method === 'mvola' ? document.getElementById('pay-mvola-prenom').value.trim() : document.getElementById('pay-cash-prenom').value.trim(),
+    numero: method === 'mvola' ? document.getElementById('pay-mvola-num').value.trim() : document.getElementById('pay-cash-num').value.trim(),
+    reference: method === 'mvola' ? document.getElementById('pay-mvola-ref').value.trim() : '',
+    type_montant: document.getElementById('pay-choix-montant').value
+  };
+  if (!paiement.titulaire_nom) return alert('Nom du payeur requis.');
+
+  const montantBase = currentResaData.montant_total;
+  let montantDeclare = montantBase / 2;
+  if (paiement.type_montant === '100') montantDeclare = montantBase;
+  if (paiement.type_montant === 'autre') {
+    montantDeclare = parseFloat(document.getElementById('pay-valeur-autre').value) || 0;
+  }
+
+  const { error } = await sb.from('reservations').update({
+    paiement_methode: paiement.methode,
+    paiement_titulaire: `${paiement.titulaire_nom} ${paiement.titulaire_prenom}`.trim(),
+    paiement_numero: paiement.numero,
+    paiement_ref: paiement.reference,
+    paiement_type_montant: paiement.type_montant,
+    paiement_montant_declare: montantDeclare
+  }).eq('id', currentReservationId);
+
+  if (error) {
+    alert('Erreur : ' + error.message);
+    return;
+  }
+
+  Object.assign(currentResaData, {
+    paiement_methode: paiement.methode,
+    paiement_titulaire: `${paiement.titulaire_nom} ${paiement.titulaire_prenom}`.trim(),
+    paiement_numero: paiement.numero,
+    paiement_ref: paiement.reference,
+    paiement_montant_declare: montantDeclare
+  });
+
+  document.getElementById('step-2-paiement').style.display = 'none';
+  document.getElementById('step-3-download').
