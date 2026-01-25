@@ -1,4 +1,3 @@
-/* === STYLE-UI.CSS : BASE THEME PUBLIC === */
 :root {
   --primary: #3498db;
   --primary-dark: #1f2a37;
@@ -64,7 +63,7 @@ body {
   position:absolute; bottom:0; left:50%; transform:translateX(-50%);
 }
 
-/* FLIP CARDS (features & conditions) */
+/* FLIP CARDS */
 .features-container, .conditions-grid {
   display:flex; flex-wrap:wrap; justify-content:center; gap:18px;
 }
@@ -84,13 +83,25 @@ body {
 .flip-card-front { background:var(--glass); border:1px solid rgba(255,255,255,.4); }
 .flip-card-back { background:var(--secondary); color:white; transform:rotateY(180deg); }
 
-/* CATALOGUE VOITURES */
+/* GRILLE VOITURES : 3 colonnes desktop / 1 mobile */
 .grid-voitures {
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:22px;
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap:24px;
+  align-items:stretch;
 }
+@media (max-width:1200px) {
+  .grid-voitures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width:768px) {
+  .grid-voitures { grid-template-columns: 1fr; }
+}
+
+/* CARTES VOITURES */
 .carte-voiture {
   background:var(--glass); border-radius:16px; overflow:hidden;
   box-shadow:var(--shadow); backdrop-filter:blur(8px);
+  display:flex; flex-direction:column;
 }
 .carte-voiture img { width:100%; height:200px; object-fit:cover; }
 .carte-voiture h3 { margin:15px 20px 8px; }
@@ -101,6 +112,41 @@ body {
 }
 .carte-voiture button:hover { background:var(--primary); }
 .btn-disabled { background:#cbd5f5!important; color:#6b7280!important; cursor:not-allowed; }
+
+/* FILTRES COMPACTS */
+.filters-section {
+  padding:12px 5%;
+  background-color: rgba(15, 23, 42, 0.9);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.filters-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.filters-container select,
+.filters-container input {
+  border-radius: 999px;
+  padding: 8px 14px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.1);
+  color: white;
+  font-size: 0.85rem;
+  outline: none;
+}
+.filters-container select option,
+.filters-container input {
+  color: #0f172a;
+}
+@media (max-width: 768px) {
+  .filters-section { padding: 10px; }
+  .filters-container {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+  }
+}
 
 /* FORMULAIRES & OPTIONS */
 .container-form, .form-contact-box, .avis-box, .contact-form,
@@ -131,15 +177,6 @@ input, select, textarea {
   border:none; border-radius:999px; padding:14px 26px;
   background:var(--accent); color:white; font-weight:600; cursor:pointer;
 }
-
-/* FILTRES EMPLOIS / VOITURES / MEDIA */
-.cars-filters, .filters-bar, .media-filters {
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-  gap:16px; margin:20px 0; padding:20px;
-  background:white; border-radius:18px; box-shadow:var(--shadow);
-}
-.filters-bar input, .filters-bar select,
-.media-filters input, .media-filters select { min-width:180px; }
 
 /* EMPLOIS */
 .jobs-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:22px; }
@@ -178,7 +215,7 @@ input, select, textarea {
 }
 .close-modal { position:absolute; top:12px; right:18px; font-size:1.6rem; cursor:pointer; }
 
-/* RESPONSIVE */
+/* RESPONSIVE MENU */
 @media (max-width:768px) {
   .menu-toggle { display:block; }
   .nav-links {
