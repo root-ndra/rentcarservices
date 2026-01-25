@@ -484,7 +484,56 @@ function ouvrirWhatsApp(payload) {
 }
 
 /* ---------- PAIEMENT & OTP ---------- */
+/* ---------- PAIEMENT & OTP ---------- */
 function togglePaymentFields() {
   const method = document.getElementById('pay-method').value;
-  document.getElementById('fields-mvola').style.display = method === 'mvola' ? 'block' : 'none';
-  document.getElementById('fields-espece').style.display = method === 'espece' ? 'block' :
+  
+  // Gestion de l'affichage Mvola
+  const divMvola = document.getElementById('fields-mvola');
+  if (divMvola) {
+      divMvola.style.display = method === 'mvola' ? 'block' : 'none';
+  }
+
+  // Gestion de l'affichage Espèce (C'est ici que votre code coupait)
+  const divEspece = document.getElementById('fields-espece');
+  if (divEspece) {
+      divEspece.style.display = method === 'espece' ? 'block' : 'none';
+  }
+}
+
+// Fonction manquante pour toggleAutreMontant (appelée dans le HTML mais absente du JS)
+function toggleAutreMontant() {
+    const choix = document.getElementById('pay-choix-montant').value;
+    const inputAutre = document.getElementById('pay-valeur-autre');
+    if (inputAutre) {
+        inputAutre.style.display = choix === 'autre' ? 'block' : 'none';
+    }
+    calculerResteAPayer(); // Mise à jour dynamique
+}
+
+// Fonction utile pour mettre à jour le texte "Reste à payer" lors du paiement
+function calculerResteAPayer() {
+    const total = parseInt(document.getElementById('prix-total').innerText.replace(/\s/g, ''), 10) || 0;
+    const choix = document.getElementById('pay-choix-montant').value;
+    let paye = 0;
+
+    if (choix === '50') paye = total * 0.5;
+    else if (choix === '100') paye = total;
+    else {
+        paye = parseInt(document.getElementById('pay-valeur-autre').value, 10) || 0;
+    }
+
+    const reste = Math.max(0, total - paye);
+    const elReste = document.getElementById('pay-reste');
+    if (elReste) elReste.innerText = formatPrix(reste);
+}
+
+// Fonction placeholder pour éviter une erreur si on clique sur "Confirmer le paiement"
+function envoyerInfosPaiement() {
+    alert("Fonctionnalité de paiement à implémenter (Mvola/Espèce).");
+}
+
+// Fonction placeholder pour le téléchargement PDF
+function telechargerFactureAuto() {
+    alert("Téléchargement de la facture...");
+}
