@@ -12,6 +12,7 @@ let siteConfig = null;
 
 async function initSupabase() {
   if (sb) return;
+  // On charge la config depuis le JSON
   const response = await fetch('supabase-config.json');
   if (!response.ok) throw new Error('supabase-config.json introuvable');
   const { supabaseUrl, supabaseKey } = await response.json();
@@ -27,31 +28,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (e) {
     console.error(e);
     const container = document.getElementById('container-voitures');
-    if (container) container.innerHTML = '<p>Impossible de charger les véhicules.</p>';
+    if (container) container.innerHTML = '<p>Impossible de charger les véhicules (Erreur JS/Config).</p>';
   }
 });
 
 /* ---------- CONFIG SITE ---------- */
 async function loadSiteConfig() {
-  const resp = await fetch('site_config.json');
-  if (!resp.ok) return;
-  siteConfig = await resp.json();
-  setText('header-site-name', siteConfig.header?.siteName || 'RIJA NIAINA CAR SERVICES');
-  setAttr('header-logo', 'src', siteConfig.header?.logoUrl || 'https://i.ibb.co/dw8gxWXL/1765001359376.png');
-  setText('footer-title', siteConfig.header?.siteName || 'Rija NIAINA Car Services');
-  setText('footer-address', siteConfig.footer?.address || 'Siae 33 Ambodifilao, Analakely, Antananarivo 101');
-  setText('footer-phone', siteConfig.contact?.phoneDisplay || '+261 38 85 524 32');
-  setText('footer-nif', siteConfig.footer?.nif || '5012357932');
-  setText('footer-stat', siteConfig.footer?.stat || '70209 11 2025 0 06328');
-  setText('txt-modal-phone', siteConfig.contact?.phoneDisplay || '+261 38 85 524 32');
-  if (siteConfig.footer?.socials) {
-    const footerSocials = document.getElementById('footer-socials');
-    footerSocials.innerHTML = '';
-    Object.entries(siteConfig.footer.socials).forEach(([k, url]) => {
-      if (url) footerSocials.innerHTML += `<a href="${url}" target="_blank" style="color:white;margin:0 8px;"><i class="fab fa-${k}"></i></a>`;
-    });
+  try {
+      const resp = await fetch('site_config.json');
+      if (!resp.ok) return;
+      siteConfig = await resp.json();
+      setText('header-site-name', siteConfig.header?.siteName || 'RIJA NIAINA CAR SERVICES');
+      setAttr('header-logo', 'src', siteConfig.header?.logoUrl || 'https://i.ibb.co/dw8gxWXL/1765001359376.png');
+      setText('footer-title', siteConfig.header?.siteName || 'Rija NIAINA Car Services');
+      setText('footer-address', siteConfig.footer?.address || 'Siae 33 Ambodifilao, Analakely, Antananarivo 101');
+      setText('footer-phone', siteConfig.contact?.phoneDisplay || '+261 38 85 524 32');
+      setText('footer-nif', siteConfig.footer?.nif || '5012357932');
+      setText('footer-stat', siteConfig.footer?.stat || '70209 11 2025 0 06328');
+      setText('txt-modal-phone', siteConfig.contact?.phoneDisplay || '+261 38 85 524 32');
+      if (siteConfig.footer?.socials) {
+        const footerSocials = document.getElementById('footer-socials');
+        if(footerSocials) {
+            footerSocials.innerHTML = '';
+            Object.entries(siteConfig.footer.socials).forEach(([k, url]) => {
+              if (url) footerSocials.innerHTML += `<a href="${url}" target="_blank" style="color:white;margin:0 8px;"><i class="fab fa-${k}"></i></a>`;
+            });
+        }
+      }
+  } catch (err) {
+      console.log("Pas de site_config.json ou erreur, utilisation des défauts.");
   }
 }
+
 function setText(id, text) {
   const el = document.getElementById(id);
   if (el) el.textContent = text ?? '';
@@ -66,14 +74,16 @@ function formatPrix(val) { return (val || 0).toLocaleString('fr-FR'); }
 /* ---------- CHARGEMENT VOITURES ---------- */
 async function chargerVoitures() {
   const container = document.getElementById('container-voitures');
-  container.innerHTML = '<p>Chargement...</p>';
+  // Le script fonctionne si ce texte change pour "Chargement..."
+  container.innerHTML = '<p style="padding:20px; text-align:center;">Chargement des véhicules...</p>';
 
   const { data, error } = await sb.from('voitures')
     .select('*')
     .eq('est_public', true)
     .order('prix_base');
+    
   if (error) {
-    container.innerHTML = `<p>Erreur : ${error.message}</p>`;
+    container.innerHTML = `<p>Erreur Supabase : ${error.message}</p>`;
     return;
   }
 
@@ -85,7 +95,7 @@ async function chargerVoitures() {
 function renderVoitures(list) {
   const container = document.getElementById('container-voitures');
   if (!list.length) {
-    container.innerHTML = '<p>Aucune voiture ne correspond.</p>';
+    container.innerHTML = '<p>Aucune voiture ne correspond à vos critères.</p>';
     return;
   }
 
@@ -189,8 +199,17 @@ function ouvrirReservationDepuisCarte(id, nom, prix, ref) {
   const section = document.getElementById('reservation');
   if (section) {
     section.style.display = 'block';
-    window.scrollTo({ top: section.offsetTop - 30, behavior: 'smooth' });
+    // On cache la liste pour se concentrer sur la résa (optionnel, selon design)
+    // document.querySelector('.car-grid-section').style.display = 'none'; 
+    section.scrollIntoView({ behavior: 'smooth' });
   }
+}
+
+function afficherSection(className) {
+    // Fonction inverse pour le bouton "Retour"
+    document.getElementById('reservation').style.display = 'none';
+    document.querySelector('.' + className).style.display = 'block';
+    window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 function ouvrirModalContact(idVoiture) {
@@ -211,7 +230,7 @@ function closeContactModal() { document.getElementById('modal-contact-only').sty
 /* ---------- RÉSERVATION ---------- */
 function selectionnerVoiture(id, nom, prix, ref) {
   voitureSelectionnee = { id, nom, prix, ref };
-  document.getElementById('nom-voiture-selectionnee').innerText = nom;
+  setText('nom-voiture-selectionnee', nom);
   document.getElementById('id-voiture-input').value = id;
   document.getElementById('ref-voiture-input').value = ref;
   document.getElementById('prix-base-input').value = prix;
@@ -228,17 +247,22 @@ function resetReservationForm() {
   ].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
 
   reductionActive = 0;
-  document.getElementById('msg-promo').innerText = '';
+  setText('msg-promo', '');
   document.getElementById('opt-livraison').checked = false;
   document.getElementById('opt-recuperation').checked = false;
-  document.querySelector('input[name="offre"][value="jour"]').checked = true;
+  const offreJour = document.querySelector('input[name="offre"][value="jour"]');
+  if(offreJour) offreJour.checked = true;
   document.getElementById('check-conditions-step1').checked = false;
 
   document.getElementById('step-1-actions').style.display = 'block';
   document.getElementById('step-2-paiement').style.display = 'none';
   document.getElementById('step-3-download').style.display = 'none';
-  document.getElementById('btn-dl-pdf').disabled = true;
-  document.getElementById('btn-dl-pdf').classList.remove('btn-pdf-active');
+  
+  const btnPdf = document.getElementById('btn-dl-pdf');
+  if(btnPdf) {
+      btnPdf.disabled = true;
+      btnPdf.classList.remove('btn-pdf-active');
+  }
   document.getElementById('input-otp-auto').value = '';
 }
 
@@ -329,7 +353,9 @@ function calculerPrix() {
   if (d2 < d1) return;
 
   const jours = Math.ceil((d2 - d1) / 86400000) + 1;
-  const formule = document.querySelector('input[name="offre"]:checked').value;
+  const formuleInput = document.querySelector('input[name="offre"]:checked');
+  const formule = formuleInput ? formuleInput.value : 'jour';
+  
   let multiplicateur = 1;
   if (formule === 'nuit') multiplicateur = 0.8;
   if (formule === '24h') multiplicateur = 1.3;
@@ -342,11 +368,11 @@ function calculerPrix() {
 
   const acompte = Math.round(total * 0.5);
 
-  document.getElementById('txt-jours').innerText = jours;
-  document.getElementById('txt-formule').innerText = formule.toUpperCase();
-  document.getElementById('prix-total').innerText = formatPrix(Math.round(total));
-  document.getElementById('prix-acompte').innerText = formatPrix(acompte);
-  document.getElementById('pay-reste').innerText = formatPrix(Math.round(total) - acompte);
+  setText('txt-jours', jours);
+  setText('txt-formule', formule.toUpperCase());
+  setText('prix-total', formatPrix(Math.round(total)));
+  setText('prix-acompte', formatPrix(acompte));
+  setText('pay-reste', formatPrix(Math.round(total) - acompte));
 }
 
 async function verifierPromo() {
@@ -411,7 +437,10 @@ async function lancerReservationWhatsApp() {
     return;
   }
 
+  // Insertion ou mise à jour du client
   await sb.from('clients').upsert({ nom: payload.nom, tel: payload.tel }, { onConflict: 'tel' });
+  
+  // Création réservation
   const { data, error } = await sb.from('reservations').insert([payload]).select();
   if (error) {
     alert('Erreur : ' + error.message);
@@ -484,56 +513,34 @@ function ouvrirWhatsApp(payload) {
 }
 
 /* ---------- PAIEMENT & OTP ---------- */
-/* ---------- PAIEMENT & OTP ---------- */
 function togglePaymentFields() {
   const method = document.getElementById('pay-method').value;
   
-  // Gestion de l'affichage Mvola
   const divMvola = document.getElementById('fields-mvola');
-  if (divMvola) {
-      divMvola.style.display = method === 'mvola' ? 'block' : 'none';
-  }
-
-  // Gestion de l'affichage Espèce (C'est ici que votre code coupait)
+  if(divMvola) divMvola.style.display = method === 'mvola' ? 'block' : 'none';
+  
   const divEspece = document.getElementById('fields-espece');
-  if (divEspece) {
-      divEspece.style.display = method === 'espece' ? 'block' : 'none';
-  }
+  if(divEspece) divEspece.style.display = method === 'espece' ? 'block' : 'none';
 }
 
-// Fonction manquante pour toggleAutreMontant (appelée dans le HTML mais absente du JS)
 function toggleAutreMontant() {
     const choix = document.getElementById('pay-choix-montant').value;
     const inputAutre = document.getElementById('pay-valeur-autre');
     if (inputAutre) {
         inputAutre.style.display = choix === 'autre' ? 'block' : 'none';
     }
-    calculerResteAPayer(); // Mise à jour dynamique
+    // Si vous voulez recalculer le reste, ajoutez une fonction de calcul ici
 }
 
-// Fonction utile pour mettre à jour le texte "Reste à payer" lors du paiement
-function calculerResteAPayer() {
-    const total = parseInt(document.getElementById('prix-total').innerText.replace(/\s/g, ''), 10) || 0;
-    const choix = document.getElementById('pay-choix-montant').value;
-    let paye = 0;
-
-    if (choix === '50') paye = total * 0.5;
-    else if (choix === '100') paye = total;
-    else {
-        paye = parseInt(document.getElementById('pay-valeur-autre').value, 10) || 0;
-    }
-
-    const reste = Math.max(0, total - paye);
-    const elReste = document.getElementById('pay-reste');
-    if (elReste) elReste.innerText = formatPrix(reste);
-}
-
-// Fonction placeholder pour éviter une erreur si on clique sur "Confirmer le paiement"
 function envoyerInfosPaiement() {
-    alert("Fonctionnalité de paiement à implémenter (Mvola/Espèce).");
+    alert("Fonctionnalité de paiement à implémenter selon votre logique métier.");
+    // Ici, vous pourriez envoyer les infos Mvola à Supabase ou changer le statut
 }
 
-// Fonction placeholder pour le téléchargement PDF
 function telechargerFactureAuto() {
-    alert("Téléchargement de la facture...");
+    alert("Téléchargement de la facture en cours...");
 }
+
+// Modales Conditions
+function ouvrirModalConditions() { document.getElementById('modal-conditions').style.display = 'flex'; }
+function fermerModalConditions() { document.getElementById('modal-conditions').style.display = 'none'; }
