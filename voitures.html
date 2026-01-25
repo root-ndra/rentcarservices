@@ -7,9 +7,8 @@
 
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" 
-  href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css">
-
+  <link rel="stylesheet"
+        href="https://unpkg.com/fullcalendar@6.1.10/main.min.css">
   <link rel="stylesheet" href="style-ui.css">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -171,9 +170,7 @@
             <option value="autre">Autre montant</option>
           </select>
           <input type="number" id="pay-valeur-autre" style="display:none;" placeholder="Montant (Ar)">
-
           <p>Reste à payer : <strong id="pay-reste">0</strong> Ar</p>
-
           <button class="btn-dark" onclick="envoyerInfosPaiement()">
             <i class="fas fa-check-circle"></i> Confirmer le paiement
           </button>
@@ -228,7 +225,7 @@
   <div class="modal-content">
     <span class="close-modal" onclick="closeContactModal()">&times;</span>
     <div class="modern-contact-box">
-      <div class="contact-icon-large"><i class="fasomiast"></i></div>
+      <div class="contact-icon-large"><i class="fas fa-headset"></i></div>
       <h3>Contactez-nous pour ce véhicule</h3>
       <p id="contact-car-name">—</p>
       <div class="contact-actions-row">
@@ -252,4 +249,3 @@
 <script src="script-voitures.js"></script>
 </body>
 </html>
-
