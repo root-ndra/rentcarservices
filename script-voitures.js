@@ -1,296 +1,547 @@
-/* ---------- CHARGEMENT SUPABASE VIA JSON ---------- */
-let supabaseClient = null;
+/* ---------- INITIALISATION ---------- */
+let sb = null;
+let calendar = null;
+let voitureSelectionnee = null;
+let currentCarReservations = [];
+let currentReservationId = null;
+let realTimeSubscription = null;
+let reductionActive = 0;
+let currentResaData = null;
 
 async function initSupabase() {
-  if (supabaseClient) return;
+  if (sb) return;
   const response = await fetch('supabase-config.json');
-  if (!response.ok) throw new Error('supabase-config.json introuvable');
+  if (!response.ok) throw new Error('supabase-config introuvable');
   const { supabaseUrl, supabaseKey } = await response.json();
-  supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+  sb = supabase.createClient(supabaseUrl, supabaseKey);
 }
-
-/* ---------- DONNÉES GLOBALES ---------- */
-let siteConfig = null;
-let voituresCache = [];
-let selectedCar = null;
-let promoReduction = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     await initSupabase();
-    await loadSiteConfig();
-    bindFilterListeners();
-    bindReservationForm();
     await chargerVoitures();
-  } catch (error) {
-    console.error('Initialisation impossible :', error);
+    bindFiltres();
+  } catch (e) {
+    console.error(e);
     const container = document.getElementById('container-voitures');
-    if(container) container.innerHTML = '<p class="empty-state">Impossible de charger le catalogue.</p>';
+    if (container) container.innerHTML = '<p>Impossible de charger les véhicules.</p>';
   }
 });
 
-/* ---------- CONFIGURATION (logo, footer, contact) ---------- */
-async function loadSiteConfig() {
-  const resp = await fetch('site_config.json');
-  if (!resp.ok) throw new Error('site_config.json introuvable');
-  siteConfig = await resp.json();
-
-  const { header, contact, footer } = siteConfig;
-  setText('header-site-name', header.siteName);
-  setAttr('header-logo', 'src', header.logoUrl);
-  setText('footer-title', header.siteName);
-  setText('footer-address', footer.address);
-  setText('footer-nif', footer.nif);
-  setText('footer-stat', footer.stat);
-  setText('footer-phone', contact.phoneDisplay);
-  setAttr('cta-hotline', 'href', `tel:${contact.phoneCall}`);
-
-  const socials = document.getElementById('footer-socials');
-  if(socials) {
-    socials.innerHTML = '';
-    const icons = { facebook: 'fab fa-facebook', instagram: 'fab fa-instagram', tiktok: 'fab fa-tiktok' };
-    Object.entries(footer.socials || {}).forEach(([network, url]) => {
-      if (!url || url === '#') return;
-      socials.innerHTML += `
-        <a href="${url}" target="_blank" rel="noopener"
-           style="color:white;margin:0 8px;font-size:1.3rem;">
-          <i class="${icons[network] || 'fas fa-globe'}"></i>
-        </a>`;
-    });
-  }
+/* ---------- UI ---------- */
+function toggleMenu() {
+  document.getElementById('nav-menu')?.classList.toggle('active');
 }
 
-/* ---------- UTILITAIRES UI ---------- */
-function toggleMenu() { document.getElementById('nav-menu')?.classList.toggle('active'); }
-function setText(id, text) { const el = document.getElementById(id); if (el) el.textContent = text ?? ''; }
-function setAttr(id, attr, value) { const el = document.getElementById(id); if (el) el.setAttribute(attr, value ?? ''); }
+function afficherSection(id) {
+  document.querySelectorAll('.page-section').forEach(sec => sec.style.display = 'none');
+  document.getElementById(id).style.display = 'block';
+  window.scrollTo(0, 0);
+}
 
-/* ---------- CHARGEMENT ET AFFICHAGE DES VOITURES ---------- */
+function formatPrix(val) {
+  return (val || 0).toLocaleString('fr-FR');
+}
+
+/* ---------- CHARGEMENT VOITURES ---------- */
+let voituresCache = [];
+
 async function chargerVoitures() {
   const container = document.getElementById('container-voitures');
-  if (!container) return;
-  container.innerHTML = '<p>Chargement du catalogue...</p>';
+  container.innerHTML = '<p>Chargement...</p>';
 
- const { data, error } = await supabaseClient.from('voitures').select('*').eq('est_public', true).order('prix_base', { ascending: true });
-
+  const { data, error } = await sb.from('voitures')
+    .select('*')
+    .eq('est_public', true)
+    .neq('reservable', false)
+    .order('prix_base', { ascending: true });
 
   if (error) {
-    container.innerHTML = `<p class="empty-state">Erreur : ${error.message}</p>`;
+    container.innerHTML = `<p>${error.message}</p>`;
     return;
   }
 
   voituresCache = data || [];
-  peuplerFiltresDynamiques(voituresCache);
+  remplirFiltres(voituresCache);
   renderVoitures(voituresCache);
 }
 
 function renderVoitures(list) {
   const container = document.getElementById('container-voitures');
-  if (!container) return;
   if (!list.length) {
-    container.innerHTML = '<p class="empty-state">Aucun véhicule ne correspond à votre recherche.</p>';
+    container.innerHTML = '<p>Aucune voiture ne correspond.</p>';
     return;
   }
 
-  container.innerHTML = list.map((v) => {
-    const prix = (v.prix_base || 0).toLocaleString('fr-FR');
-    const desc = (v.description || '').slice(0, 140);
-    const chauffeurLabel = { oui: 'Chauffeur inclus', non: 'Sans chauffeur', option: 'Chauffeur en option' }[v.chauffeur_option || 'option'];
-    const reservable = v.reservable !== false;
-
-    return `
-      <article class="carte-voiture">
-        <img src="${v.image_url || 'https://placehold.co/600x400?text=Voiture'}" alt="${v.nom}">
-        <h3>${v.nom}</h3>
-        <div class="car-tags">
-          <span><i class="fas fa-tags"></i> ${v.type || '—'}</span>
-          <span><i class="fas fa-gas-pump"></i> ${v.carburant || '—'}</span>
-          <span><i class="fas fa-user-friends"></i> ${v.places ? `${v.places} places` : '—'}</span>
-          <span><i class="fas fa-id-card"></i> ${chauffeurLabel}</span>
-        </div>
-        <p class="carte-desc">${desc}${v.description?.length > 140 ? '…' : ''}</p>
-        <p class="prix">${prix} Ar / jour</p>
-        <button ${reservable ? '' : 'class="btn-disabled"'} onclick="reserverVoiture('${v.id}')">
-          ${reservable ? 'Réserver' : 'Contact direct'}
-        </button>
-      </article>`;
-  }).join('');
+  container.innerHTML = list.map(v => `
+    <article class="carte-voiture">
+      <img src="${v.image_url || 'https://placehold.co/600x400'}" alt="${v.nom}">
+      <h3>${v.nom}</h3>
+      <p>${v.type || '-'} · ${v.transmission || '-'}</p>
+      <p class="prix">${formatPrix(v.prix_base)} Ar / jour</p>
+      <button onclick="selectionnerVoiture('${v.id}', '${v.nom.replace(/'/g, "\\'")}', ${v.prix_base}, '${v.ref_id || ''}')">
+        Réserver
+      </button>
+    </article>
+  `).join('');
 }
 
-/* ---------- FILTRES ---------- */
-function peuplerFiltresDynamiques(list) {
+function bindFiltres() {
+  ['filtre-type', 'filtre-transmission', 'filtre-places', 'filtre-prix']
+    .forEach(id => document.getElementById(id)?.addEventListener('input', appliquerFiltres));
+}
+
+function remplirFiltres(list) {
   const remplir = (id, values) => {
     const select = document.getElementById(id);
     if (!select) return;
     const uniques = [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
-    select.innerHTML = `<option value="">Tous les ${id.split('-')[1]}s</option>`;
     uniques.forEach(val => select.innerHTML += `<option value="${val}">${val}</option>`);
   };
-  remplir('filter-type', list.map(v => v.type));
-  remplir('filter-carburant', list.map(v => v.carburant));
-}
-
-function bindFilterListeners() {
-  ['filter-type', 'filter-carburant', 'filter-places', 'filter-prix-max', 'sort-prix']
-    .forEach(id => document.getElementById(id)?.addEventListener('input', appliquerFiltres));
+  remplir('filtre-type', list.map(v => v.type));
+  remplir('filtre-transmission', list.map(v => v.transmission));
 }
 
 function appliquerFiltres() {
-    const type = document.getElementById('filter-type').value;
-    const carburant = document.getElementById('filter-carburant').value;
-    const places = document.getElementById('filter-places').value;
-    const prixMax = parseInt(document.getElementById('filter-prix-max').value, 10) || 0;
-    const sort = document.getElementById('sort-prix').value;
+  const type = document.getElementById('filtre-type').value;
+  const trans = document.getElementById('filtre-transmission').value;
+  const places = document.getElementById('filtre-places').value;
+  const prix = parseInt(document.getElementById('filtre-prix').value, 10) || 0;
 
-    let resultat = voituresCache.filter(v => {
-        const matchType = !type || v.type === type;
-        const matchCarb = !carburant || v.carburant === carburant;
-        const matchPlaces = !places || (places === '7+' ? (v.places || 0) >= 7 : String(v.places || '') === places);
-        const matchPrix = !prixMax || (v.prix_base || 0) <= prixMax;
-        return matchType && matchCarb && matchPlaces && matchPrix;
-    });
+  const res = voituresCache.filter(v => {
+    const matchType = !type || v.type === type;
+    const matchTrans = !trans || v.transmission === trans;
+    const matchPlaces = !places ||
+      (places === '7+' ? (v.places || 0) >= 7 : String(v.places || '') === places);
+    const matchPrix = !prix || (v.prix_base || 0) <= prix;
+    return matchType && matchTrans && matchPlaces && matchPrix;
+  });
 
-    resultat.sort((a, b) => sort === 'prix-desc' ? (b.prix_base || 0) - (a.prix_base || 0) : (a.prix_base || 0) - (b.prix_base || 0));
-    renderVoitures(resultat);
+  renderVoitures(res);
 }
 
+/* ---------- RÉSERVATION ---------- */
+function selectionnerVoiture(id, nom, prix, ref) {
+  voitureSelectionnee = { id, nom, prix, ref };
+  document.getElementById('nom-voiture-selectionnee').innerText = nom;
+  document.getElementById('id-voiture-input').value = id;
+  document.getElementById('ref-voiture-input').value = ref;
+  document.getElementById('prix-base-input').value = prix;
 
-/* ---------- LOGIQUE MODALS (CONTACT & RESERVATION) ---------- */
-function reserverVoiture(id) {
-  const voiture = voituresCache.find((v) => v.id.toString() === id.toString());
-  if (!voiture) return;
+  resetReservationForm();
+  afficherSection('reservation');
+  initCalendar(id);
+}
 
-  if (voiture.reservable === false) {
-    openContactModal(voiture);
+function resetReservationForm() {
+  ['date-debut', 'date-fin', 'code-promo', 'loueur-nom', 'loueur-prenom',
+   'loueur-adresse', 'loueur-tel', 'loueur-tel2', 'loueur-cin',
+   'urgence-nom', 'urgence-prenom', 'urgence-tel'
+  ].forEach(id => { if (document.getElementById(id)) document.getElementById(id).value = ''; });
+
+  reductionActive = 0;
+  document.getElementById('msg-promo').innerText = '';
+  document.getElementById('opt-livraison').checked = false;
+  document.getElementById('opt-recuperation').checked = false;
+  document.querySelector('input[name="offre"][value="jour"]').checked = true;
+  document.getElementById('check-conditions-step1').checked = false;
+
+  document.getElementById('step-1-actions').style.display = 'block';
+  document.getElementById('step-2-paiement').style.display = 'none';
+  document.getElementById('step-3-download').style.display = 'none';
+  document.getElementById('btn-dl-pdf').disabled = true;
+  document.getElementById('btn-dl-pdf').classList.remove('btn-pdf-active');
+  document.getElementById('input-otp-auto').value = '';
+}
+
+/* ---------- CALENDRIER ---------- */
+async function initCalendar(idVoiture) {
+  if (calendar) calendar.destroy();
+  const calendarEl = document.getElementById('calendrier-dispo');
+
+  const [{ data: resas }, { data: maints }] = await Promise.all([
+    sb.from('reservations').select('date_debut, date_fin').eq('id_voiture', idVoiture).neq('code_otp', null),
+    sb.from('maintenances').select('date_debut, date_fin').eq('id_voiture', idVoiture)
+  ]);
+
+  currentCarReservations = [];
+  const events = [];
+
+  (resas || []).forEach(r => {
+    currentCarReservations.push({ start: new Date(r.date_debut), end: new Date(r.date_fin) });
+    const finPlus = new Date(r.date_fin); finPlus.setDate(finPlus.getDate() + 1);
+    events.push({ title: 'Loué', start: r.date_debut, end: finPlus.toISOString().split('T')[0], display: 'background', color: '#e74c3c' });
+  });
+
+  (maints || []).forEach(m => {
+    currentCarReservations.push({ start: new Date(m.date_debut), end: new Date(m.date_fin) });
+    const finPlus = new Date(m.date_fin); finPlus.setDate(finPlus.getDate() + 1);
+    events.push({ title: 'Maintenance', start: m.date_debut, end: finPlus.toISOString().split('T')[0], display: 'background', color: '#f39c12' });
+  });
+
+  calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    locale: 'fr',
+    events,
+    dateClick: info => {
+      const debut = document.getElementById('date-debut');
+      const fin = document.getElementById('date-fin');
+      if (!debut.value) debut.value = info.dateStr;
+      else if (!fin.value) {
+        if (new Date(info.dateStr) >= new Date(debut.value)) fin.value = info.dateStr;
+        else { debut.value = info.dateStr; fin.value = ''; }
+      } else {
+        debut.value = info.dateStr;
+        fin.value = '';
+      }
+      calculerPrix();
+    }
+  });
+  calendar.render();
+}
+
+function verifierDisponibilite(debut, fin) {
+  const d1 = new Date(debut);
+  const d2 = new Date(fin);
+  return !currentCarReservations.some(resa => d1 <= resa.end && d2 >= resa.start);
+}
+
+/* ---------- CALCUL PRIX & PROMO ---------- */
+function calculerPrix() {
+  const prixBase = parseInt(document.getElementById('prix-base-input').value || 0, 10);
+  const dateDebut = document.getElementById('date-debut').value;
+  const dateFin = document.getElementById('date-fin').value;
+  if (!prixBase || !dateDebut || !dateFin) return;
+
+  const d1 = new Date(dateDebut);
+  const d2 = new Date(dateFin);
+  if (d2 < d1) return;
+
+  const jours = Math.ceil((d2 - d1) / 86400000) + 1;
+  const formule = document.querySelector('input[name="offre"]:checked').value;
+  let multiplicateur = 1;
+  if (formule === 'nuit') multiplicateur = 0.8;
+  if (formule === '24h') multiplicateur = 1.3;
+
+  let total = prixBase * jours * multiplicateur;
+  if (document.getElementById('opt-livraison').checked) total += 15000;
+  if (document.getElementById('opt-recuperation').checked) total += 15000;
+
+  if (reductionActive > 0) total = total * (1 - reductionActive / 100);
+
+  const acompte = Math.round(total * 0.5);
+
+  document.getElementById('txt-jours').innerText = jours;
+  document.getElementById('txt-formule').innerText = formule.toUpperCase();
+  document.getElementById('prix-total').innerText = formatPrix(Math.round(total));
+  document.getElementById('prix-acompte').innerText = formatPrix(acompte);
+  document.getElementById('pay-reste').innerText = formatPrix(Math.round(total) - acompte);
+}
+
+async function verifierPromo() {
+  const code = document.getElementById('code-promo').value.trim().toUpperCase();
+  const msg = document.getElementById('msg-promo');
+  const dateDebut = document.getElementById('date-debut').value;
+  const dateFin = document.getElementById('date-fin').value;
+
+  if (!dateDebut || !dateFin) {
+    msg.innerText = 'Sélectionnez les dates.';
+    msg.style.color = 'red';
+    return;
+  }
+
+  const diffDays = Math.ceil((new Date(dateFin) - new Date(dateDebut)) / 86400000) + 1;
+  const { data } = await sb.from('codes_promo').select('*').eq('code', code).eq('actif', true).single();
+
+  if (!data) {
+    reductionActive = 0;
+    msg.innerText = 'Code invalide.';
+    msg.style.color = 'red';
+  } else if (dateDebut < data.date_debut || dateDebut > data.date_fin) {
+    reductionActive = 0;
+    msg.innerText = 'Code expiré/non actif.';
+    msg.style.color = 'red';
+  } else if (diffDays < data.min_jours) {
+    reductionActive = 0;
+    msg.innerText = `Minimum ${data.min_jours} jours requis.`;
+    msg.style.color = 'red';
   } else {
-    openReservationModal(voiture);
+    reductionActive = data.reduction_pourcent;
+    msg.innerText = `-${reductionActive}% appliqué.`;
+    msg.style.color = 'green';
   }
+  calculerPrix();
 }
 
-function openContactModal(voiture) {
-  if (!siteConfig) return;
-  setText('contact-car-name', voiture.nom);
-  setText('txt-modal-phone', siteConfig.contact.phoneDisplay);
-  setAttr('btn-modal-call', 'href', `tel:${siteConfig.contact.phoneCall}`);
-  const whatsappNum = siteConfig.contact.whatsapp.replace(/\D/g, '');
-  const text = encodeURIComponent(`Bonjour, je souhaite plus d'informations sur le véhicule : ${voiture.nom}.`);
-  setAttr('btn-modal-wa', 'href', `https://wa.me/${whatsappNum}?text=${text}`);
-  document.getElementById('modal-contact-only').style.display = 'flex';
+/* ---------- WORKFLOW ---------- */
+function faireLeCalculMathematique() {
+  const prixTotal = parseInt(document.getElementById('prix-total').innerText.replace(/\s/g, ''), 10);
+  const jours = parseInt(document.getElementById('txt-jours').innerText, 10);
+  if (!prixTotal || !jours) return { ok: false };
+
+  return {
+    ok: true,
+    total: prixTotal,
+    acompte: Math.round(prixTotal / 2),
+    offre: document.querySelector('input[name="offre"]:checked').value
+  };
 }
 
-function closeContactModal() {
-  document.getElementById('modal-contact-only').style.display = 'none';
-}
-
-function openReservationModal(voiture) {
-  selectedCar = voiture;
-  promoReduction = 0;
-  
-  const form = document.getElementById('quick-reservation-form');
-  if(form) form.reset();
-
-  setText('modal-car-name', voiture.nom);
-  setText('modal-car-price', (voiture.prix_base || 0).toLocaleString('fr-FR'));
-  
-  updateEstimation();
-  document.getElementById('reservation-modal').style.display = 'flex';
-}
-
-function closeReservationModal() {
-  document.getElementById('reservation-modal').style.display = 'none';
-  selectedCar = null;
-}
-
-/* ---------- GESTION FORMULAIRE DE RÉSERVATION ---------- */
-function bindReservationForm() {
-  ['res-date-start', 'res-date-end', 'opt-chauffeur', 'opt-wifi', 'opt-assurance']
-    .forEach(id => document.getElementById(id)?.addEventListener('input', updateEstimation));
-}
-
-function calcDays(start, end) {
-  const s = new Date(start);
-  const e = new Date(end);
-  if (isNaN(s) || isNaN(e) || e < s) return 0;
-  return Math.ceil((e - s) / 86400000) + 1;
-}
-
-function updateEstimation() {
-  if (!selectedCar) return;
-  const start = document.getElementById('res-date-start').value;
-  const end = document.getElementById('res-date-end').value;
-  const days = calcDays(start, end);
-
-  if (!days) {
-    setText('summary-days', '—');
-    setText('summary-total', '—');
+async function lancerReservationWhatsApp() {
+  if (!document.getElementById('check-conditions-step1').checked) {
+    alert('Merci d’accepter les conditions.');
     return;
   }
 
-  let total = days * (selectedCar.prix_base || 0);
-  if (document.getElementById('opt-chauffeur').checked) total += 60000 * days;
-  if (document.getElementById('opt-wifi').checked) total += 20000 * days;
-  if (document.getElementById('opt-assurance').checked) total += 40000 * days;
-  if (promoReduction > 0) total *= 1 - promoReduction / 100;
+  const payload = construirePayloadClient();
+  if (!payload) return;
 
-  setText('summary-days', `${days} jour(s)`);
-  setText('summary-total', `${Math.round(total).toLocaleString('fr-FR')} Ar`);
-}
-
-async function applyPromo() {
-    // La logique de applyPromo reste la même que dans votre script original
-    // ...
-}
-
-async function submitReservation(event) {
-  event.preventDefault();
-  if (!selectedCar || !siteConfig) return;
-
-  const start = document.getElementById('res-date-start').value;
-  const end = document.getElementById('res-date-end').value;
-  const days = calcDays(start, end);
-  const feedbackEl = document.getElementById('quick-reservation-feedback');
-
-  if (!days) {
-    feedbackEl.textContent = 'Veuillez sélectionner des dates valides.';
-    feedbackEl.style.color = '#e74c3c';
+  if (!verifierDisponibilite(payload.date_debut, payload.date_fin)) {
+    alert('Ces dates ne sont plus disponibles.');
     return;
   }
 
-  const nom = document.getElementById('res-nom').value;
-  const phone = document.getElementById('res-phone').value;
-  const options = [];
-  if (document.getElementById('opt-chauffeur').checked) options.push('Chauffeur');
-  if (document.getElementById('opt-wifi').checked) options.push('Wi-Fi');
-  if (document.getElementById('opt-assurance').checked) options.push('Assurance');
-  
-  const totalEstim = document.getElementById('summary-total').textContent;
-  
-  const text = encodeURIComponent(
-    `*Demande de Réservation*\n\n` +
-    `*Véhicule :* ${selectedCar.nom}\n` +
-    `*Période :* Du ${start} au ${end} (${days} jours)\n` +
-    `*Client :* ${nom}\n` +
-    `*Téléphone :* ${phone}\n` +
-    `*Options :* ${options.length ? options.join(', ') : 'Aucune'}\n` +
-    `*Total estimé :* ${totalEstim}`
-  );
+  await sb.from('clients').upsert({ nom: payload.nom, tel: payload.tel }, { onConflict: 'tel' });
+  const { data, error } = await sb.from('reservations').insert([payload]).select();
+  if (error) {
+    alert('Erreur : ' + error.message);
+    return;
+  }
 
-  const whatsappNum = siteConfig.contact.whatsapp.replace(/\D/g, '');
-  window.open(`https://wa.me/${whatsappNum}?text=${text}`, '_blank');
+  currentReservationId = data[0].id;
+  currentResaData = data[0];
 
-  feedbackEl.textContent = 'Votre demande a été préparée pour WhatsApp. Merci de l\'envoyer !';
-  feedbackEl.style.color = '#16a34a';
-  setTimeout(() => {
-    feedbackEl.textContent = '';
-    closeReservationModal();
-  }, 3000);
+  ouvrirWhatsApp(payload);
+  document.getElementById('step-1-actions').style.display = 'none';
+  document.getElementById('step-2-paiement').style.display = 'block';
+  document.getElementById('step-2-paiement').scrollIntoView({ behavior: 'smooth' });
 }
 
-/* ---------- EXPOSITION GLOBALE POUR LE HTML ---------- */
+function construirePayloadClient() {
+  const dateDebut = document.getElementById('date-debut').value;
+  const dateFin = document.getElementById('date-fin').value;
+  if (!dateDebut || !dateFin) {
+    alert('Choisissez vos dates.');
+    return null;
+  }
+
+  const nom = document.getElementById('loueur-nom').value.trim();
+  const prenom = document.getElementById('loueur-prenom').value.trim();
+  const tel = document.getElementById('loueur-tel').value.trim();
+  const cin = document.getElementById('loueur-cin').value.trim();
+  if (!nom || !tel || !cin) {
+    alert('Nom, téléphone et CIN sont obligatoires.');
+    return null;
+  }
+
+  const calcul = faireLeCalculMathematique();
+  if (!calcul.ok) {
+    alert('Vérifiez vos dates.');
+    return null;
+  }
+
+  return {
+    id_voiture: document.getElementById('id-voiture-input').value,
+    date_debut: dateDebut,
+    date_fin: dateFin,
+    nom,
+    prenom,
+    adresse: document.getElementById('loueur-adresse').value,
+    tel,
+    tel2: document.getElementById('loueur-tel2').value,
+    cin_passeport: cin,
+    urgence_nom: document.getElementById('urgence-nom').value,
+    urgence_prenom: document.getElementById('urgence-prenom').value,
+    urgence_tel: document.getElementById('urgence-tel').value,
+    type_offre: calcul.offre,
+    montant_total: calcul.total,
+    statut: 'en_attente'
+  };
+}
+
+function ouvrirWhatsApp(payload) {
+  const message = [
+    `Bonjour Rija,`,
+    `Réservation *${document.getElementById('nom-voiture-selectionnee').innerText}* (#${currentReservationId})`,
+    `Du ${payload.date_debut} au ${payload.date_fin}`,
+    `Total : ${formatPrix(payload.montant_total)} Ar`,
+    `Client : ${payload.nom} ${payload.prenom}`,
+    `CIN : ${payload.cin_passeport}`,
+    `Tel : ${payload.tel}`,
+    `Je procède au paiement.`,
+  ].join('\n');
+  window.open(`https://wa.me/261388552432?text=${encodeURIComponent(message)}`, '_blank');
+}
+
+/* ---------- PAIEMENT & OTP ---------- */
+function togglePaymentFields() {
+  const method = document.getElementById('pay-method').value;
+  document.getElementById('fields-mvola').style.display = method === 'mvola' ? 'block' : 'none';
+  document.getElementById('fields-espece').style.display = method === 'espece' ? 'block' : 'none';
+}
+
+function toggleAutreMontant() {
+  const choix = document.getElementById('pay-choix-montant').value;
+  document.getElementById('pay-valeur-autre').style.display = (choix === 'autre') ? 'block' : 'none';
+}
+
+async function envoyerInfosPaiement() {
+  if (!currentReservationId) {
+    alert('Aucune réservation en cours.');
+    return;
+  }
+  const method = document.getElementById('pay-method').value;
+  if (!method) return alert('Choisissez un mode de paiement.');
+
+  const paiement = {
+    methode: method,
+    titulaire_nom: method === 'mvola' ? document.getElementById('pay-mvola-nom').value.trim() : document.getElementById('pay-cash-nom').value.trim(),
+    titulaire_prenom: method === 'mvola' ? document.getElementById('pay-mvola-prenom').value.trim() : document.getElementById('pay-cash-prenom').value.trim(),
+    numero: method === 'mvola' ? document.getElementById('pay-mvola-num').value.trim() : document.getElementById('pay-cash-num').value.trim(),
+    reference: method === 'mvola' ? document.getElementById('pay-mvola-ref').value.trim() : '',
+    type_montant: document.getElementById('pay-choix-montant').value
+  };
+  if (!paiement.titulaire_nom) return alert('Nom du payeur requis.');
+
+  const montantBase = currentResaData.montant_total;
+  let montantDeclare = montantBase / 2;
+  if (paiement.type_montant === '100') montantDeclare = montantBase;
+  if (paiement.type_montant === 'autre') {
+    montantDeclare = parseFloat(document.getElementById('pay-valeur-autre').value) || 0;
+  }
+
+  const { error } = await sb.from('reservations').update({
+    paiement_methode: paiement.methode,
+    paiement_titulaire: `${paiement.titulaire_nom} ${paiement.titulaire_prenom}`.trim(),
+    paiement_numero: paiement.numero,
+    paiement_ref: paiement.reference,
+    paiement_type_montant: paiement.type_montant,
+    paiement_montant_declare: montantDeclare
+  }).eq('id', currentReservationId);
+
+  if (error) {
+    alert('Erreur : ' + error.message);
+    return;
+  }
+
+  Object.assign(currentResaData, {
+    paiement_methode: paiement.methode,
+    paiement_titulaire: `${paiement.titulaire_nom} ${paiement.titulaire_prenom}`.trim(),
+    paiement_numero: paiement.numero,
+    paiement_ref: paiement.reference,
+    paiement_montant_declare: montantDeclare
+  });
+
+  document.getElementById('step-2-paiement').style.display = 'none';
+  document.getElementById('step-3-download').style.display = 'block';
+  ecouterValidationAdmin();
+}
+
+function ecouterValidationAdmin() {
+  if (!currentReservationId) return;
+
+  if (realTimeSubscription) sb.removeChannel(realTimeSubscription);
+
+  realTimeSubscription = sb.channel('suivi-resa-' + currentReservationId)
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'reservations',
+      filter: `id=eq.${currentReservationId}`
+    }, payload => {
+      if (payload.new.code_otp) {
+        activerBoutonDownload(payload.new.code_otp);
+        currentResaData = payload.new;
+      }
+    })
+    .subscribe();
+}
+
+function activerBoutonDownload(code) {
+  const input = document.getElementById('input-otp-auto');
+  const btn = document.getElementById('btn-dl-pdf');
+  input.value = code;
+  input.style.borderColor = '#2ecc71';
+  btn.disabled = false;
+  btn.classList.add('btn-pdf-active');
+  document.querySelector('.otp-loader').innerHTML = '<i class="fas fa-check-circle" style="color:green"></i> Paiement validé !';
+}
+
+/* ---------- PDF ---------- */
+function telechargerFactureAuto() {
+  if (!currentResaData) return;
+  genererPDF(currentResaData);
+}
+
+function genererPDF(resa) {
+  if (!window.jspdf) return alert('Librairie PDF manquante.');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const timestamp = new Date();
+  const nomFichier = formatDateFile(timestamp) + '.pdf';
+
+  doc.setFillColor(44, 62, 80);
+  doc.rect(0, 0, 210, 40, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.text('RIJA NIAINA CAR SERVICES', 105, 15, { align: 'center' });
+  doc.setFontSize(10);
+  doc.text('SIAE 33 Ambodifilao, Analakely, Antananarivo', 105, 25, { align: 'center' });
+  doc.text('Tel : +261 38 85 524 32', 105, 32, { align: 'center' });
+
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(12);
+  doc.text(`Facture N° ${resa.id}`, 14, 55);
+  doc.text(`Date : ${timestamp.toLocaleDateString('fr-FR')}`, 195, 55, { align: 'right' });
+
+  const d1 = new Date(resa.date_debut);
+  const d2 = new Date(resa.date_fin);
+  const duree = Math.ceil((d2 - d1) / 86400000) + 1;
+
+  const paye = parseFloat(resa.paiement_montant_declare) || 0;
+  const reste = (resa.montant_total || 0) - paye;
+
+  doc.autoTable({
+    startY: 65,
+    head: [['CLIENT', 'LOCATION', 'PAIEMENT']],
+    body: [[
+      `Nom : ${resa.nom} ${resa.prenom || ''}\nTel : ${resa.tel}\nAdresse : ${resa.adresse || '-'}`,
+      `Voiture : ${document.getElementById('nom-voiture-selectionnee').innerText}\nPériode : ${resa.date_debut} → ${resa.date_fin}\nDurée : ${duree} jour(s)\nTotal : ${formatPrix(resa.montant_total)} Ar`,
+      `Méthode : ${resa.paiement_methode || '-'}\nPayé : ${formatPrix(paye)} Ar\nReste : ${formatPrix(reste)} Ar\nOTP : ${resa.code_otp || '-'}`,
+    ]],
+    theme: 'grid',
+    headStyles: { fillColor: [52, 152, 219] },
+    styles: { cellPadding: 5, fontSize: 10 }
+  });
+
+  doc.save(nomFichier);
+}
+
+function formatDateFile(dateObj) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${pad(dateObj.getHours())}-${pad(dateObj.getMinutes())}-${pad(dateObj.getSeconds())}-${pad(dateObj.getDate())}-${pad(dateObj.getMonth() + 1)}-${dateObj.getFullYear()}`;
+}
+
+/* ---------- MODAL CONDITIONS ---------- */
+function ouvrirModalConditions() {
+  document.getElementById('modal-conditions').style.display = 'flex';
+}
+
+function fermerModalConditions() {
+  document.getElementById('modal-conditions').style.display = 'none';
+}
+
+/* ---------- EXPORT GLOBAL ---------- */
 window.toggleMenu = toggleMenu;
-window.reserverVoiture = reserverVoiture;
-window.closeContactModal = closeContactModal;
-window.closeReservationModal = closeReservationModal;
-window.applyPromo = applyPromo;
-window.submitReservation = submitReservation;
-
+window.selectionnerVoiture = selectionnerVoiture;
+window.calculerPrix = calculerPrix;
+window.verifierPromo = verifierPromo;
+window.lancerReservationWhatsApp = lancerReservationWhatsApp;
+window.togglePaymentFields = togglePaymentFields;
+window.toggleAutreMontant = toggleAutreMontant;
+window.envoyerInfosPaiement = envoyerInfosPaiement;
+window.telechargerFactureAuto = telechargerFactureAuto;
+window.ouvrirModalConditions = ouvrirModalConditions;
+window.fermerModalConditions = fermerModalConditions;
+window.afficherSection = afficherSection;
