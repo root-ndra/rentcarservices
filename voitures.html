@@ -6,14 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/main.min.css"
-      integrity="sha512-UNM6vbhXq3YJ0wPUmTHIor+B8C4o1Xc2UPiiYl21wuvE0l3yNM5X7RqjUB4lfrMxCvOIRm7YxOKTcz2jyl+EcA=="
-      crossorigin="anonymous" referrerpolicy="no-referrer">
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/main.min.css"
+        integrity="sha512-UNM6vbhXq3YJ0wPUmTHIor+B8C4o1Xc2UPiiYl21wuvE0l3yNM5X7RqjUB4lfrMxCvOIRm7YxOKTcz2jyl+EcA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
 
   <link rel="stylesheet" href="style-ui.css">
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="https://i.ibb.co/dw8gxWXL/1765001359376.png">
 </head>
 <body>
 
@@ -45,7 +49,7 @@
         <option value="5">5 places</option>
         <option value="7+">7 places et +</option>
       </select>
-      <input type="number" id="filter-prix-max" placeholder="Prix max / jour">
+      <input type="number" id="filter-prix-max" placeholder="Prix max / jour (Ar)">
       <select id="sort-prix">
         <option value="prix-asc">Prix croissant</option>
         <option value="prix-desc">Prix décroissant</option>
@@ -75,14 +79,8 @@
         <h3><i class="far fa-calendar-alt"></i> Choisissez vos dates</h3>
         <div id="calendrier-dispo"></div>
         <div class="dates-inputs">
-          <div>
-            <label>Du :</label>
-            <input type="date" id="date-debut" onchange="calculerPrix()">
-          </div>
-          <div>
-            <label>Au :</label>
-            <input type="date" id="date-fin" onchange="calculerPrix()">
-          </div>
+          <div><label>Du :</label><input type="date" id="date-debut" onchange="calculerPrix()"></div>
+          <div><label>Au :</label><input type="date" id="date-fin" onchange="calculerPrix()"></div>
         </div>
       </div>
 
@@ -210,6 +208,17 @@
   </div>
 </footer>
 
+<div class="modal-overlay" id="modal-conditions" style="display:none;">
+  <div class="modal-content">
+    <span class="close-modal" onclick="fermerModalConditions()">&times;</span>
+    <h3><i class="fas fa-file-contract"></i> Conditions générales</h3>
+    <div class="conditions-scroll-box">
+      <!-- Conditions à insérer -->
+    </div>
+    <button class="btn-dark" onclick="fermerModalConditions()">Fermer</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-contact-only" style="display:none;">
   <div class="modal-content">
     <span class="close-modal" onclick="closeContactModal()">&times;</span>
@@ -217,12 +226,8 @@
     <h3>Contactez-nous pour ce véhicule</h3>
     <p id="contact-car-name">—</p>
     <div class="contact-actions-row">
-      <a id="btn-modal-call" class="btn-contact-action btn-call-action" href="#">
-        <i class="fas fa-phone"></i> Appeler
-      </a>
-      <a id="btn-modal-wa" class="btn-contact-action btn-wa-action" href="#" target="_blank" rel="noopener">
-        <i class="fab fa-whatsapp"></i> WhatsApp
-      </a>
+      <a id="btn-modal-call" class="btn-contact-action btn-call-action" href="#"><i class="fas fa-phone"></i> Appeler</a>
+      <a id="btn-modal-wa" class="btn-contact-action btn-wa-action" href="#" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp</a>
     </div>
     <p style="margin-top:12px;color:#475569;">Hotline : <strong id="txt-modal-phone">+261 38 85 524 32</strong></p>
   </div>
@@ -240,4 +245,3 @@
 <script src="script-voitures.js"></script>
 </body>
 </html>
-
