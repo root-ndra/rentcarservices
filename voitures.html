@@ -42,7 +42,7 @@
         <option value="5">5 places</option>
         <option value="7+">7 places et +</option>
       </select>
-      <input type="number" id="filter-prix-max" placeholder="Prix max / jour">
+      <input type="number" id="filter-prix-max" placeholder="Prix max / jour (Ar)">
       <select id="sort-prix">
         <option value="prix-asc">Prix croissant</option>
         <option value="prix-desc">Prix décroissant</option>
@@ -57,9 +57,147 @@
     </div>
   </section>
 
-  <!-- SECTION RÉSERVATION (identique à index.html) -->
-  <!-- ... même bloc que ton index (calendrier + options + formulaire + paiement + OTP) ... -->
-  <!-- Copie exactement la section #reservation et la modal des conditions depuis index.html -->
+  <section id="reservation" class="page-section" style="display:none;">
+    <button onclick="afficherSection('liste-voitures')" class="btn-back">
+      <i class="fas fa-arrow-left"></i> Retour aux voitures
+    </button>
+
+    <div class="container-form">
+      <h2>Réservation : <span id="nom-voiture-selectionnee" class="highlight-text"></span></h2>
+      <input type="hidden" id="id-voiture-input">
+      <input type="hidden" id="ref-voiture-input">
+      <input type="hidden" id="prix-base-input">
+
+      <div class="bloc-calendrier">
+        <h3><i class="far fa-calendar-alt"></i> Choisissez vos dates</h3>
+        <div id="calendrier-dispo"></div>
+        <div class="dates-inputs">
+          <div>
+            <label>Du :</label>
+            <input type="date" id="date-debut" onchange="calculerPrix()">
+          </div>
+          <div>
+            <label>Au :</label>
+            <input type="date" id="date-fin" onchange="calculerPrix()">
+          </div>
+        </div>
+      </div>
+
+      <hr>
+
+      <div class="section-offres">
+        <h3><i class="fas fa-sliders-h"></i> Formule & options</h3>
+        <div class="options-grid">
+          <label><input type="radio" name="offre" value="jour" class="hidden-input" checked onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-sun"></i> Journée</div></label>
+          <label><input type="radio" name="offre" value="nuit" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-moon"></i> Nuit</div></label>
+          <label><input type="radio" name="offre" value="24h" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-clock"></i> 24H</div></label>
+        </div>
+        <div class="options-grid">
+          <label><input type="checkbox" id="opt-livraison" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-truck"></i> Livraison (+15 000)</div></label>
+          <label><input type="checkbox" id="opt-recuperation" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-undo"></i> Récupération (+15 000)</div></label>
+        </div>
+        <label style="font-weight:600;color:#555;">Code promo</label>
+        <div class="promo-container">
+          <input type="text" id="code-promo" placeholder="CODE">
+          <button class="btn-dark" onclick="verifierPromo()">OK</button>
+        </div>
+        <small id="msg-promo"></small>
+      </div>
+
+      <hr>
+
+      <div class="grid-form">
+        <div class="col-form">
+          <h3><i class="fas fa-user"></i> Loueur</h3>
+          <input id="loueur-nom" placeholder="Nom">
+          <input id="loueur-prenom" placeholder="Prénom">
+          <input id="loueur-adresse" placeholder="Adresse">
+          <input id="loueur-tel" placeholder="Téléphone / WhatsApp">
+          <input id="loueur-tel2" placeholder="Téléphone 2">
+          <input id="loueur-cin" placeholder="N° CIN / Permis">
+        </div>
+        <div class="col-form">
+          <h3><i class="fas fa-phone-alt"></i> Contact d'urgence</h3>
+          <input id="urgence-nom" placeholder="Nom">
+          <input id="urgence-prenom" placeholder="Prénom">
+          <input id="urgence-tel" placeholder="Téléphone">
+        </div>
+      </div>
+
+      <div id="resume-prix" class="resume-box">
+        <h3>Récapitulatif</h3>
+        <p>Durée : <span id="txt-jours">0</span> jour(s)</p>
+        <p>Formule : <span id="txt-formule">JOUR</span></p>
+        <p>Total : <strong id="prix-total">0</strong> Ar</p>
+        <p>Acompte (50 %) : <strong id="prix-acompte">0</strong> Ar</p>
+        <p>Reste indicatif : <strong id="pay-reste">0</strong> Ar</p>
+      </div>
+
+      <div class="conditions-box">
+        <label class="checkbox-container">
+          <input type="checkbox" id="check-conditions-step1">
+          J’accepte les conditions de location.
+        </label>
+        <a href="#" onclick="ouvrirModalConditions()">Lire les conditions</a>
+      </div>
+
+      <div id="step-1-actions" class="actions">
+        <button class="btn-whatsapp" onclick="lancerReservationWhatsApp()">
+          <i class="fab fa-whatsapp"></i> Réserver & envoyer via WhatsApp
+        </button>
+      </div>
+
+      <div id="step-2-paiement" style="display:none;">
+        <h3><i class="fas fa-money-bill-wave"></i> Informations de paiement</h3>
+        <div class="payment-section">
+          <label>Mode de paiement</label>
+          <select id="pay-method" onchange="togglePaymentFields()">
+            <option value="">-- Choisir --</option>
+            <option value="mvola">Mobile Money (Mvola)</option>
+            <option value="espece">Espèces (agence)</option>
+          </select>
+
+          <div id="fields-mvola" style="display:none;">
+            <input id="pay-mvola-nom" placeholder="Nom du titulaire">
+            <input id="pay-mvola-prenom" placeholder="Prénom du titulaire">
+            <input id="pay-mvola-num" placeholder="034 xx xxx xx">
+            <input id="pay-mvola-ref" placeholder="ID transaction">
+          </div>
+
+          <div id="fields-espece" style="display:none;">
+            <input id="pay-cash-nom" placeholder="Nom du déposant">
+            <input id="pay-cash-prenom" placeholder="Prénom du déposant">
+            <input id="pay-cash-num" placeholder="Tél. du déposant">
+          </div>
+
+          <label>Montant payé</label>
+          <select id="pay-choix-montant" onchange="toggleAutreMontant()">
+            <option value="50">Acompte (50 %)</option>
+            <option value="100">Totalité (100 %)</option>
+            <option value="autre">Autre montant</option>
+          </select>
+          <input type="number" id="pay-valeur-autre" style="display:none;" placeholder="Montant (Ar)">
+
+          <p>Reste à payer : <strong id="pay-reste">0</strong> Ar</p>
+
+          <button class="btn-dark" onclick="envoyerInfosPaiement()">
+            <i class="fas fa-check-circle"></i> Confirmer le paiement
+          </button>
+        </div>
+      </div>
+
+      <div id="step-3-download" style="display:none;">
+        <h3>Validation en cours</h3>
+        <div class="otp-loader">
+          <div class="spinner"></div> En attente du code OTP admin...
+        </div>
+        <input id="input-otp-auto" readonly placeholder="Code OTP">
+        <button id="btn-dl-pdf" class="btn-dark" disabled onclick="telechargerFactureAuto()">
+          <i class="fas fa-file-pdf"></i> Télécharger la facture
+        </button>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer class="site-footer">
@@ -71,12 +209,26 @@
   </div>
 </footer>
 
-<a href="tel:+261388552432" class="floating-call-btn">
-  <i class="fas fa-phone-alt"></i>
-  <span>Appeler</span>
-</a>
+<div class="modal-overlay" id="modal-conditions" style="display:none;">
+  <div class="modal-content">
+    <span class="close-modal" onclick="fermerModalConditions()">&times;</span>
+    <h3><i class="fas fa-file-contract"></i> Conditions générales</h3>
+    <div class="conditions-scroll-box">
+      <h4>1. Conducteur</h4>
+      <p>Le locataire doit avoir plus de 23 ans et un permis valide (+2 ans).</p>
+      <h4>2. Paiement</h4>
+      <p>Un acompte de 50 % est requis pour bloquer le véhicule.</p>
+      <h4>3. Utilisation</h4>
+      <p>Usage en « bon père de famille ». Sous-location interdite.</p>
+      <h4>4. Carburant</h4>
+      <p>À la charge du locataire. Restitution avec le même niveau.</p>
+      <h4>5. Dommages</h4>
+      <p>Tout dégât constaté reste à charge du locataire.</p>
+    </div>
+    <button class="btn-dark" onclick="fermerModalConditions()">Fermer</button>
+  </div>
+</div>
 
-<!-- Modal contact rapide (voiture non réservable) -->
 <div class="modal-overlay" id="modal-contact-only" style="display:none;">
   <div class="modal-content">
     <span class="close-modal" onclick="closeContactModal()">&times;</span>
@@ -90,8 +242,10 @@
   </div>
 </div>
 
-<!-- Modal conditions (copiée depuis index.html) -->
-<!-- ... -->
+<a href="tel:+261388552432" class="floating-call-btn" aria-label="Appeler l'agence">
+  <i class="fas fa-phone-alt"></i>
+  <span>Appeler</span>
+</a>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
