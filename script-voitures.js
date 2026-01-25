@@ -464,3 +464,4 @@ async function envoyerInfosPaiement() {
 
   document.getElementById('step-2-paiement').style.display = 'none';
   document.getElementById('step-3-download').
+
