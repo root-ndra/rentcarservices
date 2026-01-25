@@ -2,17 +2,18 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Admin · Réservations & flotte</title>
+  <title>Admin · Réservations</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="style-admin.css">
 </head>
 <body>
 <div id="admin-content">
   <header>
     <div>
-      <h2>Réservations & flotte</h2>
-      <p>Suivez les demandes et l’état des véhicules</p>
+      <h2>Gestion des réservations</h2>
+      <p>Validation paiements, OTP et suivi flotte</p>
     </div>
     <div class="header-user">
       <span id="user-email"></span>
@@ -23,54 +24,76 @@
 
   <main>
     <nav>
-      <button class="tab-btn" onclick="window.location='admin.html'">Dashboard</button>
-      <button class="tab-btn active"><i class="fas fa-calendar-check"></i>Réservations</button>
-      <button class="tab-btn" onclick="window.location='admin-maintenance.html'">Maintenance</button>
-      <button class="tab-btn" onclick="window.location='admin-communication.html'">Communication</button>
-      <button class="tab-btn" onclick="window.location='admin-emplois.html'">Emplois</button>
+      <button class="tab-btn" onclick="window.location='admin.html'">
+        <i class="fas fa-chart-line"></i> Dashboard
+      </button>
+      <button class="tab-btn active">
+        <i class="fas fa-calendar-check"></i> Réservations
+      </button>
+      <button class="tab-btn" onclick="window.location='admin-maintenance.html'">
+        <i class="fas fa-tools"></i> Maintenance
+      </button>
+      <button class="tab-btn" onclick="window.location='admin-communication.html'">
+        <i class="fas fa-bullhorn"></i> Communication
+      </button>
+      <button class="tab-btn" onclick="window.location='admin-emplois.html'">
+        <i class="fas fa-briefcase"></i> Emplois
+      </button>
     </nav>
 
     <section class="content-area">
-      <div class="card-grid" id="kpi-reservations" style="margin-bottom: 25px;"></div>
+      <div class="card-grid" id="kpi-reservations" style="margin-bottom:25px;"></div>
 
       <button onclick="toggleNewResaForm()" class="btn-action btn-primaire" style="margin-bottom:15px;">
-        <i class="fas fa-plus-circle"></i> Nouvelle Réservation (Comptoir)
+        <i class="fas fa-plus-circle"></i> Nouvelle réservation (comptoir)
       </button>
 
-      <div id="form-new-resa" class="form-box" style="display:none; background:#e8f8f5;">
-        <h3 style="margin-top:0;">Création Réservation Directe</h3>
+      <div id="form-new-resa" class="form-box" style="display:none;">
+        <h3 style="margin-top:0;">Création rapide</h3>
         <div class="form-grid">
-            <div><label>Voiture</label><select id="new-resa-voiture" onchange="calculerPrixAdmin()"></select></div>
-            <div><label>Client (Nom)</label><input type="text" id="new-resa-nom" placeholder="Nom complet"></div>
-            <div><label>Client (Tél)</label><input type="text" id="new-resa-tel" placeholder="034..."></div>
-            <div><label>Début</label><input type="date" id="new-resa-debut" onchange="calculerPrixAdmin()"></div>
-            <div><label>Fin</label><input type="date" id="new-resa-fin" onchange="calculerPrixAdmin()"></div>
-            <div><label>Montant Total (Ar)</label><input type="number" id="new-resa-montant" onchange="updateResteAdmin()"><small>Calculé auto.</small></div>
-            <div><label>Statut</label><select id="new-resa-statut"><option value="valide">Validé (Payé/Acompte)</option><option value="en_attente">En attente</option></select></div>
-            <div><label>Déjà Payé (Ar)</label><input type="number" id="new-resa-paye" value="0" onchange="updateResteAdmin()"></div>
-            <div><label>Reste à payer</label><input type="number" id="new-resa-reste" readonly style="background:#ddd; font-weight:bold;"></div>
+          <div><label>Voiture</label><select id="new-resa-voiture" onchange="calculerPrixAdmin()"></select></div>
+          <div><label>Client</label><input id="new-resa-nom" placeholder="Nom complet"></div>
+          <div><label>Téléphone</label><input id="new-resa-tel" placeholder="034..."></div>
+          <div><label>Début</label><input type="date" id="new-resa-debut" onchange="calculerPrixAdmin()"></div>
+          <div><label>Fin</label><input type="date" id="new-resa-fin" onchange="calculerPrixAdmin()"></div>
+          <div><label>Montant total</label><input type="number" id="new-resa-montant" onchange="updateResteAdmin()"></div>
+          <div><label>Statut</label>
+            <select id="new-resa-statut">
+              <option value="valide">Validée</option>
+              <option value="en_attente">En attente</option>
+            </select></div>
+          <div><label>Montant payé</label><input type="number" id="new-resa-paye" value="0" onchange="updateResteAdmin()"></div>
+          <div><label>Reste à payer</label><input type="number" id="new-resa-reste" readonly style="background:#eee;"></div>
         </div>
-        <button onclick="creerReservationAdmin()" class="btn-full" style="margin-top:15px;">Créer la réservation</button>
+        <button class="btn-full" style="margin-top:12px;" onclick="creerReservationAdmin()">Enregistrer</button>
       </div>
 
-      <div style="display:flex; gap:15px; flex-wrap:wrap; margin:25px 0;">
+      <div class="filters-bar" style="margin:30px 0;">
         <select id="filter-status">
           <option value="">Tous les statuts</option>
-          <option value="valide">Validée</option>
+          <option value="valide">Validées</option>
           <option value="en_attente">En attente</option>
-          <option value="annulee">Annulée</option>
+          <option value="annulee">Annulées</option>
         </select>
         <select id="filter-voiture">
           <option value="">Toutes les voitures</option>
         </select>
-        <input type="date" id="filter-date" placeholder="Filtrer par date">
+        <input type="date" id="filter-date">
         <button class="btn-action btn-sec" onclick="exportReservations()">Exporter CSV</button>
       </div>
 
       <div class="table-container">
         <table id="table-reservations">
           <thead>
-            <tr><th>#ID / Statut</th><th>Client (Loueur)</th><th>Voiture & Dates</th><th>Paiement & Payeur</th><th>Finances (Ar)</th><th>Code OTP</th><th>Actions</th></tr>
+            <tr>
+              <th># / Statut</th>
+              <th>Client</th>
+              <th>Voiture & dates</th>
+              <th>Paiement</th>
+              <th>Finances</th>
+              <th>OTP</th>
+              <th>Actions</th>
+            </tr>
           </thead>
           <tbody><tr><td colspan="7">Chargement…</td></tr></tbody>
         </table>
@@ -79,20 +102,28 @@
   </main>
 </div>
 
-<div class="modal-overlay" id="modal-edit-resa">
-    <div class="modal-content" style="border-top: 5px solid #3498db;">
-        <span class="close-modal" onclick="closeModal('modal-edit-resa')">×</span>
-        <h3 style="color:#3498db;"><i class="fas fa-edit"></i> Modifier Réservation</h3>
-        <input type="hidden" id="edit-resa-id">
-        <p style="background:#eee; padding:10px; border-radius:5px;"><strong>Client :</strong> <span id="edit-resa-client"></span></p>
-        <div class="form-grid">
-            <div><label>Début</label><input type="date" id="edit-resa-debut"></div>
-            <div><label>Fin</label><input type="date" id="edit-resa-fin"></div>
-        </div>
-        <label>Montant Total (Ar)</label><input type="number" id="edit-resa-montant"><small>Ajustez le prix manuellement si besoin.</small>
-        <label style="margin-top:10px;">Statut</label><select id="edit-resa-statut"><option value="valide">Validé</option><option value="en_attente">En attente</option><option value="annulee">Annulée (Archives)</option></select>
-        <button onclick="sauvegarderModificationResa()" class="btn-full" style="margin-top:20px; background:#3498db;">Mettre à jour</button>
+<!-- Modal édition réservation -->
+<div class="modal-overlay" id="modal-edit-resa" style="display:none;">
+  <div class="modal-content" style="border-top:5px solid #3498db; max-width:520px;">
+    <span class="close-modal" onclick="closeModal('modal-edit-resa')">&times;</span>
+    <h3><i class="fas fa-edit"></i> Modifier réservation</h3>
+    <input type="hidden" id="edit-resa-id">
+    <p style="background:#f4f6f9; padding:10px; border-radius:6px;">
+      <strong>Client :</strong> <span id="edit-resa-client"></span>
+    </p>
+    <div class="form-grid">
+      <div><label>Début</label><input type="date" id="edit-resa-debut"></div>
+      <div><label>Fin</label><input type="date" id="edit-resa-fin"></div>
     </div>
+    <label>Montant total</label><input type="number" id="edit-resa-montant">
+    <label>Statut</label>
+    <select id="edit-resa-statut">
+      <option value="valide">Validée</option>
+      <option value="en_attente">En attente</option>
+      <option value="annulee">Annulée</option>
+    </select>
+    <button class="btn-full" style="margin-top:15px;" onclick="sauvegarderModificationResa()">Mettre à jour</button>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
