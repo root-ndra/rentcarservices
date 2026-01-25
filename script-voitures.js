@@ -1,3 +1,4 @@
+/* ---------- INITIALISATION ---------- */
 let sb = null;
 let calendar = null;
 let voitureSelectionnee = null;
@@ -30,41 +31,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+/* ---------- CONFIG SITE ---------- */
 async function loadSiteConfig() {
   const resp = await fetch('site_config.json');
   if (!resp.ok) return;
   siteConfig = await resp.json();
   setText('header-site-name', siteConfig.header?.siteName || 'RIJA NIAINA CAR SERVICES');
-  setAttr('header-logo', 'src', siteConfig.header?.logoUrl || 'https://i.ibb.co/dw8gxWXL/1765001359376.png');
-  setText('footer-title', siteConfig.header?.siteName || 'Rija NIAINA Car Services');
-  setText('footer-address', siteConfig.footer?.address || 'Siae 33 Ambodifilao, Analakely, Antananarivo 101');
-  setText('footer-phone', siteConfig.contact?.phoneDisplay || '+261 38 85 524 32');
-  setText('footer-nif', siteConfig.footer?.nif || '5012357932');
-  setText('footer-stat', siteConfig.footer?.stat || '70209 11 2025 0 06328');
-  setAttr('cta-hotline', 'href', `tel:${siteConfig.contact?.phoneCall || '+261388552432'}`);
-  setText('txt-modal-phone', siteConfig.contact?.phoneDisplay || '+261 38 85 524 32');
-  if (siteConfig.footer?.socials) {
-    const socials = document.getElementById('footer-socials');
-    socials.innerHTML = '';
-    Object.entries(siteConfig.footer.socials).forEach(([k, url]) => {
-      if (url) socials.innerHTML += `<a href="${url}" target="_blank" style="color:white;margin:0 8px;"><i class="fab fa-${k}"></i></a>`;
-    });
-  }
+  setAttr('header-logo', 'src', siteConfig.header?.logoUrl || '');
+  setText('footer-title', siteConfig.header?.siteName || '');
+  setText('footer-address', siteConfig.footer?.address || '');
+  setText('footer-phone', siteConfig.contact?.phoneDisplay || '');
+  setText('footer-nif', siteConfig.footer?.nif || '');
+  setText('footer-stat', siteConfig.footer?.stat || '');
+  setAttr('cta-hotline', 'href', `tel:${siteConfig.contact?.phoneCall || ''}`);
+  setText('txt-modal-phone', siteConfig.contact?.phoneDisplay || '');
 }
 
-function setText(id, txt) { const el = document.getElementById(id); if (el) el.textContent = txt; }
-function setAttr(id, attr, val) { const el = document.getElementById(id); if (el) el.setAttribute(attr, val); }
+function setText(id, text) { const el = document.getElementById(id); if (el) el.textContent = text ?? ''; }
+function setAttr(id, attr, value) { const el = document.getElementById(id); if (el) el.setAttribute(attr, value ?? ''); }
 function toggleMenu() { document.getElementById('nav-menu')?.classList.toggle('active'); }
 function formatPrix(val) { return (val || 0).toLocaleString('fr-FR'); }
 
+/* ---------- CHARGEMENT VOITURES ---------- */
 async function chargerVoitures() {
   const container = document.getElementById('container-voitures');
   container.innerHTML = '<p>Chargement...</p>';
+
   const { data, error } = await sb.from('voitures').select('*').eq('est_public', true).order('prix_base');
   if (error) {
     container.innerHTML = `<p>Erreur : ${error.message}</p>`;
     return;
   }
+
   voituresCache = data || [];
   remplirFiltres(voituresCache);
   renderVoitures(voituresCache);
@@ -76,21 +74,45 @@ function renderVoitures(list) {
     container.innerHTML = '<p>Aucune voiture ne correspond.</p>';
     return;
   }
+
   container.innerHTML = list.map(v => {
     const reservable = v.reservable !== false;
-    const btnLabel = reservable ? 'Réserver' : 'Contactez-nous';
-    const btnClass = reservable ? '' : 'btn-disabled';
+    const chauffeur = v.chauffeur_option === 'oui' ? 'Chauffeur inclus' :
+                      v.chauffeur_option === 'non' ? 'Sans chauffeur' : 'Chauffeur en option';
+    const desc = v.description ? v.description.slice(0, 140) + (v.description.length > 140 ? '…' : '') : 'Description à venir.';
+
     return `
       <article class="carte-voiture">
-        <img src="${v.image_url || 'https://placehold.co/600x400'}" alt="${v.nom}">
-        <h3>${v.nom}</h3>
-        <p>${v.type || '-'} · ${v.transmission || '-'}</p>
-        <p class="prix">${formatPrix(v.prix_base)} Ar / jour</p>
-        <button class="${btnClass}" onclick="gererClickVoiture('${v.id}', ${reservable})">${btnLabel}</button>
+        <img src="${v.image_url || 'https://placehold.co/800x500?text=Voiture'}" alt="${v.nom}">
+        <div class="carte-body">
+          <h3>${v.nom}</h3>
+          <div class="car-tags">
+            <span><i class="fas fa-tags"></i> ${v.type || '—'}</span>
+            <span><i class="fas fa-gas-pump"></i> ${v.carburant || '—'}</span>
+            <span><i class="fas fa-user-friends"></i> ${v.places ? `${v.places} places` : '—'}</span>
+            <span><i class="fas fa-id-card"></i> ${chauffeur}</span>
+          </div>
+          <p class="carte-desc">${desc}</p>
+          <div class="car-infos">
+            <div><i class="fas fa-cogs"></i>${v.transmission || '—'}</div>
+            <div><i class="fas fa-car-side"></i>${v.categorie || v.segment || 'Usage mixte'}</div>
+          </div>
+          <p class="prix">${formatPrix(v.prix_base)} Ar / jour</p>
+          <div class="card-actions">
+            <button class="btn-reserver ${reservable ? '' : 'btn-disabled'}"
+                    ${reservable ? `onclick="ouvrirReservationDepuisCarte('${v.id}', '${v.nom.replace(/'/g, "\\'")}', ${v.prix_base || 0}, '${v.ref_id || ''}')"` : 'disabled'}>
+              RÉSERVER
+            </button>
+            <button class="btn-contact" onclick="ouvrirModalContact('${v.id}')">
+              CONTACTER
+            </button>
+          </div>
+        </div>
       </article>`;
   }).join('');
 }
 
+/* ---------- FILTRES ---------- */
 function bindFiltres() {
   ['filter-type', 'filter-carburant', 'filter-places', 'filter-prix-max', 'sort-prix']
     .forEach(id => document.getElementById(id)?.addEventListener('input', appliquerFiltres));
@@ -116,7 +138,7 @@ function appliquerFiltres() {
   const prixMax = parseInt(document.getElementById('filter-prix-max').value, 10) || 0;
   const sort = document.getElementById('sort-prix').value;
 
-  let resultat = voituresCache.filter(v => {
+  const resultat = voituresCache.filter(v => {
     const matchType = !type || v.type === type;
     const matchCarb = !carburant || v.carburant === carburant;
     const matchPlaces = !places || (places === '7+' ? (v.places || 0) >= 7 : String(v.places || '') === places);
@@ -124,28 +146,39 @@ function appliquerFiltres() {
     return matchType && matchCarb && matchPlaces && matchPrix;
   });
 
-  resultat.sort((a, b) => sort === 'prix-desc' ? (b.prix_base || 0) - (a.prix_base || 0) : (a.prix_base || 0) - (b.prix_base || 0));
+  resultat.sort((a, b) => sort === 'prix-desc'
+    ? (b.prix_base || 0) - (a.prix_base || 0)
+    : (a.prix_base || 0) - (b.prix_base || 0));
+
   renderVoitures(resultat);
 }
 
-function gererClickVoiture(idVoiture, isReservable) {
+/* ---------- ACTION SUR CARTES ---------- */
+function ouvrirReservationDepuisCarte(id, nom, prix, ref) {
+  selectionnerVoiture(id, nom, prix, ref);
+  const section = document.getElementById('reservation');
+  if (section) {
+    section.style.display = 'block';
+    window.scrollTo({ top: section.offsetTop - 40, behavior: 'smooth' });
+  }
+}
+
+function ouvrirModalContact(idVoiture) {
   const voiture = voituresCache.find(v => v.id == idVoiture);
   if (!voiture) return;
-  if (isReservable) selectionnerVoiture(voiture.id, voiture.nom, voiture.prix_base, voiture.ref_id || '');
-  else ouvrirModalContact(voiture);
-}
-
-function ouvrirModalContact(voiture) {
-  document.getElementById('contact-car-name').innerText = voiture.nom;
-  document.getElementById('btn-modal-call').href = `tel:${siteConfig?.contact?.phoneCall || '+261388552432'}`;
-  const message = encodeURIComponent(`Bonjour, je souhaite louer ${voiture.nom}.`);
-  const wa = siteConfig?.contact?.whatsapp?.replace(/\D/g, '') || '261388552432';
-  document.getElementById('btn-modal-wa').href = `https://wa.me/${wa}?text=${message}`;
+  setText('contact-car-name', voiture.nom);
+  if (siteConfig?.contact) {
+    setAttr('btn-modal-call', 'href', `tel:${siteConfig.contact.phoneCall}`);
+    const wa = siteConfig.contact.whatsapp.replace(/\D/g, '');
+    const message = encodeURIComponent(`Bonjour, je suis intéressé(e) par ${voiture.nom}.`);
+    setAttr('btn-modal-wa', 'href', `https://wa.me/${wa}?text=${message}`);
+    setText('txt-modal-phone', siteConfig.contact.phoneDisplay);
+  }
   document.getElementById('modal-contact-only').style.display = 'flex';
 }
-
 function closeContactModal() { document.getElementById('modal-contact-only').style.display = 'none'; }
 
+/* ---------- RÉSERVATION ---------- */
 function selectionnerVoiture(id, nom, prix, ref) {
   voitureSelectionnee = { id, nom, prix, ref };
   document.getElementById('nom-voiture-selectionnee').innerText = nom;
@@ -179,6 +212,7 @@ function resetReservationForm() {
   document.getElementById('input-otp-auto').value = '';
 }
 
+/* ---------- CALENDRIER & DISPONIBILITÉ ---------- */
 async function initCalendar(idVoiture) {
   if (calendar) calendar.destroy();
   const calendarEl = document.getElementById('calendrier-dispo');
@@ -230,6 +264,7 @@ function verifierDisponibilite(debut, fin) {
   return !currentCarReservations.some(resa => d1 <= resa.end && d2 >= resa.start);
 }
 
+/* ---------- CALCUL PRIX & PROMO ---------- */
 function calculerPrix() {
   const prixBase = parseInt(document.getElementById('prix-base-input').value || 0, 10);
   const dateDebut = document.getElementById('date-debut').value;
@@ -266,8 +301,9 @@ async function verifierPromo() {
   const msg = document.getElementById('msg-promo');
   const dateDebut = document.getElementById('date-debut').value;
   const dateFin = document.getElementById('date-fin').value;
+
   if (!dateDebut || !dateFin) {
-    msg.innerText = 'Sélectionnez les dates.';
+    msg.innerText = 'Sélectionnez vos dates.';
     msg.style.color = 'red';
     return;
   }
@@ -295,6 +331,7 @@ async function verifierPromo() {
   calculerPrix();
 }
 
+/* ---------- WORKFLOW RÉSERVATION ---------- */
 function faireLeCalculMathematique() {
   const prixTotal = parseInt(document.getElementById('prix-total').innerText.replace(/\s/g, ''), 10);
   const jours = parseInt(document.getElementById('txt-jours').innerText, 10);
@@ -394,6 +431,7 @@ function ouvrirWhatsApp(payload) {
   window.open(`https://wa.me/261388552432?text=${encodeURIComponent(message)}`, '_blank');
 }
 
+/* ---------- PAIEMENT ET OTP ---------- */
 function togglePaymentFields() {
   const method = document.getElementById('pay-method').value;
   document.getElementById('fields-mvola').style.display = method === 'mvola' ? 'block' : 'none';
@@ -477,91 +515,4 @@ function ecouterValidationAdmin() {
     .subscribe();
 }
 
-function activerBoutonDownload(code) {
-  const input = document.getElementById('input-otp-auto');
-  const btn = document.getElementById('btn-dl-pdf');
-  input.value = code;
-  input.style.borderColor = '#2ecc71';
-  btn.disabled = false;
-  btn.classList.add('btn-pdf-active');
-  document.querySelector('.otp-loader').innerHTML = '<i class="fas fa-check-circle" style="color:green"></i> Paiement validé !';
-}
-
-function telechargerFactureAuto() {
-  if (!currentResaData) return;
-  genererPDF(currentResaData);
-}
-
-function formatDateFile(dateObj) {
-  const pad = n => String(n).padStart(2, '0');
-  return `${pad(dateObj.getHours())}-${pad(dateObj.getMinutes())}-${pad(dateObj.getSeconds())}-${pad(dateObj.getDate())}-${pad(dateObj.getMonth() + 1)}-${dateObj.getFullYear()}`;
-}
-
-function genererPDF(resa) {
-  if (!window.jspdf) return alert('Librairie PDF manquante.');
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  doc.setFillColor(44, 62, 80);
-  doc.rect(0, 0, 210, 40, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
-  doc.text('RIJA NIAINA CAR SERVICES', 105, 15, { align: 'center' });
-  doc.setFontSize(10);
-  doc.text('SIAE 33 Ambodifilao, Analakely, Antananarivo', 105, 25, { align: 'center' });
-  doc.text('Tel : +261 38 85 524 32', 105, 32, { align: 'center' });
-
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(12);
-  doc.text(`Facture N° ${resa.id}`, 14, 55);
-  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 195, 55, { align: 'right' });
-
-  const d1 = new Date(resa.date_debut);
-  const d2 = new Date(resa.date_fin);
-  const duree = Math.ceil((d2 - d1) / 86400000) + 1;
-
-  const paye = parseFloat(resa.paiement_montant_declare) || 0;
-  const total = resa.montant_total || 0;
-  const reste = total - paye;
-
-  doc.autoTable({
-    startY: 65,
-    head: [['CLIENT', 'LOCATION', 'PAIEMENT']],
-    body: [[
-      `Nom : ${resa.nom} ${resa.prenom || ''}\nTel : ${resa.tel}\nAdresse : ${resa.adresse || '-'}`,
-      `Voiture : ${document.getElementById('nom-voiture-selectionnee').innerText}\nPériode : ${resa.date_debut} → ${resa.date_fin}\nDurée : ${duree} jour(s)\nTotal : ${formatPrix(total)} Ar`,
-      `Méthode : ${resa.paiement_methode || '-'}\nPayé : ${formatPrix(paye)} Ar\nReste : ${formatPrix(reste)} Ar\nOTP : ${resa.code_otp || '-'}`,
-    ]],
-    theme: 'grid',
-    headStyles: { fillColor: [52, 152, 219] },
-    styles: { cellPadding: 5, fontSize: 10 }
-  });
-
-  doc.save(`${formatDateFile(new Date())}.pdf`);
-}
-
-function ouvrirModalConditions() {
-  document.getElementById('modal-conditions').style.display = 'flex';
-}
-
-function fermerModalConditions() {
-  document.getElementById('modal-conditions').style.display = 'none';
-}
-
-function afficherSection() {
-  window.scrollTo(0, 0);
-}
-
-window.toggleMenu = toggleMenu;
-window.gererClickVoiture = gererClickVoiture;
-window.selectionnerVoiture = selectionnerVoiture;
-window.calculerPrix = calculerPrix;
-window.verifierPromo = verifierPromo;
-window.lancerReservationWhatsApp = lancerReservationWhatsApp;
-window.togglePaymentFields = togglePaymentFields;
-window.toggleAutreMontant = toggleAutreMontant;
-window.envoyerInfosPaiement = envoyerInfosPaiement;
-window.telechargerFactureAuto = telechargerFactureAuto;
-window.ouvrirModalConditions = ouvrirModalConditions;
-window.fermerModalConditions = fermerModalConditions;
-window.closeContactModal = closeContactModal;
+function activerBoutonDownload(code
