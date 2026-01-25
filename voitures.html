@@ -16,8 +16,8 @@
 
 <nav class="navbar">
   <div class="logo-container">
-    <img src="https://i.ibb.co/dw8gxWXL/1765001359376.png" alt="Logo" class="nav-logo">
-    <span>RIJA NIAINA CAR SERVICES</span>
+    <img src="" alt="Logo" class="nav-logo" id="header-logo">
+    <span id="header-site-name">RIJA NIAINA CAR SERVICES</span>
   </div>
   <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
   <ul class="nav-links" id="nav-menu">
@@ -58,7 +58,7 @@
   </section>
 
   <section id="reservation" class="page-section" style="display:none;">
-    <button onclick="afficherSection('liste-voitures')" class="btn-back">
+    <button onclick="afficherSection('car-grid-section')" class="btn-back">
       <i class="fas fa-arrow-left"></i> Retour aux voitures
     </button>
 
@@ -72,14 +72,8 @@
         <h3><i class="far fa-calendar-alt"></i> Choisissez vos dates</h3>
         <div id="calendrier-dispo"></div>
         <div class="dates-inputs">
-          <div>
-            <label>Du :</label>
-            <input type="date" id="date-debut" onchange="calculerPrix()">
-          </div>
-          <div>
-            <label>Au :</label>
-            <input type="date" id="date-fin" onchange="calculerPrix()">
-          </div>
+          <div><label>Du :</label><input type="date" id="date-debut" onchange="calculerPrix()"></div>
+          <div><label>Au :</label><input type="date" id="date-fin" onchange="calculerPrix()"></div>
         </div>
       </div>
 
@@ -163,10 +157,9 @@
             <input id="pay-mvola-num" placeholder="034 xx xxx xx">
             <input id="pay-mvola-ref" placeholder="ID transaction">
           </div>
-
           <div id="fields-espece" style="display:none;">
             <input id="pay-cash-nom" placeholder="Nom du déposant">
-            <input id="pay-cash-prenom" placeholder="Prénom du déposant">
+            <input id="pay-cash-prenom" placeholder="Prénom">
             <input id="pay-cash-num" placeholder="Tél. du déposant">
           </div>
 
@@ -202,10 +195,11 @@
 
 <footer class="site-footer">
   <div class="footer-content">
-    <h3>Rija NIAINA Car Services</h3>
-    <p><i class="fas fa-map-marker-alt"></i> Siae 33 Ambodifilao, Analakely, Antananarivo 101</p>
-    <p class="footer-legal">NIF: 5012357932 | STAT: 70209 11 2025 0 06328</p>
-    <p class="footer-phone"><i class="fas fa-phone"></i> +261 38 85 524 32</p>
+    <h3 id="footer-title">Rija NIAINA Car Services</h3>
+    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address">Siae 33 Ambodifilao, Analakely, Antananarivo 101</span></p>
+    <p class="footer-legal">NIF: <span id="footer-nif">5012357932</span> | STAT: <span id="footer-stat">70209 11 2025 0 06328</span></p>
+    <p class="footer-phone"><i class="fas fa-phone"></i> <span id="footer-phone">+261 38 85 524 32</span></p>
+    <div id="footer-socials" style="margin-top:15px;"></div>
   </div>
 </footer>
 
@@ -232,13 +226,16 @@
 <div class="modal-overlay" id="modal-contact-only" style="display:none;">
   <div class="modal-content">
     <span class="close-modal" onclick="closeContactModal()">&times;</span>
-    <h3>Contactez-nous pour ce véhicule</h3>
-    <p id="contact-car-name">—</p>
-    <div class="contact-actions-row">
-      <a id="btn-modal-call" class="btn-contact-action btn-call-action" href="#"><i class="fas fa-phone"></i> Appeler</a>
-      <a id="btn-modal-wa" class="btn-contact-action btn-wa-action" href="#" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+    <div class="modern-contact-box">
+      <div class="contact-icon-large"><i class="fasomiast"></i></div>
+      <h3>Contactez-nous pour ce véhicule</h3>
+      <p id="contact-car-name">—</p>
+      <div class="contact-actions-row">
+        <a id="btn-modal-call" class="btn-contact-action btn-call-action" href="#"><i class="fas fa-phone"></i> Appeler</a>
+        <a id="btn-modal-wa" class="btn-contact-action btn-wa-action" href="#" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+      </div>
+      <p style="margin-top:12px;color:#475569;">Hotline : <strong id="txt-modal-phone">+261 38 85 524 32</strong></p>
     </div>
-    <p style="margin-top:12px;color:#475569;">Hotline : <strong id="txt-modal-phone">+261 38 85 524 32</strong></p>
   </div>
 </div>
 
