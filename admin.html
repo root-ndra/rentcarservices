@@ -47,11 +47,24 @@
   </header>
 
   <main>
-    <nav>
-      <button class="tab-btn active"><i class="fas fa-chart-line"></i>Dashboard</button>
-      <button class="tab-btn" onclick="alert('Page non implémentée')">Réservations</button>
-      <button class="tab-btn" onclick="alert('Page non implémentée')">Maintenance</button>
-    </nav>
+<nav>
+  <button class="tab-btn active" onclick="window.location.href='admin.html'">
+    <i class="fas fa-chart-line"></i> Dashboard
+  </button>
+  <button class="tab-btn" onclick="window.location.href='admin-reservations.html'">
+    <i class="fas fa-calendar-check"></i> Réservations
+  </button>
+  <button class="tab-btn" onclick="window.location.href='admin-maintenance.html'">
+    <i class="fas fa-tools"></i> Maintenance
+  </button>
+  <button class="tab-btn" onclick="window.location.href='admin-communication.html'">
+    <i class="fas fa-bullhorn"></i> Communication
+  </button>
+  <button class="tab-btn" onclick="window.location.href='admin-emplois.html'">
+    <i class="fas fa-briefcase"></i> Emplois
+  </button>
+</nav>
+
 
     <section class="content-area">
       <!-- Section Voitures -->
@@ -160,3 +173,4 @@
 <script src="admin.js"></script>
 </body>
 </html>
+
