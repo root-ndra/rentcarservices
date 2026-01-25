@@ -37,18 +37,29 @@ async function loadSiteConfig() {
   if (!resp.ok) return;
   siteConfig = await resp.json();
   setText('header-site-name', siteConfig.header?.siteName || 'RIJA NIAINA CAR SERVICES');
-  setAttr('header-logo', 'src', siteConfig.header?.logoUrl || '');
-  setText('footer-title', siteConfig.header?.siteName || '');
-  setText('footer-address', siteConfig.footer?.address || '');
-  setText('footer-phone', siteConfig.contact?.phoneDisplay || '');
-  setText('footer-nif', siteConfig.footer?.nif || '');
-  setText('footer-stat', siteConfig.footer?.stat || '');
-  setAttr('cta-hotline', 'href', `tel:${siteConfig.contact?.phoneCall || ''}`);
-  setText('txt-modal-phone', siteConfig.contact?.phoneDisplay || '');
+  setAttr('header-logo', 'src', siteConfig.header?.logoUrl || 'https://i.ibb.co/dw8gxWXL/1765001359376.png');
+  setText('footer-title', siteConfig.header?.siteName || 'Rija NIAINA Car Services');
+  setText('footer-address', siteConfig.footer?.address || 'Siae 33 Ambodifilao, Analakely, Antananarivo 101');
+  setText('footer-phone', siteConfig.contact?.phoneDisplay || '+261 38 85 524 32');
+  setText('footer-nif', siteConfig.footer?.nif || '5012357932');
+  setText('footer-stat', siteConfig.footer?.stat || '70209 11 2025 0 06328');
+  setText('txt-modal-phone', siteConfig.contact?.phoneDisplay || '+261 38 85 524 32');
+  if (siteConfig.footer?.socials) {
+    const footerSocials = document.getElementById('footer-socials');
+    footerSocials.innerHTML = '';
+    Object.entries(siteConfig.footer.socials).forEach(([k, url]) => {
+      if (url) footerSocials.innerHTML += `<a href="${url}" target="_blank" style="color:white;margin:0 8px;"><i class="fab fa-${k}"></i></a>`;
+    });
+  }
 }
-
-function setText(id, text) { const el = document.getElementById(id); if (el) el.textContent = text ?? ''; }
-function setAttr(id, attr, value) { const el = document.getElementById(id); if (el) el.setAttribute(attr, value ?? ''); }
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text ?? '';
+}
+function setAttr(id, attr, value) {
+  const el = document.getElementById(id);
+  if (el) el.setAttribute(attr, value ?? '');
+}
 function toggleMenu() { document.getElementById('nav-menu')?.classList.toggle('active'); }
 function formatPrix(val) { return (val || 0).toLocaleString('fr-FR'); }
 
@@ -57,7 +68,10 @@ async function chargerVoitures() {
   const container = document.getElementById('container-voitures');
   container.innerHTML = '<p>Chargement...</p>';
 
-  const { data, error } = await sb.from('voitures').select('*').eq('est_public', true).order('prix_base');
+  const { data, error } = await sb.from('voitures')
+    .select('*')
+    .eq('est_public', true)
+    .order('prix_base');
   if (error) {
     container.innerHTML = `<p>Erreur : ${error.message}</p>`;
     return;
@@ -77,9 +91,14 @@ function renderVoitures(list) {
 
   container.innerHTML = list.map(v => {
     const reservable = v.reservable !== false;
-    const chauffeur = v.chauffeur_option === 'oui' ? 'Chauffeur inclus' :
-                      v.chauffeur_option === 'non' ? 'Sans chauffeur' : 'Chauffeur en option';
-    const desc = v.description ? v.description.slice(0, 140) + (v.description.length > 140 ? '…' : '') : 'Description à venir.';
+    const chauffeur = v.chauffeur_option === 'oui'
+      ? 'Chauffeur inclus'
+      : v.chauffeur_option === 'non'
+        ? 'Sans chauffeur'
+        : 'Chauffeur en option';
+    const desc = v.description
+      ? v.description.slice(0, 140) + (v.description.length > 140 ? '…' : '')
+      : 'Description à venir.';
 
     return `
       <article class="carte-voiture">
@@ -100,16 +119,29 @@ function renderVoitures(list) {
           <p class="prix">${formatPrix(v.prix_base)} Ar / jour</p>
           <div class="card-actions">
             <button class="btn-reserver ${reservable ? '' : 'btn-disabled'}"
-                    ${reservable ? `onclick="ouvrirReservationDepuisCarte('${v.id}', '${v.nom.replace(/'/g, "\\'")}', ${v.prix_base || 0}, '${v.ref_id || ''}')"` : 'disabled'}>
+                    data-id="${v.id}"
+                    data-nom="${v.nom.replace(/"/g, '&quot;')}"
+                    data-prix="${v.prix_base || 0}"
+                    data-ref="${v.ref_id || ''}"
+                    onclick="${reservable ? 'handleReserveClick(event)' : 'return false;'}"
+                    ${reservable ? '' : 'disabled'}>
               RÉSERVER
             </button>
-            <button class="btn-contact" onclick="ouvrirModalContact('${v.id}')">
-              CONTACTER
-            </button>
+            <button class="btn-contact" onclick="ouvrirModalContact('${v.id}')">CONTACTER</button>
           </div>
         </div>
       </article>`;
   }).join('');
+}
+
+function handleReserveClick(evt) {
+  const btn = evt.currentTarget;
+  ouvrirReservationDepuisCarte(
+    btn.dataset.id,
+    btn.dataset.nom,
+    parseInt(btn.dataset.prix, 10) || 0,
+    btn.dataset.ref || ''
+  );
 }
 
 /* ---------- FILTRES ---------- */
@@ -117,7 +149,6 @@ function bindFiltres() {
   ['filter-type', 'filter-carburant', 'filter-places', 'filter-prix-max', 'sort-prix']
     .forEach(id => document.getElementById(id)?.addEventListener('input', appliquerFiltres));
 }
-
 function remplirFiltres(list) {
   const remplir = (id, values) => {
     const select = document.getElementById(id);
@@ -130,7 +161,6 @@ function remplirFiltres(list) {
   remplir('filter-type', list.map(v => v.type));
   remplir('filter-carburant', list.map(v => v.carburant));
 }
-
 function appliquerFiltres() {
   const type = document.getElementById('filter-type').value;
   const carburant = document.getElementById('filter-carburant').value;
@@ -153,13 +183,13 @@ function appliquerFiltres() {
   renderVoitures(resultat);
 }
 
-/* ---------- ACTION SUR CARTES ---------- */
+/* ---------- ACTIONS CARTES ---------- */
 function ouvrirReservationDepuisCarte(id, nom, prix, ref) {
   selectionnerVoiture(id, nom, prix, ref);
   const section = document.getElementById('reservation');
   if (section) {
     section.style.display = 'block';
-    window.scrollTo({ top: section.offsetTop - 40, behavior: 'smooth' });
+    window.scrollTo({ top: section.offsetTop - 30, behavior: 'smooth' });
   }
 }
 
@@ -218,8 +248,13 @@ async function initCalendar(idVoiture) {
   const calendarEl = document.getElementById('calendrier-dispo');
 
   const [{ data: resas }, { data: maints }] = await Promise.all([
-    sb.from('reservations').select('date_debut, date_fin').eq('id_voiture', idVoiture).neq('code_otp', null),
-    sb.from('maintenances').select('date_debut, date_fin').eq('id_voiture', idVoiture)
+    sb.from('reservations')
+      .select('date_debut, date_fin')
+      .eq('id_voiture', idVoiture)
+      .neq('code_otp', null),
+    sb.from('maintenances')
+      .select('date_debut, date_fin')
+      .eq('id_voiture', idVoiture)
   ]);
 
   currentCarReservations = [];
@@ -227,14 +262,28 @@ async function initCalendar(idVoiture) {
 
   (resas || []).forEach(r => {
     currentCarReservations.push({ start: new Date(r.date_debut), end: new Date(r.date_fin) });
-    const finPlus = new Date(r.date_fin); finPlus.setDate(finPlus.getDate() + 1);
-    events.push({ title: 'Loué', start: r.date_debut, end: finPlus.toISOString().split('T')[0], display: 'background', color: '#e74c3c' });
+    const finPlus = new Date(r.date_fin);
+    finPlus.setDate(finPlus.getDate() + 1);
+    events.push({
+      title: 'Loué',
+      start: r.date_debut,
+      end: finPlus.toISOString().split('T')[0],
+      display: 'background',
+      color: '#e74c3c'
+    });
   });
 
   (maints || []).forEach(m => {
     currentCarReservations.push({ start: new Date(m.date_debut), end: new Date(m.date_fin) });
-    const finPlus = new Date(m.date_fin); finPlus.setDate(finPlus.getDate() + 1);
-    events.push({ title: 'Maintenance', start: m.date_debut, end: finPlus.toISOString().split('T')[0], display: 'background', color: '#f39c12' });
+    const finPlus = new Date(m.date_fin);
+    finPlus.setDate(finPlus.getDate() + 1);
+    events.push({
+      title: 'Maintenance',
+      start: m.date_debut,
+      end: finPlus.toISOString().split('T')[0],
+      display: 'background',
+      color: '#f39c12'
+    });
   });
 
   calendar = new FullCalendar.Calendar(calendarEl, {
@@ -246,8 +295,12 @@ async function initCalendar(idVoiture) {
       const fin = document.getElementById('date-fin');
       if (!debut.value) debut.value = info.dateStr;
       else if (!fin.value) {
-        if (new Date(info.dateStr) >= new Date(debut.value)) fin.value = info.dateStr;
-        else { debut.value = info.dateStr; fin.value = ''; }
+        if (new Date(info.dateStr) >= new Date(debut.value)) {
+          fin.value = info.dateStr;
+        } else {
+          debut.value = info.dateStr;
+          fin.value = '';
+        }
       } else {
         debut.value = info.dateStr;
         fin.value = '';
@@ -301,9 +354,8 @@ async function verifierPromo() {
   const msg = document.getElementById('msg-promo');
   const dateDebut = document.getElementById('date-debut').value;
   const dateFin = document.getElementById('date-fin').value;
-
   if (!dateDebut || !dateFin) {
-    msg.innerText = 'Sélectionnez vos dates.';
+    msg.innerText = 'Sélectionnez les dates.';
     msg.style.color = 'red';
     return;
   }
@@ -331,7 +383,7 @@ async function verifierPromo() {
   calculerPrix();
 }
 
-/* ---------- WORKFLOW RÉSERVATION ---------- */
+/* ---------- WORKFLOW ---------- */
 function faireLeCalculMathematique() {
   const prixTotal = parseInt(document.getElementById('prix-total').innerText.replace(/\s/g, ''), 10);
   const jours = parseInt(document.getElementById('txt-jours').innerText, 10);
@@ -431,88 +483,8 @@ function ouvrirWhatsApp(payload) {
   window.open(`https://wa.me/261388552432?text=${encodeURIComponent(message)}`, '_blank');
 }
 
-/* ---------- PAIEMENT ET OTP ---------- */
+/* ---------- PAIEMENT & OTP ---------- */
 function togglePaymentFields() {
   const method = document.getElementById('pay-method').value;
   document.getElementById('fields-mvola').style.display = method === 'mvola' ? 'block' : 'none';
-  document.getElementById('fields-espece').style.display = method === 'espece' ? 'block' : 'none';
-}
-
-function toggleAutreMontant() {
-  const choix = document.getElementById('pay-choix-montant').value;
-  document.getElementById('pay-valeur-autre').style.display = (choix === 'autre') ? 'block' : 'none';
-}
-
-async function envoyerInfosPaiement() {
-  if (!currentReservationId) {
-    alert('Aucune réservation en cours.');
-    return;
-  }
-  const method = document.getElementById('pay-method').value;
-  if (!method) return alert('Choisissez un mode de paiement.');
-
-  const paiement = {
-    methode: method,
-    titulaire_nom: method === 'mvola' ? document.getElementById('pay-mvola-nom').value.trim() : document.getElementById('pay-cash-nom').value.trim(),
-    titulaire_prenom: method === 'mvola' ? document.getElementById('pay-mvola-prenom').value.trim() : document.getElementById('pay-cash-prenom').value.trim(),
-    numero: method === 'mvola' ? document.getElementById('pay-mvola-num').value.trim() : document.getElementById('pay-cash-num').value.trim(),
-    reference: method === 'mvola' ? document.getElementById('pay-mvola-ref').value.trim() : '',
-    type_montant: document.getElementById('pay-choix-montant').value
-  };
-  if (!paiement.titulaire_nom) return alert('Nom du payeur requis.');
-
-  const montantBase = currentResaData.montant_total;
-  let montantDeclare = montantBase / 2;
-  if (paiement.type_montant === '100') montantDeclare = montantBase;
-  if (paiement.type_montant === 'autre') {
-    montantDeclare = parseFloat(document.getElementById('pay-valeur-autre').value) || 0;
-  }
-
-  const { error } = await sb.from('reservations').update({
-    paiement_methode: paiement.methode,
-    paiement_titulaire: `${paiement.titulaire_nom} ${paiement.titulaire_prenom}`.trim(),
-    paiement_numero: paiement.numero,
-    paiement_ref: paiement.reference,
-    paiement_type_montant: paiement.type_montant,
-    paiement_montant_declare: montantDeclare
-  }).eq('id', currentReservationId);
-
-  if (error) {
-    alert('Erreur : ' + error.message);
-    return;
-  }
-
-  Object.assign(currentResaData, {
-    paiement_methode: paiement.methode,
-    paiement_titulaire: `${paiement.titulaire_nom} ${paiement.titulaire_prenom}`.trim(),
-    paiement_numero: paiement.numero,
-    paiement_ref: paiement.reference,
-    paiement_montant_declare: montantDeclare
-  });
-
-  document.getElementById('step-2-paiement').style.display = 'none';
-  document.getElementById('step-3-download').style.display = 'block';
-  ecouterValidationAdmin();
-}
-
-function ecouterValidationAdmin() {
-  if (!currentReservationId) return;
-
-  if (realTimeSubscription) sb.removeChannel(realTimeSubscription);
-
-  realTimeSubscription = sb.channel('suivi-resa-' + currentReservationId)
-    .on('postgres_changes', {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'reservations',
-      filter: `id=eq.${currentReservationId}`
-    }, payload => {
-      if (payload.new.code_otp) {
-        activerBoutonDownload(payload.new.code_otp);
-        currentResaData = payload.new;
-      }
-    })
-    .subscribe();
-}
-
-function activerBoutonDownload(code
+  document.getElementById('fields-espece').style.display = method === 'espece' ? 'block' :
