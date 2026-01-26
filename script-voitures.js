@@ -2,9 +2,6 @@
 let sb = null;
 let calendar = null;
 let voitureSelectionnee = null;
-let currentCarReservations = [];
-let currentReservationId = null;
-let reductionActive = 0;
 let voituresCache = [];
 let siteConfig = null;
 
@@ -53,7 +50,7 @@ async function loadSiteConfig() {
     } catch (err) { console.log("Site config non chargé."); }
 }
 
-/* ---------- CATALOGUE (CORRIGÉ : BOUTONS & INFOS) ---------- */
+/* ---------- CATALOGUE (BOUTON GRISÉ SI NON RÉSERVABLE) ---------- */
 async function chargerVoitures() {
     const container = document.getElementById('container-voitures');
     container.innerHTML = '<div class="loading">Chargement...</div>';
@@ -69,9 +66,14 @@ function renderVoitures(list) {
     const container = document.getElementById('container-voitures');
     container.innerHTML = list.map(v => {
         const desc = v.description ? v.description.substring(0, 80) + '...' : 'Aucune description.';
+        
+        // CONDITION : On considère la voiture indisponible si elle n'a pas de ref_id 
+        // ou si un champ 'disponible' (si tu en as un) est à false.
+        const estReservable = v.ref_id && v.ref_id !== ""; 
+
         return `
-        <article class="carte-voiture">
-            <img src="${v.image_url || 'https://placehold.co/800x500'}" alt="${v.nom}">
+        <article class="carte-voiture ${!estReservable ? 'indisponible' : ''}">
+            <img src="${v.image_url || 'https://placehold.co/800x500'}" alt="${v.nom}" style="${!estReservable ? 'filter: grayscale(1); opacity: 0.7;' : ''}">
             <div class="carte-body">
                 <h3>${v.nom}</h3>
                 <div class="car-tags">
@@ -82,7 +84,10 @@ function renderVoitures(list) {
                 <p class="carte-desc" style="font-size:0.85rem; color:#666; margin:10px 0;">${desc}</p>
                 <p class="prix">${(v.prix_base || 0).toLocaleString()} Ar / jour</p>
                 <div class="card-actions" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <button class="btn-reserver" onclick="ouvrirReservationDepuisCarte('${v.id}', '${v.nom.replace(/'/g, "\\'")}', ${v.prix_base}, '${v.ref_id}')">RÉSERVER</button>
+                    ${estReservable ? 
+                        `<button class="btn-reserver" onclick="ouvrirReservationDepuisCarte('${v.id}', '${v.nom.replace(/'/g, "\\'")}', ${v.prix_base}, '${v.ref_id}')">RÉSERVER</button>` :
+                        `<button class="btn-reserver" disabled style="background:#ccc; cursor:not-allowed; border-color:#bbb;">INDISPONIBLE</button>`
+                    }
                     <button class="btn-contact" onclick="ouvrirModalContact('${v.id}')" style="background:#25D366; color:white; border:none; border-radius:5px; cursor:pointer;"><i class="fab fa-whatsapp"></i> CONTACT</button>
                 </div>
             </div>
@@ -90,7 +95,7 @@ function renderVoitures(list) {
     `}).join('');
 }
 
-/* ---------- RÉSERVATION & WHATSAPP (OPTIMISÉ SANS LATENCE) ---------- */
+/* ---------- RÉSERVATION & WHATSAPP (SANS LATENCE) ---------- */
 function ouvrirReservationDepuisCarte(id, nom, prix, ref) {
     voitureSelectionnee = { id, nom, prix, ref };
     document.getElementById('nom-voiture-selectionnee').innerText = nom;
@@ -113,27 +118,21 @@ async function lancerReservationWhatsApp() {
         nom: document.getElementById('loueur-nom').value,
         prenom: document.getElementById('loueur-prenom').value,
         tel: document.getElementById('loueur-tel').value,
-        cin_passport: document.getElementById('loueur-cin').value, // Vérifie le nom exact de la colonne dans ta DB
+        cin_passeport: document.getElementById('loueur-cin').value,
         montant_total: parseInt(document.getElementById('prix-total').innerText.replace(/\s/g, '')),
         statut: 'en_attente'
     };
 
-    // 1. OUVERTURE IMMÉDIATE DE WHATSAPP (Supprime la latence perçue)
+    // OUVERTURE INSTANTANÉE
     const waNumber = siteConfig?.contact?.whatsapp?.replace(/\D/g, '') || '261388552432';
     const msg = `Bonjour, je réserve la ${voitureSelectionnee.nom} du ${payload.date_debut} au ${payload.date_fin}. Nom: ${payload.nom}.`;
     window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`, '_blank');
 
-    // 2. ENREGISTREMENT SILENCIEUX EN ARRIÈRE-PLAN
-    document.getElementById('step-1-actions').innerHTML = "<p>Enregistrement de la réservation...</p>";
-    
+    // ENREGISTREMENT EN ARRIÈRE-PLAN
     const { data, error } = await sb.from('reservations').insert([payload]).select();
-    
     if (!error) {
-        currentReservationId = data[0].id;
         document.getElementById('step-1-actions').style.display = 'none';
         document.getElementById('step-2-paiement').style.display = 'block';
-    } else {
-        console.error("Erreur DB:", error.message);
     }
 }
 
@@ -153,7 +152,7 @@ function closeContactModal() {
     document.getElementById('modal-contact-only').style.display = 'none';
 }
 
-/* ---------- MODAL CONDITIONS (CARTES TOURNANTES) ---------- */
+/* ---------- MODAL CONDITIONS (FLIP CARDS) ---------- */
 async function ouvrirModalConditions() {
     const modal = document.getElementById('modal-conditions');
     const container = modal.querySelector('.conditions-scroll-box');
@@ -181,7 +180,7 @@ async function ouvrirModalConditions() {
     `;
 }
 
-/* ---------- AUTRES FONCTIONS ---------- */
+/* ---------- UTILS & FILTRES ---------- */
 function fermerModalConditions() { document.getElementById('modal-conditions').style.display = 'none'; }
 function toggleMenu() { document.getElementById('nav-menu').classList.toggle('active'); }
 function setText(id, t) { const e = document.getElementById(id); if(e) e.innerText = t || ''; }
