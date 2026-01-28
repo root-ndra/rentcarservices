@@ -2,29 +2,22 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Nos véhicules · Rija Niaina Car Services</title>
+  <title>Nos véhicules · RentCarServices</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
-        crossorigin="anonymous" referrerpolicy="no-referrer">
-
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/main.min.css"
-        integrity="sha512-UNM6vbhXq3YJ0wPUmTHIor+B8C4o1Xc2UPiiYl21wuvE0l3yNM5X7RqjUB4lfrMxCvOIRm7YxOKTcz2jyl+EcA=="
-        crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 
   <link rel="stylesheet" href="style-ui.css">
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" type="image/png" href="https://i.ibb.co/dw8gxWXL/1765001359376.png">
 </head>
 <body>
 
 <nav class="navbar">
   <div class="logo-container">
     <img src="" alt="Logo" class="nav-logo" id="header-logo">
-    <span id="header-site-name">RIJA NIAINA CAR SERVICES</span>
+    <span id="header-site-name">RentCarServices</span>
   </div>
   <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
   <ul class="nav-links" id="nav-menu">
@@ -37,162 +30,108 @@
   </ul>
 </nav>
 
-<main>
-  <section class="filters-section">
-    <div class="filters-container">
-      <select id="filter-type"><option value="">Tous les types</option></select>
-      <select id="filter-carburant"><option value="">Tous les carburants</option></select>
-      <select id="filter-places">
-        <option value="">Toutes les places</option>
-        <option value="2">2 places</option>
-        <option value="4">4 places</option>
-        <option value="5">5 places</option>
-        <option value="7+">7 places et +</option>
-      </select>
-      <input type="number" id="filter-prix-max" placeholder="Prix max / jour (Ar)">
-      <select id="sort-prix">
-        <option value="prix-asc">Prix croissant</option>
-        <option value="prix-desc">Prix décroissant</option>
-      </select>
+<main class="container">
+  <header class="page-header">
+    <h1>Choisissez votre véhicule</h1>
+    <p>Large gamme de voitures pour tous vos besoins à Madagascar.</p>
+  </header>
+
+  <section class="filters-bar">
+    <select id="filter-type">
+      <option value="">Tous les types</option>
+    </select>
+    <select id="sort-prix">
+      <option value="prix-asc">Prix croissant</option>
+      <option value="prix-desc">Prix décroissant</option>
+    </select>
+    <div class="filter-group">
+      <label>Prix max (Ar)</label>
+      <input type="range" id="filter-prix-max" min="50000" max="1000000" step="10000" value="1000000">
     </div>
   </section>
 
-  <section class="car-grid-section">
-    <h2>Notre flotte disponible</h2>
-    <div id="container-voitures">
-      <p>Chargement du catalogue...</p>
-    </div>
-  </section>
+  <div id="container-voitures" class="catalogue-grid"></div>
 
-  <section id="reservation" class="page-section" style="display:none;">
-    <button onclick="afficherSection('car-grid-section')" class="btn-back">
-      <i class="fas fa-arrow-left"></i> Retour aux voitures
-    </button>
-
-    <div class="container-form">
-      <h2>Réservation : <span id="nom-voiture-selectionnee" class="highlight-text"></span></h2>
-      <input type="hidden" id="id-voiture-input">
-      <input type="hidden" id="ref-voiture-input">
-      <input type="hidden" id="prix-base-input">
-
-      <div class="bloc-calendrier">
-        <h3><i class="far fa-calendar-alt"></i> Choisissez vos dates</h3>
-        <div id="calendrier-dispo"></div>
-        <div class="dates-inputs">
-          <div><label>Du :</label><input type="date" id="date-debut" onchange="calculerPrix()"></div>
-          <div><label>Au :</label><input type="date" id="date-fin" onchange="calculerPrix()"></div>
+  <section id="reservation" class="booking-section" style="display:none;">
+    <div class="booking-card">
+      <h2 id="nom-voiture-selectionnee">Modèle Voiture</h2>
+      
+      <div class="booking-grid">
+        <div class="calendar-container">
+          <label><i class="fas fa-calendar-alt"></i> Disponibilités & Sélection</label>
+          <div id="calendrier-dispo"></div>
         </div>
-      </div>
 
-      <hr>
+        <div class="form-container">
+          <form id="form-reservation">
+            <input type="hidden" id="id-voiture-input">
+            <input type="hidden" id="ref-voiture-input">
+            <input type="hidden" id="prix-base-input">
 
-      <div class="section-offres">
-        <h3><i class="fas fa-sliders-h"></i> Formule & options</h3>
-        <div class="options-grid">
-          <label><input type="radio" name="offre" value="jour" class="hidden-input" checked onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-sun"></i> Journée</div></label>
-          <label><input type="radio" name="offre" value="nuit" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-moon"></i> Nuit</div></label>
-          <label><input type="radio" name="offre" value="24h" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-clock"></i> 24H</div></label>
-        </div>
-        <div class="options-grid">
-          <label><input type="checkbox" id="opt-livraison" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-truck"></i> Livraison (+15 000)</div></label>
-          <label><input type="checkbox" id="opt-recuperation" class="hidden-input" onchange="calculerPrix()"><div class="btn-option"><i class="fas fa-undo"></i> Récupération (+15 000)</div></label>
-        </div>
-        <label style="font-weight:600;color:#555;">Code promo</label>
-        <div class="promo-container">
-          <input type="text" id="code-promo" placeholder="CODE">
-          <button class="btn-dark" onclick="verifierPromo()">OK</button>
-        </div>
-        <small id="msg-promo"></small>
-      </div>
+            <div class="form-group-row">
+              <div class="input-styled">
+                <label>Date Début</label>
+                <input type="date" id="date-debut" readonly>
+              </div>
+              <div class="input-styled">
+                <label>Date Fin</label>
+                <input type="date" id="date-fin" readonly>
+              </div>
+            </div>
 
-      <hr>
+            <div class="input-styled">
+              <label>Nom complet</label>
+              <div class="input-with-icon">
+                <i class="fas fa-user"></i>
+                <input type="text" id="loueur-nom" placeholder="Votre nom">
+              </div>
+            </div>
 
-      <div class="grid-form">
-        <div class="col-form">
-          <h3><i class="fas fa-user"></i> Loueur</h3>
-          <input id="loueur-nom" placeholder="Nom">
-          <input id="loueur-prenom" placeholder="Prénom">
-          <input id="loueur-adresse" placeholder="Adresse">
-          <input id="loueur-tel" placeholder="Téléphone / WhatsApp">
-          <input id="loueur-tel2" placeholder="Téléphone 2">
-          <input id="loueur-cin" placeholder="N° CIN / Permis">
-        </div>
-        <div class="col-form">
-          <h3><i class="fas fa-phone-alt"></i> Contact d'urgence</h3>
-          <input id="urgence-nom" placeholder="Nom">
-          <input id="urgence-prenom" placeholder="Prénom">
-          <input id="urgence-tel" placeholder="Téléphone">
-        </div>
-      </div>
+            <div class="input-styled">
+              <label>Téléphone WhatsApp</label>
+              <div class="input-with-icon">
+                <i class="fab fa-whatsapp"></i>
+                <input type="tel" id="loueur-tel" placeholder="+261 ...">
+              </div>
+            </div>
 
-      <div id="resume-prix" class="resume-box">
-        <h3>Récapitulatif</h3>
-        <p>Durée : <span id="txt-jours">0</span> jour(s)</p>
-        <p>Formule : <span id="txt-formule">JOUR</span></p>
-        <p>Total : <strong id="prix-total">0</strong> Ar</p>
-        <p>Acompte (50 %) : <strong id="prix-acompte">0</strong> Ar</p>
-        <p>Reste indicatif : <strong id="pay-reste">0</strong> Ar</p>
-      </div>
+            <div class="input-styled">
+              <label>N° CIN ou Passeport</label>
+              <input type="text" id="loueur-cin" placeholder="Obligatoire">
+            </div>
 
-      <div class="conditions-box">
-        <label class="checkbox-container">
-          <input type="checkbox" id="check-conditions-step1">
-          J’accepte les conditions de location.
-        </label>
-        <a href="#" onclick="ouvrirModalConditions()">Lire les conditions</a>
-      </div>
+            <div class="price-summary">
+              <p>Durée : <span id="txt-jours">0</span> jour(s)</p>
+              <p class="total-line">Total : <span id="prix-total">0</span> Ar</p>
+              <p class="acompte-line">Acompte (50%) : <span id="prix-acompte">0</span> Ar</p>
+            </div>
 
-      <div id="step-1-actions" class="actions">
-        <button class="btn-whatsapp" onclick="lancerReservationWhatsApp()">
-          <i class="fab fa-whatsapp"></i> Réserver & envoyer via WhatsApp
-        </button>
-      </div>
+            <div class="terms-check">
+              <input type="checkbox" id="check-conditions-step1">
+              <label for="check-conditions-step1">J'accepte les <a href="#" onclick="ouvrirModalConditions()">Conditions Générales</a></label>
+            </div>
 
-      <div id="step-2-paiement" style="display:none;">
-        <h3><i class="fas fa-money-bill-wave"></i> Informations de paiement</h3>
-        <div class="payment-section">
-          <label>Mode de paiement</label>
-          <select id="pay-method" onchange="togglePaymentFields()">
-            <option value="">-- Choisir --</option>
-            <option value="mvola">Mobile Money (Mvola)</option>
-            <option value="espece">Espèces (agence)</option>
-          </select>
+            <div id="step-1-actions">
+              <button type="button" class="btn-primary-lg" onclick="lancerReservationWhatsApp()">
+                <i class="fab fa-whatsapp"></i> RÉSERVER VIA WHATSAPP
+              </button>
+            </div>
+          </form>
 
-          <div id="fields-mvola" style="display:none;">
-            <input id="pay-mvola-nom" placeholder="Nom du titulaire">
-            <input id="pay-mvola-prenom" placeholder="Prénom du titulaire">
-            <input id="pay-mvola-num" placeholder="034 xx xxx xx">
-            <input id="pay-mvola-ref" placeholder="ID transaction">
+          <div id="step-2-paiement" style="display:none;">
+            <div class="payment-box">
+              <h3><i class="fas fa-shield-alt"></i> Sécurisez votre réservation</h3>
+              <p>Payez l'acompte pour bloquer les dates.</p>
+              <select id="pay-method" onchange="togglePaymentFields()" class="styled-select">
+                <option value="mvola">Mvola / Orange Money</option>
+                <option value="espece">Espèces à l'agence</option>
+              </select>
+              <div id="fields-mvola" class="payment-details">
+                <p>Envoyez vers : <strong>038 85 524 32</strong></p>
+              </div>
+            </div>
           </div>
-          <div id="fields-espece" style="display:none;">
-            <input id="pay-cash-nom" placeholder="Nom du déposant">
-            <input id="pay-cash-prenom" placeholder="Prénom">
-            <input id="pay-cash-num" placeholder="Tél. du déposant">
-          </div>
-
-          <label>Montant payé</label>
-          <select id="pay-choix-montant" onchange="toggleAutreMontant()">
-            <option value="50">Acompte (50 %)</option>
-            <option value="100">Totalité (100 %)</option>
-            <option value="autre">Autre montant</option>
-          </select>
-          <input type="number" id="pay-valeur-autre" style="display:none;" placeholder="Montant (Ar)">
-          <p>Reste à payer : <strong id="pay-reste">0</strong> Ar</p>
-          <button class="btn-dark" onclick="envoyerInfosPaiement()">
-            <i class="fas fa-check-circle"></i> Confirmer le paiement
-          </button>
         </div>
-      </div>
-
-      <div id="step-3-download" style="display:none;">
-        <h3>Validation en cours</h3>
-        <div class="otp-loader">
-          <div class="spinner"></div> En attente du code OTP admin...
-        </div>
-        <input id="input-otp-auto" readonly placeholder="Code OTP">
-        <button id="btn-dl-pdf" class="btn-dark" disabled onclick="telechargerFactureAuto()">
-          <i class="fas fa-file-pdf"></i> Télécharger la facture
-        </button>
       </div>
     </div>
   </section>
@@ -200,48 +139,34 @@
 
 <footer class="site-footer">
   <div class="footer-content">
-    <h3 id="footer-title">Rija NIAINA Car Services</h3>
-    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address">Siae 33 Ambodifilao, Analakely, Antananarivo 101</span></p>
-    <p class="footer-legal">NIF: <span id="footer-nif">5012357932</span> | STAT: <span id="footer-stat">70209 11 2025 0 06328</span></p>
-    <p class="footer-phone"><i class="fas fa-phone"></i> <span id="footer-phone">+261 38 85 524 32</span></p>
-    <div id="footer-socials" style="margin-top:15px;"></div>
+    <h3 id="footer-title">RentCarServices</h3>
+    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address">—</span></p>
+    <p class="footer-phone"><i class="fas fa-phone"></i> <span id="footer-phone">—</span></p>
+    <p class="footer-legal">NIF <span id="footer-nif">-</span> · STAT <span id="footer-stat">-</span></p>
+    <div id="footer-socials"></div>
   </div>
 </footer>
 
 <div class="modal-overlay" id="modal-conditions" style="display:none;">
-  <div class="modal-content">
+  <div class="modal-content large">
     <span class="close-modal" onclick="fermerModalConditions()">&times;</span>
-    <h3><i class="fas fa-file-contract"></i> Conditions générales</h3>
-    <div class="conditions-scroll-box">
-      <!-- Conditions à insérer -->
-    </div>
-    <button class="btn-dark" onclick="fermerModalConditions()">Fermer</button>
+    <h2>Conditions de Location</h2>
+    <div class="conditions-scroll-box"></div>
   </div>
 </div>
 
 <div class="modal-overlay" id="modal-contact-only" style="display:none;">
   <div class="modal-content">
     <span class="close-modal" onclick="closeContactModal()">&times;</span>
-    <div class="contact-icon-large"><i class="fas fa-headset"></i></div>
-    <h3>Contactez-nous pour ce véhicule</h3>
-    <p id="contact-car-name">—</p>
+    <h3 id="contact-car-name">Modèle</h3>
     <div class="contact-actions-row">
-      <a id="btn-modal-call" class="btn-contact-action btn-call-action" href="#"><i class="fas fa-phone"></i> Appeler</a>
-      <a id="btn-modal-wa" class="btn-contact-action btn-wa-action" href="#" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+      <a id="btn-modal-wa" class="btn-wa" href="#" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+      <a id="btn-modal-call" class="btn-call" href="#"><i class="fas fa-phone"></i> Appeler</a>
     </div>
-    <p style="margin-top:12px;color:#475569;">Hotline : <strong id="txt-modal-phone">+261 38 85 524 32</strong></p>
   </div>
 </div>
 
-<a href="tel:+261388552432" class="floating-call-btn" aria-label="Appeler l'agence">
-  <i class="fas fa-phone-alt"></i>
-  <span>Appeler</span>
-</a>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/supabase@1.35.7/dist/umd/supabase.js"></script>
 <script src="script-voitures.js"></script>
 </body>
 </html>
