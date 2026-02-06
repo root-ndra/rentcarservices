@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Location de Voitures · RentCarServices</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+  <link rel="stylesheet" href="style-ui.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="logo-container">
+    <img src="" alt="Logo" class="nav-logo" id="header-logo">
+    <span id="header-site-name">RentCarServices</span>
+  </div>
+  <ul class="nav-links" id="nav-menu">
+    <li><a href="index.html">Accueil</a></li>
+    <li><a href="voitures.html" class="active">Nos voitures</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+</nav>
+
+<main class="container">
+  <header class="page-header">
+    <h1>Catalogue des Véhicules</h1>
+    <p>Sélectionnez un véhicule pour voir ses disponibilités.</p>
+  </header>
+
+  <section class="filters-bar">
+    <select id="filter-type">
+      <option value="">Tous les types</option>
+    </select>
+    <select id="sort-prix">
+      <option value="prix-asc">Prix croissant</option>
+      <option value="prix-desc">Prix décroissant</option>
+    </select>
+  </section>
+
+  <div id="container-voitures" class="catalogue-grid"></div>
+
+  <section id="reservation" class="booking-section" style="display:none;">
+    <div class="booking-card">
+      <h2 id="nom-voiture-selectionnee">Nom du modèle</h2>
+      
+      <div class="booking-grid">
+        <div class="calendar-wrapper">
+          <label><i class="fas fa-calendar-check"></i> 1. Choisissez vos dates sur le calendrier</label>
+          <div id="calendrier-dispo"></div>
+        </div>
+
+        <div class="form-wrapper">
+          <form id="form-reservation">
+            <input type="hidden" id="id-voiture-input">
+            <input type="hidden" id="prix-base-input">
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Date Début</label>
+                <input type="date" id="date-debut" readonly>
+              </div>
+              <div class="form-group">
+                <label>Date Fin</label>
+                <input type="date" id="date-fin" readonly>
+              </div>
+            </div>
+
+            <div class="section-divider">Coordonnées Locataire</div>
+            <div class="form-row">
+              <input type="text" id="loueur-nom" placeholder="Nom" required>
+              <input type="text" id="loueur-prenom" placeholder="Prénom" required>
+            </div>
+            <input type="tel" id="loueur-tel" placeholder="Téléphone WhatsApp (ex: 034...)" required>
+            <input type="text" id="loueur-cin" placeholder="N° CIN ou Passeport" required>
+            <input type="text" id="loueur-adresse" placeholder="Adresse complète">
+
+            <div class="section-divider">Contact d'Urgence</div>
+            <div class="form-row">
+              <input type="text" id="urgence-nom" placeholder="Nom d'un proche" required>
+              <input type="tel" id="urgence-tel" placeholder="Téléphone urgence" required>
+            </div>
+
+            <div class="price-summary-box">
+              <div class="price-row">Durée : <span id="txt-jours">0</span> jour(s)</div>
+              <div class="price-row total">Total : <span id="prix-total">0</span> Ar</div>
+              <div class="price-row deposit">Acompte (50%) : <span id="prix-acompte">0</span> Ar</div>
+            </div>
+
+            <div class="terms">
+              <input type="checkbox" id="check-conditions-step1">
+              <label for="check-conditions-step1">J'accepte les <a href="#" onclick="ouvrirModalConditions()">conditions générales</a></label>
+            </div>
+
+            <button type="button" class="btn-primary-full" onclick="lancerReservationWhatsApp()">
+              <i class="fab fa-whatsapp"></i> CONFIRMER ET RÉSERVER
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal-overlay" id="modal-conditions" style="display:none;">
+  <div class="modal-content large">
+    <span class="close-modal" onclick="fermerModalConditions()">&times;</span>
+    <h2>Conditions de Location</h2>
+    <div class="conditions-scroll-box"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/supabase@1.35.7/dist/umd/supabase.js"></script>
+<script src="script-voitures.js"></script>
+</body>
+</html>
