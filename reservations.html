@@ -4,12 +4,16 @@
   <meta charset="UTF-8">
   <title>Finaliser votre réservation · RentCarServices</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+  
   <link rel="stylesheet" href="style-ui.css">
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="page-reservation">
+<body class="page-reservation-standalone">
 
 <nav class="navbar">
   <div class="logo-container">
@@ -24,7 +28,7 @@
 <main class="reservation-main-content">
   <div class="booking-container standalone">
     <div class="booking-header">
-      <h2><i class="fas fa-file-signature"></i> Formulaire de Réservation</h2>
+      <h2><i class="fas fa-file-contract"></i> Formulaire de Réservation</h2>
       <div class="selected-car-badge">
         Véhicule : <strong id="nom-voiture-selectionnee">Chargement...</strong>
       </div>
@@ -33,17 +37,25 @@
     <div class="booking-grid-layout">
       <div class="col-left">
         <div class="step-box">
-          <h3><i class="far fa-calendar-alt"></i> 1. Dates de location</h3>
+          <h3><i class="far fa-calendar-check"></i> 1. Choix des dates</h3>
+          <p class="hint">Cliquez et glissez sur le calendrier pour sélectionner votre période.</p>
           <div id="calendrier-dispo"></div>
+          
           <div class="dates-display">
-            <input type="text" id="date-debut" readonly placeholder="Date Début">
-            <i class="fas fa-arrow-right"></i>
-            <input type="text" id="date-fin" readonly placeholder="Date Fin">
+            <div class="date-field">
+              <label>Début</label>
+              <input type="text" id="date-debut" readonly placeholder="AAAA-MM-JJ">
+            </div>
+            <div class="date-separator"><i class="fas fa-long-arrow-alt-right"></i></div>
+            <div class="date-field">
+              <label>Fin</label>
+              <input type="text" id="date-fin" readonly placeholder="AAAA-MM-JJ">
+            </div>
           </div>
         </div>
 
         <div class="step-box">
-          <h3><i class="fas fa-truck-pickup"></i> 2. Options Logistiques</h3>
+          <h3><i class="fas fa-concierge-bell"></i> 2. Options Logistiques</h3>
           <label class="option-row">
             <div class="opt-info">
               <input type="checkbox" id="opt-livraison" onchange="toggleLivraisonFields()">
@@ -51,15 +63,15 @@
             </div>
             <span class="price-tag">+15 000 Ar</span>
           </label>
-          <div id="livraison-details" style="display:none;">
-            <input type="text" id="lieu-livraison" placeholder="Adresse précise">
+          <div id="livraison-details" style="display:none; margin-top:10px; padding-left:25px;">
+            <input type="text" id="lieu-livraison" placeholder="Adresse exacte de livraison">
             <input type="time" id="heure-livraison">
           </div>
           
           <label class="option-row" style="margin-top:10px;">
             <div class="opt-info">
               <input type="checkbox" id="opt-recuperation" onchange="calculerPrix()">
-              <span>Récupération à domicile</span>
+              <span>Récupération du véhicule par nos soins</span>
             </div>
             <span class="price-tag">+15 000 Ar</span>
           </label>
@@ -72,44 +84,48 @@
           <input type="hidden" id="prix-base-input">
 
           <div class="step-box">
-            <h3><i class="fas fa-user-shield"></i> 3. Infos Locataire</h3>
+            <h3><i class="fas fa-id-card-alt"></i> 3. Coordonnées du Locataire</h3>
             <div class="input-row">
               <input type="text" id="loueur-nom" placeholder="Nom" required>
               <input type="text" id="loueur-prenom" placeholder="Prénom" required>
             </div>
-            <input type="tel" id="loueur-tel" placeholder="WhatsApp / Téléphone" required>
-            <input type="text" id="loueur-adresse" placeholder="Adresse de résidence" required>
+            <input type="tel" id="loueur-tel" placeholder="N° de téléphone (WhatsApp)" required>
+            <input type="text" id="loueur-adresse" placeholder="Adresse complète de résidence" required>
             <input type="text" id="loueur-cin" placeholder="N° CIN ou Permis de conduire" required>
           </div>
 
           <div class="step-box urgence-box">
-            <h3><i class="fas fa-ambulance"></i> 4. Contact d'Urgence</h3>
-            <input type="text" id="urgence-nom" placeholder="Nom du contact d'urgence" required>
+            <h3><i class="fas fa-phone-alt"></i> 4. Contact d'Urgence</h3>
+            <p style="font-size: 0.8rem; color: #b91c1c; margin-bottom: 10px;">Personne à contacter en cas de besoin immédiat.</p>
+            <input type="text" id="urgence-nom" placeholder="Nom complet du contact" required>
             <input type="tel" id="urgence-tel" placeholder="Téléphone du contact" required>
             <input type="text" id="urgence-adresse" placeholder="Adresse du contact" required>
           </div>
 
           <div class="promo-section">
+            <label>Vous avez un code promo ?</label>
             <div class="promo-input-group">
-              <input type="text" id="code-promo" placeholder="Code Promo">
-              <button type="button" onclick="appliquerCodePromo()" class="btn-promo">Valider</button>
+              <input type="text" id="code-promo" placeholder="Ex: RENT2024">
+              <button type="button" onclick="appliquerCodePromo()" class="btn-promo">Appliquer</button>
             </div>
             <div id="promo-msg"></div>
           </div>
 
           <div class="summary-box">
-            <div class="line-item">Jours: <span id="txt-jours">0</span></div>
-            <div class="line-item total">Total: <span id="prix-total">0</span> Ar</div>
-            <div class="line-item deposit">Acompte (50%): <span id="prix-acompte">0</span> Ar</div>
+            <div class="line-item">Nombre de jours : <span id="txt-jours">0</span></div>
+            <div class="line-item total">Total à payer : <span id="prix-total">0</span> Ar</div>
+            <div class="line-item deposit">Acompte demandé (50%) : <span id="prix-acompte">0</span> Ar</div>
           </div>
 
           <div class="terms-check">
             <input type="checkbox" id="check-conditions-step1" required>
-            <label>J'accepte les <a href="#" onclick="ouvrirModalConditions()">conditions générales</a></label>
+            <label for="check-conditions-step1">
+              J'ai lu et j'accepte les <a href="javascript:void(0)" onclick="ouvrirModalConditions()">conditions de location</a>.
+            </label>
           </div>
 
           <button type="button" class="btn-confirm-wa" onclick="lancerReservationWhatsApp()">
-            <span>RÉSERVER VIA WHATSAPP</span>
+            <span>CONFIRMER SUR WHATSAPP</span>
             <i class="fab fa-whatsapp"></i>
           </button>
         </form>
@@ -121,23 +137,20 @@
 <div class="modal-overlay" id="modal-conditions" style="display:none;">
   <div class="modal-content large">
     <span class="close-modal" onclick="fermerModalConditions()">&times;</span>
-    <h2>Conditions Générales</h2>
-    <div class="conditions-scroll-box" id="conditions-content"></div>
+    <div class="modal-header-text">
+        <h2>Conditions Générales de Location</h2>
+        <p>Veuillez lire attentivement avant de réserver.</p>
+    </div>
+    <div class="conditions-scroll-box" id="conditions-content">
+      <p><strong>1. Pièces à fournir :</strong> Le locataire doit présenter son original de CIN et de permis de conduire lors de la remise des clés.</p>
+      <p><strong>2. Carburant :</strong> Le véhicule est livré avec un certain niveau de carburant, il doit être restitué au même niveau.</p>
+      <p><strong>3. Utilisation :</strong> Usage strictement personnel, interdit de sous-louer ou d'utiliser le véhicule pour du transport de marchandises lourdes.</p>
+      <p><strong>4. Assurance :</strong> En cas de sinistre responsable, une franchise restera à la charge du locataire.</p>
+    </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script-voitures.js"></script>
-<script>
-  // Logique spécifique à cette page : Récupérer l'ID dans l'URL
-  document.addEventListener('DOMContentLoaded', async () => {
-      const params = new URLSearchParams(window.location.search);
-      const carId = params.get('id');
-      if (carId) {
-          // Attendre que Supabase soit prêt pour charger la voiture
-          setTimeout(() => { if(typeof préparerPageReservation === "function") préparerPageReservation(carId); }, 500);
-      }
-  });
-</script>
 </body>
 </html>
