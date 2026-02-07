@@ -1,65 +1,44 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Notre Catalogue · RentCarServices</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="style-ui.css">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Nos Véhicules · RentCarServices</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <nav class="navbar">
-  <div class="logo-container">
-    <img src="" alt="Logo" class="nav-logo" id="header-logo">
-    <span id="header-site-name">RentCarServices</span>
-  </div>
-  <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
-  <ul class="nav-links" id="nav-menu">
-    <li><a href="index.html">Accueil</a></li>
-    <li><a href="voitures.html" class="active">Nos voitures</a></li>
-    <li><a href="divertissement.html">Divertissement</a></li>
-    <li><a href="emplois.html">Emplois</a></li>
-    <li><a href="contact.html">Contact & Avis</a></li>
-    <li><a href="login.html" class="btn-action btn-sec">Portail admin</a></li>
-  </ul>
+    <div class="logo-container">
+        <img src="logo.png" class="nav-logo">
+        <span>RentCarServices</span>
+    </div>
+    <ul class="nav-links">
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="voitures.html" class="active">Nos voitures</a></li>
+        <li><a href="contact.html">Contact</a></li>
+    </ul>
 </nav>
 
-<header class="hero-banner" style="min-height: 40vh; justify-content: center;">
-  <h1>Choisissez votre véhicule</h1>
-  <p class="hero-description">Sélectionnez un modèle pour voir les disponibilités et réserver.</p>
-  <div class="filters-container" style="margin-top: 20px;">
-    <select id="filter-type"><option value="">Tous les types</option></select>
-    <select id="sort-prix">
-      <option value="prix-asc">Prix croissant</option>
-      <option value="prix-desc">Prix décroissant</option>
-    </select>
-  </div>
-</header>
-
 <main>
-  <section class="page-section">
-    <div id="container-voitures" class="catalogue-grid"></div>
-  </section>
+    <div class="catalogue-grid" id="container-voitures">
+        </div>
 </main>
 
-<footer class="site-footer">
-  <div class="footer-content">
-    <h3 id="footer-title">RentCarServices</h3>
-    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address"></span></p>
-    <div id="footer-socials"></div>
-  </div>
-</footer>
+<div class="modal-overlay" id="modal-contact-only" style="display:none;">
+    <div class="modal-content">
+        <span class="close-modal" onclick="fermerModalContact()">&times;</span>
+        <h2>Besoin d'informations ?</h2>
+        <p style="margin: 15px 0;">Contactez notre support client :</p>
+        <h3 style="font-size: 1.8rem; color: #1f2a37;">+261 34 91 207 26</h3>
+        <a href="https://wa.me/261325264535" class="btn-whatsapp-large">
+            <i class="fab fa-whatsapp"></i> CONTACTER SUR WHATSAPP
+        </a>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script-voitures.js"></script>
-<script>
-  // Petite modification pour rediriger au lieu d'ouvrir une modale
-  // Cette fonction sera appelée par les boutons générés par script-voitures.js
-  function ouvrirReservation(id) {
-      window.location.href = `reservations.html?id=${id}`;
-  }
-</script>
 </body>
 </html>
