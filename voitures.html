@@ -2,13 +2,10 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Location de Voitures · RentCarServices</title>
+  <title>Notre Catalogue · RentCarServices</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
-
   <link rel="stylesheet" href="style-ui.css">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -31,14 +28,10 @@
 </nav>
 
 <header class="hero-banner" style="min-height: 40vh; justify-content: center;">
-  <h1>Choisissez le véhicule idéal</h1>
-  <p class="hero-description">
-    Consultez nos disponibilités en temps réel et réservez directement.
-  </p>
+  <h1>Choisissez votre véhicule</h1>
+  <p class="hero-description">Réservation instantanée et tarifs transparents.</p>
   <div class="filters-container" style="margin-top: 20px;">
-    <select id="filter-type">
-      <option value="">Tous les types</option>
-    </select>
+    <select id="filter-type"><option value="">Tous les types</option></select>
     <select id="sort-prix">
       <option value="prix-asc">Prix croissant</option>
       <option value="prix-desc">Prix décroissant</option>
@@ -48,67 +41,90 @@
 
 <main>
   <section class="page-section">
-    <div id="container-voitures" class="catalogue-grid">
-      </div>
+    <div id="container-voitures" class="catalogue-grid"></div>
   </section>
 
   <section id="reservation" class="booking-section" style="display:none;">
-    <div class="booking-card">
-      <h2 id="nom-voiture-selectionnee">Nom du modèle</h2>
-      
-      <div class="booking-grid">
-        <div class="calendar-wrapper">
-          <label><i class="fas fa-calendar-check"></i> 1. Choisissez vos dates sur le calendrier</label>
-          <div id="calendrier-dispo"></div>
+    <div class="booking-container">
+      <div class="booking-header">
+        <h2><i class="fas fa-car-side"></i> Réservation : <span id="nom-voiture-selectionnee">...</span></h2>
+        <button class="close-booking" onclick="document.getElementById('reservation').style.display='none'">&times;</button>
+      </div>
+
+      <div class="booking-grid-layout">
+        <div class="col-left">
+          <div class="step-box">
+            <h3><i class="far fa-calendar-alt"></i> 1. Dates de location</h3>
+            <div id="calendrier-dispo"></div>
+            <div class="dates-display">
+              <input type="text" id="date-debut" readonly placeholder="Début">
+              <i class="fas fa-arrow-right"></i>
+              <input type="text" id="date-fin" readonly placeholder="Fin">
+            </div>
+          </div>
+
+          <div class="step-box">
+            <h3><i class="fas fa-truck-pickup"></i> 2. Options Logistiques</h3>
+            <label class="option-row">
+              <div class="opt-info">
+                <input type="checkbox" id="opt-livraison" onchange="toggleLivraisonFields()">
+                <span>Livraison à domicile (Tana)</span>
+              </div>
+              <span class="price-tag">+15 000 Ar</span>
+            </label>
+            <div id="livraison-details" style="display:none; margin-top:10px;">
+              <input type="text" id="lieu-livraison" class="styled-input" placeholder="Adresse précise de livraison">
+              <input type="time" id="heure-livraison" class="styled-input" style="margin-top:5px;">
+            </div>
+          </div>
         </div>
 
-        <div class="form-wrapper">
+        <div class="col-right">
           <form id="form-reservation">
             <input type="hidden" id="id-voiture-input">
-            <input type="hidden" id="ref-voiture-input"> <input type="hidden" id="prix-base-input">
+            <input type="hidden" id="prix-base-input">
 
-            <div id="step-1-actions">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>Date Début</label>
-                    <input type="date" id="date-debut" readonly>
-                  </div>
-                  <div class="form-group">
-                    <label>Date Fin</label>
-                    <input type="date" id="date-fin" readonly>
-                  </div>
-                </div>
-
-                <div class="section-divider">Coordonnées Locataire</div>
-                <div class="form-row">
-                  <input type="text" id="loueur-nom" placeholder="Nom" required>
-                  <input type="text" id="loueur-prenom" placeholder="Prénom" required>
-                </div>
-                <input type="tel" id="loueur-tel" placeholder="Téléphone WhatsApp (ex: 034...)" required>
-                <input type="text" id="loueur-cin" placeholder="N° CIN ou Passeport" required>
-                <input type="text" id="loueur-adresse" placeholder="Adresse complète">
-
-                <div class="price-summary-box">
-                  <div class="price-row">Durée : <span id="txt-jours">0</span> jour(s)</div>
-                  <div class="price-row total">Total : <span id="prix-total">0</span> Ar</div>
-                  <div class="price-row deposit">Acompte (50%) : <span id="prix-acompte">0</span> Ar</div>
-                </div>
-
-                <div class="terms">
-                  <input type="checkbox" id="check-conditions-step1">
-                  <label for="check-conditions-step1">J'accepte les <a href="#" onclick="ouvrirModalConditions()">conditions générales</a></label>
-                </div>
-
-                <button type="button" class="btn-hero" style="width:100%; justify-content:center;" onclick="lancerReservationWhatsApp()">
-                  <i class="fab fa-whatsapp"></i> CONFIRMER ET RÉSERVER
-                </button>
+            <div class="step-box">
+              <h3><i class="fas fa-user-shield"></i> 3. Informations Locataire</h3>
+              <div class="input-row">
+                <input type="text" id="loueur-nom" placeholder="Nom" required>
+                <input type="text" id="loueur-prenom" placeholder="Prénom" required>
+              </div>
+              <input type="tel" id="loueur-tel" placeholder="Contact Téléphone / WhatsApp" required>
+              <input type="text" id="loueur-adresse" placeholder="Adresse de résidence" required>
+              <input type="text" id="loueur-cin" placeholder="N° CIN ou Permis de conduire" required>
             </div>
 
-            <div id="step-2-paiement" style="display:none; text-align:center;">
-                <h3><i class="fas fa-check-circle" style="color:green;"></i> Demande envoyée !</h3>
-                <p>La conversation WhatsApp s'est ouverte. Veuillez envoyer le message pré-rempli pour valider votre demande avec l'agence.</p>
+            <div class="step-box urgence-box">
+              <h3><i class="fas fa-phone-slash"></i> 4. Contact d'Urgence</h3>
+              <input type="text" id="urgence-nom" placeholder="Nom du contact d'urgence" required>
+              <input type="tel" id="urgence-tel" placeholder="Téléphone du contact" required>
+              <input type="text" id="urgence-adresse" placeholder="Adresse du contact" required>
             </div>
 
+            <div class="promo-section">
+              <div class="promo-input-group">
+                <input type="text" id="code-promo" placeholder="Code Promo">
+                <button type="button" onclick="appliquerCodePromo()" class="btn-promo">Valider</button>
+              </div>
+              <div id="promo-msg"></div>
+            </div>
+
+            <div class="summary-box">
+              <div class="line-item">Jours: <span id="txt-jours">0</span></div>
+              <div class="line-item total">Total: <span id="prix-total">0</span> Ar</div>
+              <div class="line-item deposit">Acompte (50%): <span id="prix-acompte">0</span> Ar</div>
+            </div>
+
+            <div class="terms-check">
+              <input type="checkbox" id="check-conditions-step1" required>
+              <label>J'accepte les <a href="#" onclick="ouvrirModalConditions()">conditions générales</a></label>
+            </div>
+
+            <button type="button" class="btn-confirm-wa" onclick="lancerReservationWhatsApp()">
+              <span>CONFIRMER SUR WHATSAPP</span>
+              <i class="fab fa-whatsapp"></i>
+            </button>
           </form>
         </div>
       </div>
@@ -119,36 +135,21 @@
 <footer class="site-footer">
   <div class="footer-content">
     <h3 id="footer-title">RentCarServices</h3>
-    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address">—</span></p>
-    <p class="footer-phone"><i class="fas fa-phone"></i> <span id="footer-phone">—</span></p>
-    <p class="footer-legal">NIF <span id="footer-nif">-</span> · STAT <span id="footer-stat">-</span></p>
-    <div id="footer-socials" style="margin-top:15px;"></div>
+    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address"></span></p>
+    <div id="footer-socials"></div>
   </div>
 </footer>
 
 <div class="modal-overlay" id="modal-conditions" style="display:none;">
   <div class="modal-content large">
     <span class="close-modal" onclick="fermerModalConditions()">&times;</span>
-    <h2>Conditions de Location</h2>
-    <div class="conditions-scroll-box"></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-contact-only" style="display:none;">
-  <div class="modal-content">
-    <span class="close-modal" onclick="closeContactModal()">&times;</span>
-    <div class="contact-icon-large"><i class="fas fa-car"></i></div>
-    <h3 id="contact-car-name">Véhicule</h3>
-    <p>Comment souhaitez-vous nous contacter ?</p>
-    <div class="contact-actions-row">
-        <a id="btn-modal-call" href="#" class="btn-contact-action btn-call-action"><i class="fas fa-phone"></i> Appeler</a>
-        <a id="btn-modal-wa" href="#" class="btn-contact-action btn-wa-action" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-    </div>
+    <h2>Conditions Générales de Location</h2>
+    <div class="conditions-scroll-box" id="conditions-content">
+      </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script-voitures.js"></script>
-
 </body>
 </html>
