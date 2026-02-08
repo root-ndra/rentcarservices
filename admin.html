@@ -2,135 +2,183 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Administration · RentCarServices</title>
+  <title>Admin · Dashboard Unifié</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="style-admin.css">
   
   <style>
-    /* Styles critiques pour le bon fonctionnement */
-    .modal-overlay {
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.8);
-        display: none; /* Caché par défaut */
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-    }
-    .modal-content {
-        background: white;
-        padding: 30px;
-        border-radius: 15px;
-        width: 90%;
-        max-width: 800px;
-        max-height: 90vh;
-        overflow-y: auto;
-    }
-    .grid-admin {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-        padding: 20px;
-    }
-    .admin-card {
-        background: white;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .form-group { margin-bottom: 15px; }
-    label { display: block; font-weight: bold; margin-bottom: 5px; }
-    input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-    .btn-save { background: #2ecc71; color: white; border: none; padding: 12px; cursor: pointer; width: 100%; border-radius: 5px; font-weight: bold; }
+    /* Styles pour le dashboard des voitures */
+    .grid-dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 25px; }
+    .car-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; position: relative; border-top: 5px solid transparent; }
+    .car-card:hover { transform: translateY(-5px); }
+    
+    .status-dispo { border-top-color: #2ecc71; } .status-louee { border-top-color: #e74c3c; } .status-maintenance { border-top-color: #f39c12; }
+    .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; color: white; text-transform: uppercase; }
+    .bg-green { background: #2ecc71; } .bg-red { background: #e74c3c; } .bg-orange { background: #f39c12; }
+
+    .card-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
+    .card-body { padding: 20px; }
+    .kpi-row { display: flex; justify-content: space-between; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px; }
+    .kpi-item { text-align: center; flex: 1; }
+    .kpi-val { font-weight: bold; font-size: 1.1rem; color: #2c3e50; }
+    .kpi-label { font-size: 0.8rem; color: #7f8c8d; }
+
+    .card-actions { padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; gap: 10px; }
+    .btn-action-card { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.85rem; font-weight: 600; text-align:center; }
+    .btn-maint { background: #f39c12; color: white; } .btn-hist { background: #95a5a6; color: white; } .btn-edit-car { background: #3498db; color: white; }
+    
+    .history-list { list-style: none; padding: 0; margin: 0; }
+    .history-item { border-bottom: 1px solid #eee; padding: 12px 5px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
   </style>
 </head>
 <body>
-
-<header style="background: #1e293b; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
-    <h2>Gestion de la Flotte</h2>
-    <button onclick="openModalVoiture()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
-        <i class="fas fa-plus"></i> Ajouter un véhicule
-    </button>
-</header>
-
-<main>
-    <div id="admin-liste-voitures" class="grid-admin">
-        <p style="padding: 20px;">Chargement des véhicules...</p>
+<div id="admin-content">
+  <header>
+    <div>
+      <h2>Dashboard général</h2>
+      <p>Vue synthétique de l'activité</p>
     </div>
-</main>
+    <div class="header-user">
+      <span id="user-email"></span>
+      <span class="user-role-badge" id="user-role"></span>
+      <button class="btn-logout" id="btn-logout">Déconnexion</button>
+    </div>
+  </header>
 
-<div id="modal-voiture" class="modal-overlay">
-    <div class="modal-content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 id="modal-titre">Modifier le véhicule</h3>
-            <span onclick="closeModal()" style="cursor:pointer; font-size: 1.5rem;">&times;</span>
-        </div>
+  <main>
+<nav>
+  <button class="tab-btn active" onclick="window.location.href='admin.html'">
+    <i class="fas fa-chart-line"></i> Dashboard
+  </button>
+  <button class="tab-btn" onclick="window.location.href='admin-reservations.html'">
+    <i class="fas fa-calendar-check"></i> Réservations
+  </button>
+  <button class="tab-btn" onclick="window.location.href='admin-maintenance.html'">
+    <i class="fas fa-tools"></i> Maintenance
+  </button>
+  <button class="tab-btn" onclick="window.location.href='admin-communication.html'">
+    <i class="fas fa-bullhorn"></i> Communication
+  </button>
+  <button class="tab-btn" onclick="window.location.href='admin-emplois.html'">
+    <i class="fas fa-briefcase"></i> Emplois
+  </button>
+</nav>
 
-        <form id="form-voiture-admin">
-            <input type="hidden" id="v-id"> <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div class="form-group">
-                    <label>Nom du modèle</label>
-                    <input type="text" id="v-nom" required>
-                </div>
-                <div class="form-group">
-                    <label>Prix (Ar/jour)</label>
-                    <input type="number" id="v-prix" required>
-                </div>
-                <div class="form-group">
-                    <label>Type de véhicule</label>
-                    <input type="text" id="v-type" placeholder="Ex: SUV, Berline, Citadine">
-                </div>
-                <div class="form-group">
-                    <label>Nombre de places</label>
-                    <input type="number" id="v-places" value="5">
-                </div>
-                <div class="form-group">
-                    <label>Carburant</label>
-                    <select id="v-carburant">
-                        <option value="Essence">Essence</option>
-                        <option value="Diesel">Diesel</option>
-                        <option value="Hybride">Hybride</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Transmission</label>
-                    <select id="v-transmission">
-                        <option value="Manuelle">Manuelle</option>
-                        <option value="Automatique">Automatique</option>
-                    </select>
-                </div>
+
+    <section class="content-area">
+      <!-- Section Voitures -->
+      <div style="margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center;">
+        <h3><i class="fas fa-car"></i> Tableau de bord des véhicules</h3>
+        <button class="btn-action btn-primaire" onclick="openCarModal()">+ Ajouter une voiture</button>
+      </div>
+      <div class="grid-dashboard" id="grid-voitures">
+        <p>Chargement du tableau de bord...</p>
+      </div>
+
+      <!-- Section Partenaires -->
+      <div style="margin:40px 0 20px; display:flex; justify-content:space-between; align-items:center;">
+        <h3><i class="fas fa-handshake"></i> Gestion des Partenaires</h3>
+        <button class="btn-action btn-primaire" onclick="openPartnerModal()">+ Ajouter Partenaire</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Nom</th><th>Email</th><th>Téléphone</th><th>Commission</th><th>Actif</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="partners-body"><tr><td colspan="6">Chargement…</td></tr></tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<!-- MODAUX -->
+
+<!-- Modal Ajout/Modification Voiture -->
+<div class="modal-overlay" id="car-modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <span class="close-modal" onclick="closeModal('car-modal')">&times;</span>
+        <h3 id="car-modal-title">Nouvelle voiture</h3>
+        <form id="car-form" onsubmit="submitCar(event)">
+            <input type="hidden" id="car-id">
+            <div class="form-grid">
+                <div><label>Nom du véhicule</label><input id="car-nom" required></div>
+                <div><label>Prix / jour (Ar)</label><input type="number" id="car-prix" required></div>
+                <div><label>Type</label><input id="car-type" placeholder="Ex: SUV, Berline..."></div>
+                <div><label>Transmission</label><select id="car-transmission"><option value="Manuelle">Manuelle</option><option value="Automatique">Automatique</option></select></div>
+                <div><label>Places</label><input type="number" id="car-places" value="5"></div>
+                <div><label>Carburant</label><input id="car-carburant" placeholder="Ex: Essence, Diesel"></div>
+            </div>
+            <label>URL de l'image</label><input id="car-image-url">
+            <label>Description</label><textarea id="car-description" rows="3"></textarea>
+            
+            <div style="margin-top: 15px; display: flex; gap: 20px; background: #f8f9fa; padding: 10px; border-radius: 8px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="car-reservable" checked> 
+                    <span style="font-size: 0.9rem;">Réservable en ligne</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #d97706; font-weight: bold;">
+                    <input type="checkbox" id="car-chauffeur"> 
+                    <span style="font-size: 0.9rem;">Option Chauffeur incluse</span>
+                </label>
             </div>
 
-            <div class="form-group">
-                <label>Image URL</label>
-                <input type="text" id="v-image">
-            </div>
-
-            <div class="form-group">
-                <label>Description</label>
-                <textarea id="v-description" rows="3"></textarea>
-            </div>
-
-            <div style="background: #f8fafc; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 20px;">
-                <label style="cursor: pointer;"><input type="checkbox" id="v-public"> Public</label>
-                <label style="cursor: pointer;"><input type="checkbox" id="v-reservable"> Réservable</label>
-                <label style="cursor: pointer; color: #d97706;"><input type="checkbox" id="v-chauffeur"> Option Chauffeur</label>
-            </div>
-
-            <button type="button" onclick="sauvegarderVoiture()" class="btn-save">
-                <i class="fas fa-save"></i> ENREGISTRER LES MODIFICATIONS
-            </button>
+            <button class="btn-full" type="submit" style="margin-top: 20px;">Enregistrer</button>
+            <p id="car-feedback"></p>
         </form>
+    </div>
+</div>
+
+<!-- Modal Partenaires -->
+<div class="modal-overlay" id="partner-modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeModal('partner-modal')">&times;</span>
+    <h3 id="partner-modal-title">Nouveau partenaire</h3>
+    <form id="partner-form" onsubmit="submitPartner(event)">
+      <input type="hidden" id="partner-user-id">
+      <label>Prénom</label><input id="new-prenom" required>
+      <label>Nom</label><input id="new-nom" required>
+      <label>Email</label><input type="email" id="new-email" required>
+      <label>Téléphone</label><input id="new-tel">
+      <label>Commission (%)</label><input type="number" id="new-commission" min="5" max="40" value="15">
+      <div class="auth-only"><label>Login Supabase (email)</label><input type="email" id="new-login"></div>
+      <div class="auth-only"><label>Mot de passe provisoire</label><input id="new-password" placeholder="Généré si vide"></div>
+      <button class="btn-full" type="submit">Enregistrer</button>
+      <p id="partner-feedback"></p>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Maintenance -->
+<div id="modal-maint" class="modal-overlay">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal('modal-maint')">×</span>
+        <h3><i class="fas fa-tools"></i> Ajouter une Maintenance</h3>
+        <input type="hidden" id="maint-id-voiture">
+        <div class="form-grid">
+            <div><label>Catégorie</label><select id="maint-categorie" onchange="updateMotifs()"><option>Chargement...</option></select></div>
+            <div><label>Motif</label><select id="maint-motif"></select></div>
+        </div>
+        <label>Détails / Garage</label><textarea id="maint-details" rows="2"></textarea>
+        <div class="form-grid"><div><label>Début</label><input type="date" id="maint-debut"></div><div><label>Fin</label><input type="date" id="maint-fin"></div></div>
+        <label>Coût (Ar)</label><input type="number" id="maint-cout" placeholder="0">
+        <button onclick="sauvegarderMaintenance()" class="btn-action btn-primaire" style="margin-top:20px; width:100%;">Enregistrer</button>
+    </div>
+</div>
+
+<!-- Modal Historique -->
+<div id="modal-historique" class="modal-overlay">
+    <div class="modal-content" style="max-width:500px;">
+        <span class="close-modal" onclick="closeModal('modal-historique')">×</span>
+        <h3>Historique de <span id="hist-titre-voiture" style="color:#2563eb;"></span></h3>
+        <div style="max-height:400px; overflow-y:auto; border:1px solid #eee; border-radius:5px; padding:5px;"><ul id="historique-list" class="history-list"></ul></div>
+        <div style="margin-top:15px; text-align:right; font-weight:bold;">Total des coûts : <span id="hist-total">0 Ar</span></div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="admin.js"></script>
-
 </body>
 </html>
+
