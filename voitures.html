@@ -2,17 +2,18 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Nos Véhicules · RentCarServices</title>
+    <title>Catalogue · RentCarServices</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 </head>
 <body>
 
 <nav class="navbar">
     <div class="logo-container">
-        <img src="logo.png" class="nav-logo" id="header-logo">
+        <img src="" alt="Logo" class="nav-logo" id="header-logo">
         <span id="header-site-name">RentCarServices</span>
     </div>
     <ul class="nav-links">
@@ -22,53 +23,31 @@
     </ul>
 </nav>
 
-<main>
+<main class="container">
+    <header style="text-align: center; padding: 40px 0; color: white;">
+        <h1>Nos Véhicules Disponibles</h1>
+        <p>Découvrez notre flotte et réservez votre trajet idéal.</p>
+    </header>
+
     <div id="container-voitures" class="catalogue-grid">
         </div>
-
-    <section id="reservation-section" style="display:none; padding: 40px 5%; background: white; margin: 20px; border-radius: 20px;">
-        <h2 id="res-nom-voiture">Réserver</h2>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-            <div id="calendrier-dispo"></div>
-            <div id="form-container">
-                <input type="hidden" id="id-voiture-input">
-                <input type="hidden" id="prix-base-input">
-                
-                <div style="display:flex; gap:10px; margin-bottom:15px;">
-                    <div style="flex:1;">
-                        <label>Début</label>
-                        <input type="date" id="date-debut" style="width:100%; padding:10px;" readonly>
-                    </div>
-                    <div style="flex:1;">
-                        <label>Fin</label>
-                        <input type="date" id="date-fin" style="width:100%; padding:10px;" readonly>
-                    </div>
-                </div>
-                
-                <input type="text" id="client-nom" placeholder="Votre nom" style="width:100%; padding:10px; margin-bottom:10px;">
-                <p>Total : <span id="prix-total" style="font-weight:bold; color: #3498db;">0</span> Ar</p>
-                
-                <button class="btn-reserver" onclick="lancerReservationWhatsApp()" style="width:100%; margin-top:15px;">
-                    CONFIRMER SUR WHATSAPP
-                </button>
-            </div>
-        </div>
-    </section>
 </main>
 
 <div class="modal-overlay" id="modal-contact-only" style="display:none;">
     <div class="modal-content">
         <span class="close-modal" onclick="closeContactModal()">&times;</span>
-        <h2 id="contact-car-name">Contactez-nous</h2>
-        <p style="margin: 20px 0;">Pour plus d'informations sur ce véhicule :</p>
-        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 20px;">+261 34 91 207 26</div>
-        <a href="https://wa.me/261325264535" class="btn-reserver" style="text-decoration:none; display:block; background:#25d366;">
-            OUVRIR WHATSAPP
-        </a>
+        <h2 id="contact-car-name">Contact Direct</h2>
+        <p>Besoin d'aide pour ce véhicule ?</p>
+        <div style="font-size: 1.5rem; font-weight: bold; margin: 20px 0;">+261 34 91 207 26</div>
+        <div style="display: flex; gap: 10px;">
+            <a href="tel:+261349120726" class="btn-reserver" style="flex:1; text-align:center; text-decoration:none;">Appeler</a>
+            <a href="https://wa.me/261325264535" class="btn-contact" style="flex:1; text-align:center; text-decoration:none; background:#25d366; color:white;">WhatsApp</a>
+        </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script-voitures.js"></script>
+
 </body>
 </html>
