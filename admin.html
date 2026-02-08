@@ -96,32 +96,73 @@
 <!-- MODAUX -->
 
 <!-- Modal Ajout/Modification Voiture -->
-<div class="modal-overlay" id="car-modal">
-    <div class="modal-content" style="max-width: 600px;">
-        <span class="close-modal" onclick="closeModal('car-modal')">&times;</span>
-        <h3 id="car-modal-title">Nouvelle voiture</h3>
-        <form id="car-form" onsubmit="submitCar(event)">
-            <input type="hidden" id="car-id">
-            <div class="form-grid">
-                <div><label>Nom du véhicule</label><input id="car-nom" required></div>
-                <div><label>Prix / jour (Ar)</label><input type="number" id="car-prix" required></div>
-                <div><label>Type</label><input id="car-type" placeholder="Ex: SUV, Berline..."></div>
-                <div><label>Transmission</label><select id="car-transmission"><option value="Manuelle">Manuelle</option><option value="Automatique">Automatique</option></select></div>
-                <div><label>Places</label><input type="number" id="car-places" value="5"></div>
-                <div><label>Carburant</label><input id="car-carburant" placeholder="Ex: Essence, Diesel"></div>
+<div id="modal-voiture" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 700px; width: 95%; max-height: 90vh; overflow-y: auto;">
+        <span class="close-modal" onclick="closeModal('modal-voiture')">&times;</span>
+        <h2 id="modal-voiture-titre" style="margin-bottom: 20px; color: #1e293b;">Gestion du Véhicule</h2>
+        
+        <form id="form-admin-voiture">
+            <input type="hidden" id="admin-v-id">
+
+            <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">Nom du modèle</label>
+                    <input type="text" id="admin-v-nom" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;" required>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">Prix de base (Ar / jour)</label>
+                    <input type="number" id="admin-v-prix" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;" required>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">Type (SUV, Berline...)</label>
+                    <input type="text" id="admin-v-type" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                </div>
+                <div>
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">Transmission</label>
+                    <select id="admin-v-transmission" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                        <option value="Manuelle">Manuelle</option>
+                        <option value="Automatique">Automatique</option>
+                    </select>
+                </div>
             </div>
-            <label>URL de l'image</label><input id="car-image-url">
-            <label>Description</label><textarea id="car-description" rows="3"></textarea>
-            <label style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
-                <input type="checkbox" id="car-reservable" checked> 
-                <span>Réservable en ligne (affiche le bouton "Réserver" sur le site public)</span>
-            </label>
-            <button class="btn-full" type="submit">Enregistrer</button>
-            <p id="car-feedback"></p>
+
+            <div style="margin-top: 15px;">
+                <label style="display: block; font-weight: bold; margin-bottom: 5px;">URL de l'image (Lien direct)</label>
+                <input type="text" id="admin-v-image" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;">
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <h4 style="margin-bottom: 15px; color: #334155;">Options du site web</h4>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="admin-v-public" style="width: 18px; height: 18px;">
+                        <span><strong>Afficher sur le site</strong> (Rendre public)</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="admin-v-reservable" style="width: 18px; height: 18px;">
+                        <span><strong>Autoriser la réservation</strong> (Affiche le bouton "Réserver")</span>
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="admin-v-chauffeur" style="width: 18px; height: 18px;">
+                        <span style="color: #b45309;"><strong>Option "Avec Chauffeur"</strong> (Affiche le badge : Tout frais inclus)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="button" onclick="sauvegarderVoiture()" class="btn-action btn-primaire" style="flex: 2; padding: 15px; font-weight: bold; cursor: pointer;">
+                    ENREGISTRER LE VÉHICULE
+                </button>
+                <button type="button" onclick="closeModal('modal-voiture')" class="btn-action" style="flex: 1; background: #94a3b8; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    Annuler
+                </button>
+            </div>
         </form>
     </div>
 </div>
-
 <!-- Modal Partenaires -->
 <div class="modal-overlay" id="partner-modal">
   <div class="modal-content">
@@ -173,4 +214,5 @@
 <script src="admin.js"></script>
 </body>
 </html>
+
 
