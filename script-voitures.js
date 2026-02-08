@@ -2,9 +2,6 @@ let sb = null;
 let calendar = null;
 let voituresCache = [];
 
-/**
- * Initialisation Supabase
- */
 async function initSupabase() {
     const response = await fetch('supabase-config.json');
     const { supabaseUrl, supabaseKey } = await response.json();
@@ -13,37 +10,46 @@ async function initSupabase() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     await initSupabase();
-    await chargerCatalogue();
+    await chargerVoitures();
 });
 
-/**
- * Charge les voitures et les affiche
- */
-async function chargerCatalogue() {
+async function chargerVoitures() {
     const { data, error } = await sb.from('voitures').select('*').eq('est_public', true);
     if (error) return;
-
     voituresCache = data;
-    const container = document.getElementById('container-voitures');
-    container.innerHTML = "";
 
-    data.forEach(v => {
+    const container = document.getElementById('container-voitures');
+    container.innerHTML = data.map(v => {
         const estReservable = (v.reservable === true || v.reservable === "true");
         const aChauffeur = (v.chauffeur_option === "true" || v.chauffeur_option === true);
 
-        // Badge Chauffeur
-        const badgeChauffeur = aChauffeur ? `<div class="badge-chauffeur"><i class="fas fa-user-tie"></i> Chauffeur inclus (Frais inclus)</div>` : '';
-
-        const card = `
+        return `
             <div class="car-card">
                 <img src="${v.image_url}" class="car-image">
-                <div class="car-body">
-                    ${badgeChauffeur}
-                    <h3>${v.nom}</h3>
-                    <p class="prix">${v.prix_base.toLocaleString()} Ar / jour</p>
+                <div class="car-info" style="padding: 20px;">
+                    ${aChauffeur ? `<div class="badge-chauffeur">Avec chauffeur inclus</div>` : ''}
+                    <h3 style="margin-bottom:5px;">${v.nom}</h3>
+                    <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 10px;">
+                        <i class="fas fa-car"></i> ${v.type || 'Non spécifié'} | 
+                        <i class="fas fa-cog"></i> ${v.transmission || 'Manuelle'}
+                    </p>
+                    
+                    <div style="display:flex; gap:15px; font-size:0.85rem; color:#475569; margin-bottom:15px;">
+                        <span><i class="fas fa-users"></i> ${v.places || '5'} places</span>
+                        <span><i class="fas fa-gas-pump"></i> ${v.carburant || 'Essence'}</span>
+                    </div>
+
+                    <p style="font-size:0.85rem; color:#64748b; margin-bottom:15px; line-height:1.4;">
+                        ${v.description || 'Aucune description disponible.'}
+                    </p>
+
+                    <p class="car-price" style="font-size: 1.3rem; font-weight: 800; color: #3498db; margin-bottom: 15px;">
+                        ${v.prix_base.toLocaleString()} Ar <small>/ jour</small>
+                    </p>
+
                     <div style="display: flex; flex-direction: column; gap: 8px;">
                         ${estReservable ? 
-                            `<button class="btn-reserver" onclick="ouvrirReservation('${v.id}', '${v.nom}', ${v.prix_base})">RÉSERVER</button>` :
+                            `<button class="btn-reserver" onclick="ouvrirReservation('${v.id}', '${v.nom}', ${v.prix_base})">RÉSERVER</button>` : 
                             `<button class="btn-reserver btn-disabled" disabled>INDISPONIBLE</button>`
                         }
                         <button class="btn-contact" onclick="ouvrirModalContact('${v.id}')">CONTACTEZ-NOUS</button>
@@ -51,73 +57,45 @@ async function chargerCatalogue() {
                 </div>
             </div>
         `;
-        container.innerHTML += card;
-    });
+    }).join('');
 }
 
-/**
- * MODALE CONTACT (Correction de l'affichage)
- */
-function ouvrirModalContact(idVoiture) {
-    const v = voituresCache.find(car => car.id == idVoiture);
-    if (!v) return;
-
-    document.getElementById('contact-car-name').innerText = v.nom;
-    const modal = document.getElementById('modal-contact-only');
-    modal.style.display = 'flex'; // Force l'affichage
+function ouvrirModalContact(id) {
+    const v = voituresCache.find(car => car.id == id);
+    if(v) document.getElementById('contact-car-name').innerText = v.nom;
+    document.getElementById('modal-contact-only').style.display = 'flex';
 }
 
 function closeContactModal() {
     document.getElementById('modal-contact-only').style.display = 'none';
 }
 
-/**
- * CALENDRIER (Correction : Débloque la sélection de dates)
- */
 function ouvrirReservation(id, nom, prix) {
-    document.getElementById('reservation').style.display = 'block';
-    document.getElementById('nom-voiture-selectionnee').innerText = nom;
+    document.getElementById('reservation-section').style.display = 'block';
+    document.getElementById('res-nom-voiture').innerText = "Réserver : " + nom;
     document.getElementById('id-voiture-input').value = id;
     document.getElementById('prix-base-input').value = prix;
-
-    document.getElementById('reservation').scrollIntoView({ behavior: 'smooth' });
-
+    document.getElementById('reservation-section').scrollIntoView({ behavior: 'smooth' });
     initCalendar(id);
 }
 
 function initCalendar(idVoiture) {
     const calendarEl = document.getElementById('calendrier-dispo');
     if (calendar) calendar.destroy();
-
     calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: 'fr',
-        selectable: true, // PERMET DE SÉLECTIONNER DES PLAGES DE DATES LIBREMENT
-        selectMirror: true,
-        unselectAuto: false,
+        selectable: true,
         select: function(info) {
-            // Remplit les champs date
             document.getElementById('date-debut').value = info.startStr;
-            
-            // FullCalendar met la fin au lendemain 00h, on retire 1 jour pour l'affichage
             let fin = new Date(info.end);
             fin.setDate(fin.getDate() - 1);
             document.getElementById('date-fin').value = fin.toISOString().split('T')[0];
             
-            calculerPrixTotal();
+            const diff = Math.ceil((new Date(info.end) - new Date(info.start)) / (1000*60*60*24));
+            const total = diff * parseInt(document.getElementById('prix-base-input').value);
+            document.getElementById('prix-total').innerText = total.toLocaleString();
         }
     });
     calendar.render();
-}
-
-function calculerPrixTotal() {
-    const prixBase = parseInt(document.getElementById('prix-base-input').value);
-    const d1 = new Date(document.getElementById('date-debut').value);
-    const d2 = new Date(document.getElementById('date-fin').value);
-
-    if (d1 && d2 && d2 >= d1) {
-        const diff = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-        document.getElementById('txt-jours').innerText = diff;
-        document.getElementById('prix-total').innerText = (diff * prixBase).toLocaleString();
-    }
 }
