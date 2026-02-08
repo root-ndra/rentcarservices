@@ -1,41 +1,111 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Nos Véhicules · RentCarServices</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Catalogue des Voitures · RentCarServices</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <nav class="navbar">
-    <div class="logo-container">
-        <img src="logo.png" class="nav-logo">
-        <span>RentCarServices</span>
-    </div>
-    <ul class="nav-links">
-        <li><a href="index.html">Accueil</a></li>
-        <li><a href="voitures.html" class="active">Nos voitures</a></li>
-        <li><a href="contact.html">Contact</a></li>
-    </ul>
+  <div class="logo-container">
+    <img src="" alt="Logo" class="nav-logo" id="header-logo">
+    <span id="header-site-name">RentCarServices</span>
+  </div>
+  <ul class="nav-links" id="nav-menu">
+    <li><a href="index.html">Accueil</a></li>
+    <li><a href="voitures.html" class="active">Nos voitures</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
 </nav>
 
-<main>
-    <div class="catalogue-grid" id="container-voitures">
+<main class="container">
+  <header class="page-header" style="text-align: center; padding: 40px 0; color: white;">
+    <h1>Nos Véhicules Disponibles</h1>
+    <p>Choisissez une voiture et réservez-la en quelques clics.</p>
+  </header>
+
+  <div class="filters-bar" style="margin-bottom: 30px; display: flex; gap: 10px; justify-content: center;">
+    <select id="filter-type" style="padding: 10px; border-radius: 8px;">
+      <option value="">Tous les types</option>
+      <option value="Citadine">Citadine</option>
+      <option value="Berline">Berline</option>
+      <option value="SUV">SUV</option>
+    </select>
+  </div>
+
+  <div id="container-voitures" class="catalogue-grid">
+    </div>
+
+  <section id="reservation" class="booking-section" style="display:none; margin-top: 50px;">
+    <div class="booking-card" style="background: white; padding: 30px; border-radius: 20px;">
+      <h2 id="nom-voiture-selectionnee" style="margin-bottom: 20px;">Nom du modèle</h2>
+      
+      <div class="booking-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+        <div class="calendar-wrapper">
+          <label style="font-weight: bold; display: block; margin-bottom: 10px;">1. Sélectionnez vos dates sur le calendrier :</label>
+          <div id="calendrier-dispo"></div>
         </div>
+
+        <div class="form-wrapper">
+          <form id="form-reservation">
+            <input type="hidden" id="id-voiture-input">
+            <input type="hidden" id="prix-base-input">
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+              <div style="flex: 1;">
+                <label>Date Début</label>
+                <input type="date" id="date-debut" style="width: 100%; padding: 10px;" readonly>
+              </div>
+              <div style="flex: 1;">
+                <label>Date Fin</label>
+                <input type="date" id="date-fin" style="width: 100%; padding: 10px;" readonly>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+              <input type="text" id="loueur-nom" placeholder="Votre Nom complet" style="width: 100%; padding: 12px; margin-bottom: 10px;" required>
+              <input type="tel" id="loueur-tel" placeholder="N° Téléphone WhatsApp" style="width: 100%; padding: 12px;" required>
+            </div>
+
+            <div class="price-summary" style="background: #f8fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+              <p>Durée : <span id="txt-jours" style="font-weight: bold;">0</span> jour(s)</p>
+              <p style="font-size: 1.2rem; font-weight: bold; color: #3498db;">Total : <span id="prix-total">0</span> Ar</p>
+            </div>
+
+            <button type="button" class="btn-reserver" style="width: 100%; padding: 15px; font-size: 1.1rem;" onclick="lancerReservationWhatsApp()">
+              <i class="fab fa-whatsapp"></i> RÉSERVER VIA WHATSAPP
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <div class="modal-overlay" id="modal-contact-only" style="display:none;">
-    <div class="modal-content">
-        <span class="close-modal" onclick="fermerModalContact()">&times;</span>
-        <h2>Besoin d'informations ?</h2>
-        <p style="margin: 15px 0;">Contactez notre support client :</p>
-        <h3 style="font-size: 1.8rem; color: #1f2a37;">+261 34 91 207 26</h3>
-        <a href="https://wa.me/261325264535" class="btn-whatsapp-large">
-            <i class="fab fa-whatsapp"></i> CONTACTER SUR WHATSAPP
-        </a>
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeContactModal()">&times;</span>
+    <div style="font-size: 3rem; color: #3498db; margin-bottom: 15px;"><i class="fas fa-headset"></i></div>
+    <h2 id="contact-car-name">Contact Direct</h2>
+    <p>Vous avez une question sur ce véhicule ?</p>
+    <div style="font-size: 1.8rem; font-weight: bold; margin: 20px 0; color: #1f2a37;" id="txt-modal-phone">+261 34 91 207 26</div>
+    
+    <div style="display: flex; gap: 10px;">
+      <a href="tel:+261349120726" class="btn-reserver" style="flex: 1; text-decoration: none; text-align: center;">
+        <i class="fas fa-phone"></i> Appeler
+      </a>
+      <a href="https://wa.me/261325264535" id="btn-modal-wa" target="_blank" class="btn-contact" style="flex: 1; text-decoration: none; text-align: center; background: #25d366; color: white;">
+        <i class="fab fa-whatsapp"></i> WhatsApp
+      </a>
     </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
