@@ -2,35 +2,100 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Réserver votre véhicule</title>
+    <title>Finaliser votre réservation · RentCarServices</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 </head>
-<body>
-    <div class="booking-container">
-        <h2 id="nom-voiture-titre">Chargement du véhicule...</h2>
-        
-        <div id="calendrier-dispo"></div>
+<body style="background: #f1f5f9;">
 
-        <div class="dates-display">
-            <div class="date-field">
-                <label>Date de début</label>
-                <input type="text" id="date-debut" readonly>
-            </div>
-            <div class="date-field">
-                <label>Date de fin</label>
-                <input type="text" id="date-fin" readonly>
-            </div>
-        </div>
+<nav class="navbar">
+    <div class="logo-container"><span id="header-site-name">RentCarServices</span></div>
+    <ul class="nav-links"><li><a href="voitures.html">Retour au catalogue</a></li></ul>
+</nav>
 
-        <div id="form-details">
-            <button class="btn-reserver" style="width:100%; margin-top:20px;" onclick="lancerReservationWhatsApp()">
-                CONFIRMER SUR WHATSAPP
-            </button>
+<main class="container" style="max-width: 1000px; margin: 40px auto; padding: 20px;">
+    <div style="background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+        <h2 id="res-titre" style="margin-bottom: 25px;">Réservation</h2>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+            <div>
+                <label style="font-weight:bold; display:block; margin-bottom:10px;">1. Choisissez vos dates :</label>
+                <div id="calendrier-dispo" style="background: white; padding: 10px; border: 1px solid #ddd; border-radius: 10px;"></div>
+            </div>
+
+            <div>
+                <label style="font-weight:bold; display:block; margin-bottom:10px;">2. Détails de réservation :</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <div style="flex:1;">
+                        <label style="font-size:0.8rem;">Date Début</label>
+                        <input type="text" id="res-debut" style="width:100%; padding:10px;" readonly>
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-size:0.8rem;">Date Fin</label>
+                        <input type="text" id="res-fin" style="width:100%; padding:10px;" readonly>
+                    </div>
+                </div>
+
+                <input type="text" id="res-nom-client" placeholder="Votre nom complet" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc;">
+                
+                <div style="background: #f8fafc; padding: 20px; border-radius: 15px;">
+                    <p>Nombre de jours : <span id="res-jours" style="font-weight:bold;">0</span></p>
+                    <p style="font-size: 1.3rem; font-weight: bold; color: #3498db;">Total : <span id="res-total">0</span> Ar</p>
+                </div>
+
+                <button onclick="envoyerWhatsApp()" class="btn-reserver" style="width:100%; padding:15px; margin-top:20px; font-size:1.1rem; background:#25d366; border:none;">
+                    <i class="fab fa-whatsapp"></i> RÉSERVER SUR WHATSAPP
+                </button>
+            </div>
         </div>
     </div>
+</main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script-voitures.js"></script>
+<script>
+    // Récupération des paramètres de l'URL
+    const params = new URLSearchParams(window.location.search);
+    const carId = params.get('id');
+    const carNom = params.get('nom');
+    const carPrix = parseInt(params.get('prix'));
+
+    document.getElementById('res-titre').innerText = "Réserver la " + carNom;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendrier-dispo');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'fr',
+            selectable: true,
+            select: function(info) {
+                document.getElementById('res-debut').value = info.startStr;
+                let fin = new Date(info.end);
+                fin.setDate(fin.getDate() - 1);
+                document.getElementById('res-fin').value = fin.toISOString().split('T')[0];
+
+                const jours = Math.ceil((new Date(info.end) - new Date(info.start)) / (1000*60*60*24));
+                document.getElementById('res-jours').innerText = jours;
+                document.getElementById('res-total').innerText = (jours * carPrix).toLocaleString();
+            }
+        });
+        calendar.render();
+    });
+
+    function envoyerWhatsApp() {
+        const nom = document.getElementById('res-nom-client').value;
+        const debut = document.getElementById('res-debut').value;
+        const fin = document.getElementById('res-fin').value;
+        const total = document.getElementById('res-total').innerText;
+
+        if(!nom || !debut) { alert("Veuillez remplir les informations"); return; }
+
+        const message = `Bonjour, je souhaite réserver la ${carNom}.\nDates: du ${debut} au ${fin}.\nClient: ${nom}\nTotal: ${total} Ar.`;
+        const waUrl = `https://wa.me/261325264535?text=${encodeURIComponent(message)}`;
+        window.open(waUrl, '_blank');
+    }
+</script>
+
 </body>
 </html>
