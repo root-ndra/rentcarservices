@@ -56,6 +56,7 @@ async function loadCarDashboard() {
     const container = document.getElementById('grid-voitures');
     container.innerHTML = '<p>Analyse des données en cours...</p>';
 
+    // Récupération des données
     const [voituresRes, resasRes, maintsRes] = await Promise.all([
         supabaseAdmin.from('voitures').select('*').order('id'),
         supabaseAdmin.from('reservations').select('*'),
@@ -82,6 +83,7 @@ async function loadCarDashboard() {
         if (isMaint) { statut = 'Maintenance'; badgeClass = 'bg-orange'; borderClass = 'status-maintenance'; }
         else if (isLoc) { statut = 'Louée'; badgeClass = 'bg-red'; borderClass = 'status-louee'; }
 
+        // Calcul des revenus du mois
         let revenus = 0, joursLoues = 0;
         const now = new Date();
         const debutPeriode = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -123,6 +125,9 @@ async function loadCarDashboard() {
     });
 }
 
+/**
+ * Ouvre le modal de voiture (Ajout ou Modification)
+ */
 function openCarModal(carId = null) {
     const modal = document.getElementById('car-modal');
     const form = document.getElementById('car-form');
@@ -136,13 +141,17 @@ function openCarModal(carId = null) {
             document.getElementById('car-modal-title').textContent = 'Modifier le véhicule';
             document.getElementById('car-nom').value = car.nom;
             document.getElementById('car-prix').value = car.prix_base;
-            document.getElementById('car-type').value = car.type;
-            document.getElementById('car-transmission').value = car.transmission;
-            document.getElementById('car-places').value = car.places;
-            document.getElementById('car-carburant').value = car.carburant;
-            document.getElementById('car-image-url').value = car.image_url;
-            document.getElementById('car-description').value = car.description;
+            document.getElementById('car-type').value = car.type || "";
+            document.getElementById('car-transmission').value = car.transmission || "Manuelle";
+            document.getElementById('car-places').value = car.places || 5;
+            document.getElementById('car-carburant').value = car.carburant || "";
+            document.getElementById('car-image-url').value = car.image_url || "";
+            document.getElementById('car-description').value = car.description || "";
             document.getElementById('car-reservable').checked = car.reservable !== false;
+            
+            // Intégration de l'option chauffeur
+            const hasChauffeur = (car.chauffeur_option === true || car.chauffeur_option === "true");
+            document.getElementById('car-chauffeur').checked = hasChauffeur;
         }
     } else {
         document.getElementById('car-modal-title').textContent = 'Ajouter un véhicule';
@@ -150,6 +159,9 @@ function openCarModal(carId = null) {
     modal.style.display = 'flex';
 }
 
+/**
+ * Enregistre ou modifie le véhicule dans Supabase
+ */
 async function submitCar(event) {
     event.preventDefault();
     const feedback = document.getElementById('car-feedback');
@@ -165,7 +177,9 @@ async function submitCar(event) {
         carburant: document.getElementById('car-carburant').value,
         image_url: document.getElementById('car-image-url').value,
         description: document.getElementById('car-description').value,
-        reservable: document.getElementById('car-reservable').checked
+        reservable: document.getElementById('car-reservable').checked,
+        // Option chauffeur envoyée à la base de données
+        chauffeur_option: document.getElementById('car-chauffeur').checked
     };
 
     let error;
@@ -189,13 +203,13 @@ async function submitCar(event) {
 async function toggleCarVisibility(carId, isVisible) {
     const { error } = await supabaseAdmin.from('voitures').update({ est_public: isVisible }).eq('id', carId);
     if (error) {
-        alert(`Erreur lors de la mise à jour de la visibilité : ${error.message}\n\nVérifiez que la colonne 'est_public' existe bien dans votre table 'voitures'.`);
+        alert(`Erreur: ${error.message}`);
         await loadCarDashboard();
     }
 }
 
 /* --------------------------------------------------- */
-/* --- 3. GESTION DES PARTENAIRES (CORRIGÉ) --- */
+/* --- 3. GESTION DES PARTENAIRES --- */
 /* --------------------------------------------------- */
 
 async function loadPartenaires() {
@@ -288,9 +302,7 @@ async function submitPartner(event) {
 
 async function togglePartner(userId, isActive) {
   const { error } = await supabaseAdmin.from('partenaires').update({ est_gele: !isActive }).eq('user_id', userId);
-  if (error) {
-    alert(`Erreur: ${error.message}`);
-  }
+  if (error) alert(`Erreur: ${error.message}`);
   await loadPartenaires();
 }
 
@@ -308,7 +320,6 @@ async function loadMaintenanceOptions() {
         updateMotifs();
     } catch (error) {
         console.error("Erreur chargement maintenances.json:", error);
-        document.getElementById('maint-categorie').innerHTML = '<option>Erreur</option>';
     }
 }
 
@@ -332,7 +343,10 @@ function updateMotifs() {
     }
 }
 
-function openMaint(id) { document.getElementById('maint-id-voiture').value = id; document.getElementById('modal-maint').style.display = 'flex'; }
+function openMaint(id) { 
+    document.getElementById('maint-id-voiture').value = id; 
+    document.getElementById('modal-maint').style.display = 'flex'; 
+}
 
 async function sauvegarderMaintenance() {
     const typeIntervention = `${document.getElementById('maint-categorie').value} - ${document.getElementById('maint-motif').value}`;
@@ -377,7 +391,7 @@ async function voirHistorique(id, nom) {
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// Exposer les fonctions à l'objet window pour les `onclick`
+// Exposer les fonctions à l'objet window pour les appels HTML
 window.closeModal = closeModal;
 window.openPartnerModal = openPartnerModal;
 window.submitPartner = submitPartner;
