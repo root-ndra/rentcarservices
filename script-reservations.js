@@ -1,16 +1,57 @@
+// --- 0. FONCTION DU MENU & UTILS (Tout en haut) ---
+function toggleMenu() { 
+    const nav = document.getElementById('nav-menu');
+    if(nav) nav.classList.toggle('active');
+}
+
+// Fonction Couleur Aléatoire (Pour le calendrier)
+function genererCouleur(id) {
+    const couleurs = ['#3498db', '#9b59b6', '#2ecc71', '#f1c40f', '#1abc9c', '#34495e', '#e67e22', '#16a085', '#8e44ad', '#2980b9'];
+    if (!id) return couleurs[Math.floor(Math.random() * couleurs.length)];
+    let hash = 0; for (let i = 0; i < id.toString().length; i++) { hash = id.toString().charCodeAt(i) + ((hash << 5) - hash); }
+    return couleurs[Math.abs(hash) % couleurs.length];
+}
+
+// --- NAVIGATION GENERIQUE ---
+function naviguerVers(pageId) {
+    const sections = document.querySelectorAll('.page-section');
+    sections.forEach(sec => sec.style.display = 'none');
+    
+    const activeSection = document.getElementById(pageId);
+    if(activeSection) activeSection.style.display = 'block';
+
+    window.scrollTo(0,0);
+    const menu = document.getElementById('nav-menu');
+    if (menu && menu.classList.contains('active')) menu.classList.remove('active');
+}
+
+// --- CONFIGURATION SUPABASE ---
+const SUPABASE_URL = 'https://ctijwjcjmbfmfhzwbguk.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aWp3amNqbWJmbWZoendiZ3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MzEyOTgsImV4cCI6MjA4MTQwNzI5OH0.gEPvDc0lgf1o1Ol5AJFDPFG8Oh5SIbsZvg-8KTB4utk';
+
 let sb = null;
+try {
+    // On vérifie si la librairie est chargée avant d'initier
+    if(typeof supabase !== 'undefined') {
+        sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } else {
+        console.error("Librairie Supabase non chargée dans le HTML.");
+    }
+} catch (e) {
+    console.error("Erreur Supabase (Probablement hors ligne)", e);
+}
 
-// Variables Globales
+// --- VARIABLES GLOBALES ---
+let calendar;
 let currentCarId = null;
-let currentCarReservations = [];
-let reductionActive = 0;
-let calendar = null;
-let currentReservationId = null;
-let windowResaData = null; // Stockage données réservation
+let currentCarReservations = []; // Stocke les plages indisponibles pour vérification JS
+let reductionActive = 0; 
+let currentReservationId = null; 
+let windowResaData = null; // Données locales de la résa en cours
 
-// --- 1. DÉMARRAGE & URL PARAMS ---
+// --- 1. DÉMARRAGE (DOMContentLoaded) ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // Récupération des paramètres URL
+    // Récupération des paramètres URL (ex: reservations.html?id=12&nom=Peugeot&prix=100000)
     const params = new URLSearchParams(window.location.search);
     currentCarId = params.get('id');
     const nomVoiture = params.get('nom');
@@ -18,90 +59,126 @@ document.addEventListener('DOMContentLoaded', async () => {
     const refVoiture = params.get('ref');
 
     if (!currentCarId) {
-        alert("Aucune voiture sélectionnée. Retour au catalogue.");
-        window.location.href = 'index.html'; // Redirection si pas d'ID
-        return;
+        console.warn("Aucun ID de voiture dans l'URL.");
+        // Optionnel : rediriger ou afficher un message
+    } else {
+        // Mise à jour de l'interface avec les infos URL
+        const titreEl = document.getElementById('titre-page');
+        if(titreEl) titreEl.innerText = `Réservation : ${nomVoiture || 'Voiture'}`;
+        
+        const inputId = document.getElementById('id-voiture-input');
+        if(inputId) inputId.value = currentCarId;
+        
+        const inputNom = document.getElementById('nom-voiture-hidden');
+        if(inputNom) inputNom.value = nomVoiture;
+
+        const inputPrix = document.getElementById('prix-base-input');
+        if(inputPrix) inputPrix.value = prixVoiture;
+
+        const inputRef = document.getElementById('ref-voiture-input');
+        if(inputRef) inputRef.value = refVoiture || '';
+        
+        // Initialisation du calendrier
+        await initCalendar(currentCarId);
     }
-
-    // Remplissage des champs cachés et interface
-    document.getElementById('titre-page').innerText = `Réservation : ${nomVoiture}`;
-    document.getElementById('id-voiture-input').value = currentCarId;
-    document.getElementById('nom-voiture-hidden').value = nomVoiture;
-    document.getElementById('prix-base-input').value = prixVoiture;
-    document.getElementById('ref-voiture-input').value = refVoiture || '';
-
-    // Initialisation Calendrier
-    await initCalendar(currentCarId);
 });
 
-// --- HELPER PRIX ---
+// --- HELPER FORMAT PRIX ---
 function formatPrix(prix) {
+    if(!prix) return "0";
     return prix.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
-// --- 2. CALENDRIER & DISPONIBILITÉ ---
+// --- 2. CALENDRIER & LOGIQUE DE SÉLECTION ---
 async function initCalendar(idVoiture) {
     const calendarEl = document.getElementById('calendrier-dispo');
-    
-    // Récupération Réservations & Maintenance depuis Supabase
-    const { data: resas } = await sb.from('reservations').select('id, date_debut, date_fin').eq('id_voiture', idVoiture).eq('statut', 'valide');
-    const { data: maints } = await sb.from('maintenances').select('date_debut, date_fin').eq('id_voiture', idVoiture);
+    if(!calendarEl) return; // Sécurité si l'élément n'existe pas
 
     currentCarReservations = [];
     let events = [];
 
-    if(resas) {
-        resas.forEach(r => {
-            currentCarReservations.push({ start: new Date(r.date_debut), end: new Date(r.date_fin) });
-            // FullCalendar exclut la date de fin, donc on ajoute +1 jour visuellement
-            let fin = new Date(r.date_fin); fin.setDate(fin.getDate() + 1);
-            events.push({ 
-                title: 'Loué', start: r.date_debut, end: fin.toISOString().split('T')[0], 
-                display: 'background', color: '#e74c3c' 
+    // Récupération des données SI Supabase est connecté
+    if(sb) {
+        const { data: resas } = await sb.from('reservations')
+            .select('id, date_debut, date_fin')
+            .eq('id_voiture', idVoiture)
+            .eq('statut', 'valide'); // On ne prend que les validées
+        
+        const { data: maints } = await sb.from('maintenances')
+            .select('date_debut, date_fin')
+            .eq('id_voiture', idVoiture);
+
+        if(resas) {
+            resas.forEach(r => {
+                currentCarReservations.push({ start: new Date(r.date_debut), end: new Date(r.date_fin) });
+                // FullCalendar exclut la date de fin visuellement, on ajoute +1 jour
+                let fin = new Date(r.date_fin); fin.setDate(fin.getDate() + 1);
+                events.push({ 
+                    title: 'Loué', 
+                    start: r.date_debut, 
+                    end: fin.toISOString().split('T')[0], 
+                    display: 'background', 
+                    color: genererCouleur(r.id) // Utilisation de ta fonction couleur
+                });
             });
-        });
-    }
-    if(maints) {
-        maints.forEach(m => {
-            currentCarReservations.push({ start: new Date(m.date_debut), end: new Date(m.date_fin) });
-            let fin = new Date(m.date_fin); fin.setDate(fin.getDate() + 1);
-            events.push({ 
-                title: 'Maintenance', start: m.date_debut, end: fin.toISOString().split('T')[0], 
-                display: 'background', color: '#c0392b' 
+        }
+        if(maints) {
+            maints.forEach(m => {
+                currentCarReservations.push({ start: new Date(m.date_debut), end: new Date(m.date_fin) });
+                let fin = new Date(m.date_fin); fin.setDate(fin.getDate() + 1);
+                events.push({ 
+                    title: 'Entretien', 
+                    start: m.date_debut, 
+                    end: fin.toISOString().split('T')[0], 
+                    display: 'background', 
+                    color: '#c0392b' 
+                });
             });
-        });
+        }
     }
 
+    // Initialisation FullCalendar
     calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth', locale: 'fr', height: 'auto', events: events,
+        initialView: 'dayGridMonth', 
+        locale: 'fr', 
+        height: 'auto', 
+        events: events,
         headerToolbar: { left: 'prev,next', center: 'title', right: '' },
-        validRange: { start: new Date().toISOString().split('T')[0] }, // Pas de date passée
+        validRange: { start: new Date().toISOString().split('T')[0] }, // Empêcher dates passées
+
+        // LOGIQUE DE CLIC (DÉBUT / FIN)
         dateClick: function(info) {
             let dDebut = document.getElementById('date-debut');
             let dFin = document.getElementById('date-fin');
             
-            // Logique de sélection simple (Début puis Fin)
+            // Cas 1: Rien n'est sélectionné OU les deux sont déjà remplis (on reset)
             if(!dDebut.value || (dDebut.value && dFin.value)) { 
                 dDebut.value = info.dateStr; 
                 dFin.value = ""; 
-            } else { 
+            } 
+            // Cas 2: Date de début existe, on essaie de mettre la fin
+            else { 
+                // Si la nouvelle date est AVANT le début, elle devient le nouveau début
                 if (new Date(info.dateStr) < new Date(dDebut.value)) { 
-                    dDebut.value = info.dateStr; dFin.value = ""; 
+                    dDebut.value = info.dateStr; 
+                    dFin.value = ""; 
                 } else { 
+                    // Sinon c'est la date de fin
                     dFin.value = info.dateStr; 
                 } 
             }
+            // On lance le calcul à chaque clic
             calculerPrix();
         }
     });
     calendar.render();
 }
 
+// Vérifie si la période sélectionnée chevauche une réservation existante
 function verifierDisponibilite(debut, fin) {
     let d1 = new Date(debut);
     let d2 = new Date(fin);
     for (let resa of currentCarReservations) {
-        // Chevauchement de dates
         if (d1 <= resa.end && d2 >= resa.start) { return false; }
     }
     return true; 
@@ -123,7 +200,7 @@ function faireLeCalculMathematique() {
         let multiplier = 1;
         let formuleChoisie = "Jour";
         
-        // Gestion Formule (Jour/Nuit/24h)
+        // Gestion Formule via Radio Boutons
         const radioOffre = document.querySelector('input[name="offre"]:checked');
         if (radioOffre) {
             formuleChoisie = radioOffre.value; 
@@ -133,19 +210,21 @@ function faireLeCalculMathematique() {
 
         let coutLocation = diffDays * prixBase * multiplier;
         
-        // Remises dégressives
+        // Logique de remise longue durée
         if (diffDays >= 7 && diffDays < 30) { coutLocation = coutLocation * 0.90; } // -10%
         else if (diffDays >= 30) { coutLocation = coutLocation * 0.85; } // -15%
 
-        // Code Promo
+        // Application Code Promo
         if (reductionActive > 0) {
             coutLocation = coutLocation * (1 - (reductionActive / 100));
         }
 
         // Options Logistiques
         let fraisOptions = 0;
-        if (document.getElementById('opt-livraison').checked) fraisOptions += 15000;
-        if (document.getElementById('opt-recuperation').checked) fraisOptions += 15000;
+        const optLiv = document.getElementById('opt-livraison');
+        const optRec = document.getElementById('opt-recuperation');
+        if (optLiv && optLiv.checked) fraisOptions += 15000;
+        if (optRec && optRec.checked) fraisOptions += 15000;
 
         let totalFinal = coutLocation + fraisOptions;
 
@@ -170,7 +249,10 @@ function calculerPrix() {
     }
 }
 
+// Vérification Code Promo via Supabase
 async function verifierPromo() {
+    if(!sb) return; // Pas de connexion
+
     const codeInput = document.getElementById('code-promo');
     const msg = document.getElementById('msg-promo');
     const code = codeInput.value.toUpperCase().trim();
@@ -182,7 +264,6 @@ async function verifierPromo() {
     const d1 = new Date(dateDebut); const d2 = new Date(dateFin);
     const diffDays = Math.ceil(Math.abs(d2 - d1) / (86400000)) + 1;
 
-    // Appel Supabase
     const { data } = await sb.from('codes_promo').select('*').eq('code', code).eq('actif', true).single();
     
     if(data) { 
@@ -201,8 +282,32 @@ async function verifierPromo() {
     calculerPrix();
 }
 
-// --- 4. WORKFLOW : RÉSERVATION WHATSAPP ---
+// --- 4. INTERFACE PAIEMENT (Tes fonctions demandées) ---
+function togglePaymentFields() {
+    const method = document.getElementById('pay-method').value;
+    
+    // Masquage par défaut
+    document.getElementById('fields-mvola').style.display = 'none';
+    document.getElementById('fields-espece').style.display = 'none';
+    document.getElementById('fields-montant').style.display = 'none';
+
+    // Affichage conditionnel
+    if(method === 'mvola') document.getElementById('fields-mvola').style.display = 'block';
+    if(method === 'espece') document.getElementById('fields-espece').style.display = 'block';
+    
+    // Si une méthode est choisie (différent de vide), on affiche le choix du montant
+    if(method !== '') document.getElementById('fields-montant').style.display = 'block';
+}
+
+function toggleAutreMontant() {
+    const choix = document.getElementById('pay-choix-montant').value;
+    document.getElementById('field-autre-montant').style.display = (choix === 'autre') ? 'block' : 'none';
+}
+
+// --- 5. WORKFLOW : RÉSERVATION WHATSAPP ---
 async function lancerReservationWhatsApp() {
+    if(!sb) return alert("Système hors ligne, impossible d'enregistrer.");
+
     const conditions = document.getElementById('check-conditions-step1').checked;
     if (!conditions) return alert("Veuillez accepter les conditions générales.");
 
@@ -220,7 +325,7 @@ async function lancerReservationWhatsApp() {
     if(!calcul.ok) return alert("Dates invalides");
 
     if (!verifierDisponibilite(document.getElementById('date-debut').value, document.getElementById('date-fin').value)) { 
-        alert("❌ Ces dates ne sont plus disponibles."); return; 
+        alert("❌ Ces dates ne sont plus disponibles (chevauchement)."); return; 
     }
 
     const urgence = {
@@ -267,25 +372,13 @@ async function lancerReservationWhatsApp() {
     document.getElementById('step-1-configuration').style.display = 'none';
     const step2 = document.getElementById('step-2-paiement');
     step2.style.display = 'block';
+    step2.classList.remove('hidden-step'); // Au cas où la classe CSS cache l'élément
     step2.scrollIntoView({behavior:'smooth'});
-}
-
-// --- 5. GESTION UI PAIEMENT ---
-function togglePaymentFields() {
-    const method = document.getElementById('pay-method').value;
-    document.getElementById('fields-mvola').style.display = (method === 'mvola') ? 'block' : 'none';
-    document.getElementById('fields-espece').style.display = (method === 'espece') ? 'block' : 'none';
-    document.getElementById('fields-montant').style.display = method ? 'block' : 'none';
-}
-
-function toggleAutreMontant() {
-    const val = document.getElementById('pay-choix-montant').value;
-    document.getElementById('field-autre-montant').style.display = (val === 'autre') ? 'block' : 'none';
 }
 
 // --- 6. ENVOI PREUVE PAIEMENT ---
 async function envoyerInfosPaiement() {
-    if(!currentReservationId) return alert("Erreur ID réservation manquant.");
+    if(!currentReservationId || !sb) return alert("Erreur système ou ID manquant.");
 
     const method = document.getElementById('pay-method').value;
     if(!method) return alert("Choisissez un mode de paiement.");
@@ -326,7 +419,9 @@ async function envoyerInfosPaiement() {
 
     // Transition UI
     document.getElementById('step-2-paiement').style.display = 'none';
-    document.getElementById('step-3-download').style.display = 'block';
+    const step3 = document.getElementById('step-3-download');
+    step3.style.display = 'block';
+    step3.classList.remove('hidden-step');
     
     // Lancement écouteur temps réel
     ecouterValidationAdmin();
@@ -334,7 +429,7 @@ async function envoyerInfosPaiement() {
 
 // --- 7. REALTIME & VALIDATION ---
 function ecouterValidationAdmin() {
-    if(!currentReservationId) return;
+    if(!currentReservationId || !sb) return;
     
     // Abonnement aux changements sur CETTE réservation
     sb.channel('suivi-resa-' + currentReservationId)
@@ -376,11 +471,13 @@ function telechargerFactureAuto() {
 }
 
 function genererPDF(resa) {
+    // Vérification de jsPDF
+    if (!window.jspdf) return alert("Erreur: Librairie PDF manquante.");
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const now = new Date();
     
-    // Header Bleu
+    // Header
     doc.setFillColor(44, 62, 80); doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(22); 
     doc.text("RIJA NIAINA CAR SERVICES", 105, 15, { align: "center" });
