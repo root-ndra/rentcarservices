@@ -2,100 +2,213 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Finaliser votre réservation · RentCarServices</title>
+    <title>Finaliser votre réservation · Rija Niaina Car Services</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
     
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root { --primary: #3498db; --success: #2ecc71; --dark: #2c3e50; --white: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f1f5f9; margin: 0; padding: 0; color: #333; }
+        
+        /* Navigation */
+        .navbar { background: var(--dark); padding: 15px 20px; color: white; display: flex; justify-content: space-between; align-items: center; }
+        .nav-links a { color: white; text-decoration: none; font-weight: bold; }
+
+        /* Container */
+        .container { max-width: 1100px; margin: 30px auto; padding: 20px; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+
+        /* Grilles & Formulaires */
+        .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        @media (max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        
+        /* Sections spécifiques */
+        .resume-box { background: var(--dark); color: white; padding: 20px; border-radius: 10px; margin-top: 20px; }
+        .conditions-box { background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; margin: 20px 0; font-size: 0.9rem; }
+        
+        /* Boutons */
+        button { cursor: pointer; transition: 0.3s; border: none; font-weight: bold; }
+        .btn-whatsapp { background: #25d366; color: white; width: 100%; padding: 15px; font-size: 1.1rem; border-radius: 8px; }
+        .btn-whatsapp:hover { background: #1ebd5b; }
+        .btn-dark { background: var(--dark); color: white; padding: 12px 20px; border-radius: 6px; }
+        .btn-pdf-active { background: #e74c3c !important; color: white; }
+
+        /* Étapes masquées */
+        .hidden-step { display: none; }
+        
+        /* Loader */
+        .otp-loader { text-align: center; color: var(--primary); font-weight: bold; margin: 15px 0; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-<body style="background: #f1f5f9;">
+<body>
 
 <nav class="navbar">
-    <div class="logo-container"><span id="header-site-name">RentCarServices</span></div>
-    <ul class="nav-links"><li><a href="voitures.html">Retour au catalogue</a></li></ul>
+    <div class="logo-container"><span>RIJA NIAINA CAR SERVICES</span></div>
+    <ul class="nav-links"><li><a href="index.html">Retour catalogue</a></li></ul>
 </nav>
 
-<main class="container" style="max-width: 1000px; margin: 40px auto; padding: 20px;">
-    <div style="background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-        <h2 id="res-titre" style="margin-bottom: 25px;">Réservation</h2>
+<main class="container">
+    <div class="card">
+        <h2 id="titre-page" style="border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 25px;">Réservation</h2>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
-            <div>
-                <label style="font-weight:bold; display:block; margin-bottom:10px;">1. Choisissez vos dates :</label>
-                <div id="calendrier-dispo" style="background: white; padding: 10px; border: 1px solid #ddd; border-radius: 10px;"></div>
+        <input type="hidden" id="id-voiture-input">
+        <input type="hidden" id="ref-voiture-input">
+        <input type="hidden" id="prix-base-input">
+        <input type="hidden" id="nom-voiture-hidden">
+
+        <div id="step-1-configuration">
+            <div class="grid-layout">
+                <div>
+                    <h3 style="margin-top:0;">1. Dates & Options</h3>
+                    <div id="calendrier-dispo" style="margin-bottom: 20px; border:1px solid #eee; padding:5px; border-radius:8px;"></div>
+                    
+                    <div class="grid-layout" style="gap:10px;">
+                        <div class="form-group">
+                            <label>Du</label>
+                            <input type="text" id="date-debut" readonly placeholder="Sélectionnez sur calendrier">
+                        </div>
+                        <div class="form-group">
+                            <label>Au</label>
+                            <input type="text" id="date-fin" readonly placeholder="Sélectionnez sur calendrier">
+                        </div>
+                    </div>
+
+                    <div style="background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:15px;">
+                        <label>Options Logistiques (+15 000 Ar/trajet)</label>
+                        <div style="display:flex; gap:15px; margin-top:5px;">
+                            <label><input type="checkbox" id="opt-livraison" onchange="calculerPrix()"> Livraison</label>
+                            <label><input type="checkbox" id="opt-recuperation" onchange="calculerPrix()"> Récupération</label>
+                        </div>
+                    </div>
+
+                    <div style="background:#f8f9fa; padding:15px; border-radius:8px;">
+                        <label>Type de location</label>
+                        <div style="display:flex; gap:15px; margin-top:5px;">
+                            <label><input type="radio" name="offre" value="Jour" checked onchange="calculerPrix()"> Journée</label>
+                            <label><input type="radio" name="offre" value="nuit" onchange="calculerPrix()"> Nuit (+50%)</label>
+                            <label><input type="radio" name="offre" value="24h" onchange="calculerPrix()"> 24h (x2)</label>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:15px;">
+                        <label>Code Promo</label>
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" id="code-promo" placeholder="Ex: ETE2024">
+                            <button onclick="verifierPromo()" class="btn-dark" style="padding: 5px 15px;">OK</button>
+                        </div>
+                        <small id="msg-promo" style="display:block; margin-top:5px; font-weight:bold;"></small>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 style="margin-top:0;">2. Vos Coordonnées</h3>
+                    <div class="form-group"><input type="text" id="loueur-nom" placeholder="Nom complet"></div>
+                    <div class="form-group"><input type="text" id="loueur-prenom" placeholder="Prénom"></div>
+                    <div class="form-group"><input type="text" id="loueur-adresse" placeholder="Adresse de résidence"></div>
+                    <div class="form-group"><input type="tel" id="loueur-tel" placeholder="Téléphone / WhatsApp"></div>
+                    <div class="form-group"><input type="text" id="loueur-cin" placeholder="N° CIN / Passeport"></div>
+
+                    <h3 style="font-size:1rem; color:#7f8c8d; margin-top:20px;">Contact d'Urgence</h3>
+                    <div class="form-group"><input type="text" id="urgence-nom" placeholder="Nom contact urgence"></div>
+                    <div class="form-group"><input type="tel" id="urgence-tel" placeholder="Tél contact urgence"></div>
+                    <div class="form-group"><input type="text" id="urgence-adresse" placeholder="Adresse urgence"></div>
+
+                    <div id="resume-prix" class="resume-box">
+                        <h3 style="margin-top:0; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:10px;">Total à payer</h3>
+                        <p>Durée : <span id="txt-jours">0</span> jours (<span id="txt-formule">Jour</span>)</p>
+                        <p style="font-size:1.4rem; font-weight:bold; margin:10px 0;">Total : <span id="prix-total">0</span> Ar</p>
+                        <p style="color:#3498db; font-weight:bold;">Acompte requis (50%) : <span id="prix-acompte">0</span> Ar</p>
+                    </div>
+
+                    <div class="conditions-box">
+                        <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer;">
+                            <input type="checkbox" id="check-conditions-step1" style="width:auto; margin-top:3px;">
+                            <span>Je confirme mes dates et j'accepte les conditions générales de location.</span>
+                        </label>
+                    </div>
+
+                    <button onclick="lancerReservationWhatsApp()" class="btn-whatsapp">
+                        <i class="fab fa-whatsapp"></i> VALIDER & RÉSERVER
+                    </button>
+                    <p style="text-align:center; font-size:0.8rem; color:#999; margin-top:10px;">Ouvrira WhatsApp pour envoyer la demande.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="step-2-paiement" class="hidden-step" style="margin-top:30px; border-top:2px dashed #ccc; padding-top:20px;">
+            <h3 style="color:var(--dark);"><i class="fas fa-money-bill-wave"></i> Finaliser le Paiement</h3>
+            
+            <div style="background:#f8f9fa; padding:25px; border-radius:12px; border:1px solid #ddd; max-width:600px; margin:0 auto;">
+                <label>Mode de paiement</label>
+                <select id="pay-method" onchange="togglePaymentFields()" style="background:white; margin-bottom:15px;">
+                    <option value="">-- Choisir --</option>
+                    <option value="mvola">Mobile Money (Mvola)</option>
+                    <option value="espece">Espèces (Agence)</option>
+                </select>
+
+                <div id="fields-mvola" style="display:none;">
+                    <input type="text" id="pay-mvola-nom" placeholder="Nom du titulaire Mvola" class="form-group">
+                    <input type="tel" id="pay-mvola-num" placeholder="034 XX XXX XX" class="form-group">
+                    <input type="text" id="pay-mvola-ref" placeholder="Référence Transaction (Reçu SMS)" class="form-group" style="border-color:var(--success);">
+                </div>
+                
+                <div id="fields-espece" style="display:none;">
+                    <input type="text" id="pay-cash-nom" placeholder="Nom du déposant" class="form-group">
+                </div>
+                
+                <div id="fields-montant" style="display:none; margin-top:15px; border-top:1px solid #eee; padding-top:15px;">
+                    <label>Montant envoyé :</label>
+                    <select id="pay-choix-montant" onchange="toggleAutreMontant()">
+                        <option value="50">Acompte (50%)</option>
+                        <option value="100">Totalité (100%)</option>
+                        <option value="autre">Autre montant</option>
+                    </select>
+                    <div id="field-autre-montant" style="display:none; margin-top:10px;">
+                        <input type="number" id="pay-valeur-autre" placeholder="Montant en Ar">
+                    </div>
+
+                    <button onclick="envoyerInfosPaiement()" class="btn-dark" style="width:100%; margin-top:20px; background:#27ae60;">
+                        <i class="fas fa-check-circle"></i> CONFIRMER LE PAIEMENT
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="step-3-download" class="hidden-step" style="text-align:center; margin-top:30px; background:#eafaf1; padding:30px; border-radius:10px;">
+            <h3 style="color:#27ae60;">Paiement enregistré !</h3>
+            <p>Nous attendons la validation de l'administrateur.</p>
+            
+            <div class="otp-loader" id="loader-msg">
+                <div class="spinner"></div> En attente de validation...
             </div>
 
-            <div>
-                <label style="font-weight:bold; display:block; margin-bottom:10px;">2. Détails de réservation :</label>
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <div style="flex:1;">
-                        <label style="font-size:0.8rem;">Date Début</label>
-                        <input type="text" id="res-debut" style="width:100%; padding:10px;" readonly>
-                    </div>
-                    <div style="flex:1;">
-                        <label style="font-size:0.8rem;">Date Fin</label>
-                        <input type="text" id="res-fin" style="width:100%; padding:10px;" readonly>
-                    </div>
-                </div>
-
-                <input type="text" id="res-nom-client" placeholder="Votre nom complet" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc;">
-                
-                <div style="background: #f8fafc; padding: 20px; border-radius: 15px;">
-                    <p>Nombre de jours : <span id="res-jours" style="font-weight:bold;">0</span></p>
-                    <p style="font-size: 1.3rem; font-weight: bold; color: #3498db;">Total : <span id="res-total">0</span> Ar</p>
-                </div>
-
-                <button onclick="envoyerWhatsApp()" class="btn-reserver" style="width:100%; padding:15px; margin-top:20px; font-size:1.1rem; background:#25d366; border:none;">
-                    <i class="fab fa-whatsapp"></i> RÉSERVER SUR WHATSAPP
+            <div style="margin-top:20px;">
+                <label>Code de validation (OTP)</label>
+                <input type="text" id="input-otp-auto" placeholder="---" readonly 
+                       style="text-align:center; font-size:2rem; letter-spacing:5px; width:200px; background:#eee; font-family:monospace; margin: 0 auto; display:block;">
+                <br>
+                <button id="btn-dl-pdf" onclick="telechargerFactureAuto()" class="btn-dark" disabled 
+                        style="background:#95a5a6; cursor:not-allowed; padding: 15px 30px;">
+                    <i class="fas fa-file-pdf"></i> TÉLÉCHARGER FACTURE
                 </button>
             </div>
         </div>
+
     </div>
 </main>
 
-<script>
-    // Récupération des paramètres de l'URL
-    const params = new URLSearchParams(window.location.search);
-    const carId = params.get('id');
-    const carNom = params.get('nom');
-    const carPrix = parseInt(params.get('prix'));
-
-    document.getElementById('res-titre').innerText = "Réserver la " + carNom;
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const calendarEl = document.getElementById('calendrier-dispo');
-        const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'fr',
-            selectable: true,
-            select: function(info) {
-                document.getElementById('res-debut').value = info.startStr;
-                let fin = new Date(info.end);
-                fin.setDate(fin.getDate() - 1);
-                document.getElementById('res-fin').value = fin.toISOString().split('T')[0];
-
-                const jours = Math.ceil((new Date(info.end) - new Date(info.start)) / (1000*60*60*24));
-                document.getElementById('res-jours').innerText = jours;
-                document.getElementById('res-total').innerText = (jours * carPrix).toLocaleString();
-            }
-        });
-        calendar.render();
-    });
-
-    function envoyerWhatsApp() {
-        const nom = document.getElementById('res-nom-client').value;
-        const debut = document.getElementById('res-debut').value;
-        const fin = document.getElementById('res-fin').value;
-        const total = document.getElementById('res-total').innerText;
-
-        if(!nom || !debut) { alert("Veuillez remplir les informations"); return; }
-
-        const message = `Bonjour, je souhaite réserver la ${carNom}.\nDates: du ${debut} au ${fin}.\nClient: ${nom}\nTotal: ${total} Ar.`;
-        const waUrl = `https://wa.me/261325264535?text=${encodeURIComponent(message)}`;
-        window.open(waUrl, '_blank');
-    }
-</script>
-
+<script src="script-reservations.js"></script>
 </body>
 </html>
