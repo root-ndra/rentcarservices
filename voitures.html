@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style-2.css">
 </head>
 <body>
 
@@ -16,13 +15,18 @@
         <img src="" alt="Logo" class="nav-logo" id="header-logo">
         <span id="header-site-name">RentCarServices</span>
     </div>
-    <ul class="nav-links">
-    <li><a href="index.html" class="active">Accueil</a></li>
-    <li><a href="voitures.html">Nos voitures</a></li>
-    <li><a href="divertissement.html">Divertissement</a></li>
-    <li><a href="emplois.html">Emplois</a></li>
-    <li><a href="contact.html">Contact & Avis</a></li>
-    <li><a href="login.html" class="btn-action btn-sec">Portail admin</a></li>
+
+    <div class="burger-menu" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <ul class="nav-links" id="nav-links">
+        <li><a href="index.html" class="active">Accueil</a></li>
+        <li><a href="voitures.html">Nos voitures</a></li>
+        <li><a href="divertissement.html">Divertissement</a></li>
+        <li><a href="emplois.html">Emplois</a></li>
+        <li><a href="contact.html">Contact & Avis</a></li>
+        <li><a href="login.html" class="btn-action btn-sec">Portail admin</a></li>
     </ul>
 </nav>
 
@@ -52,6 +56,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script-voitures.js"></script>
 
+<script>
+    function toggleMenu() {
+        const navLinks = document.getElementById('nav-links');
+        navLinks.classList.toggle('mobile-active');
+    }
+</script>
+
 </body>
 </html>
-
