@@ -17,7 +17,8 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f1f5f9; margin: 0; padding: 0; color: #333; }
         
         /* Navigation */
-        .navbar { background: var(--dark); padding: 15px 20px; color: white; display: flex; justify-content: space-between; align-items: center; }
+        .navbar { background: var(--dark); padding: 15px 20px; color: white; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1000; }
+        .nav-links { list-style: none; margin: 0; padding: 0; display: flex; }
         .nav-links a { color: white; text-decoration: none; font-weight: bold; }
 
         /* Container */
@@ -50,13 +51,41 @@
         .otp-loader { text-align: center; color: var(--primary); font-weight: bold; margin: 15px 0; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- STYLES MENU MOBILE (Ajoutés) --- */
+        .burger-menu { display: none; font-size: 1.5rem; cursor: pointer; color: white; }
+
+        @media (max-width: 768px) {
+            .burger-menu { display: block; }
+            .nav-links { 
+                display: none; 
+                position: absolute; 
+                top: 100%; 
+                left: 0; 
+                width: 100%; 
+                background: var(--dark); 
+                flex-direction: column; 
+                padding: 15px 0; 
+                text-align: center;
+                box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+            }
+            .nav-links.active { display: flex; }
+            .nav-links li { margin: 10px 0; }
+        }
     </style>
 </head>
 <body>
 
 <nav class="navbar">
     <div class="logo-container"><span>RIJA NIAINA CAR SERVICES</span></div>
-    <ul class="nav-links"><li><a href="index.html">Retour catalogue</a></li></ul>
+    
+    <div class="burger-menu" onclick="document.getElementById('nav-menu').classList.toggle('active')">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <ul class="nav-links" id="nav-menu">
+        <li><a href="index.html">Retour catalogue</a></li>
+    </ul>
 </nav>
 
 <main class="container">
