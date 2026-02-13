@@ -6,38 +6,95 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    
     <link rel="stylesheet" href="style-ui.css">
-    <link rel="stylesheet" href="style-2.css">
-
     <style>
-        /* --- STYLE RESPONSIVE DE LA GRILLE VOITURES (3 PC / 2 Tablette / 1 Mobile) --- */
+        /* --- CORRECTION DE LA GRILLE (GRID) --- */
         .catalogue-grid {
             display: grid;
-            gap: 20px;
-            padding: 20px;
-            /* Par défaut (PC/Large écrans) : 3 colonnes */
+            gap: 25px; /* Espace entre les cartes */
+            padding: 20px 0;
+            width: 100%;
+            /* PC : 3 colonnes forcées */
             grid-template-columns: repeat(3, 1fr);
         }
 
-        /* Tablette (environ moins de 992px) */
-        @media (max-width: 992px) {
+        /* Tablette (Max 1024px) : 2 colonnes */
+        @media (max-width: 1024px) {
             .catalogue-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
 
-        /* Mobile (environ moins de 600px) */
-        @media (max-width: 600px) {
+        /* Mobile (Max 768px) : 1 colonne */
+        @media (max-width: 768px) {
             .catalogue-grid {
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Style des cartes pour qu'elles s'adaptent à la grille */
+        .car-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #eee;
+        }
+
+        .car-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .car-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #eee;
+        }
+
+        .car-details {
+            padding: 20px;
+            flex-grow: 1; /* Pousse les boutons vers le bas */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .car-title { font-size: 1.25rem; margin: 0 0 10px; color: #1e293b; font-weight: 700; }
+        .car-specs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; font-size: 0.9rem; color: #64748b; }
+        .spec-tag { background: #f1f5f9; padding: 4px 8px; border-radius: 4px; }
+        .car-price { font-size: 1.3rem; color: #3b82f6; font-weight: bold; margin-top: auto; margin-bottom: 15px; }
+
+        /* Boutons */
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
         
-        /* Ajustement pour que le contenu ne soit pas caché par le header fixe si nécessaire */
-        main.container {
-            margin-top: 20px; 
-            min-height: 60vh;
+        .btn-card {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        .btn-reserver { background: #22c55e; color: white; }
+        .btn-reserver:hover { background: #16a34a; }
+
+        .btn-contact { background: #3b82f6; color: white; }
+        .btn-contact:hover { background: #2563eb; }
+
+        /* État désactivé (Grisé) */
+        .btn-disabled {
+            background: #cbd5e1 !important;
+            color: #64748b !important;
+            cursor: not-allowed;
+            pointer-events: none; /* Empêche le clic */
         }
     </style>
 </head>
@@ -59,14 +116,15 @@
   </ul>
 </nav>
 
-<main class="container">
-    <header style="text-align: center; padding: 40px 0; color: #333;">
-        <h1>Nos Véhicules Disponibles</h1>
-        <p>Découvrez notre flotte et réservez votre trajet idéal.</p>
+<main class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    <header style="text-align: center; padding: 40px 0; margin-bottom:20px;">
+        <h1 style="color: #1e293b;">Nos Véhicules Disponibles</h1>
+        <p style="color: #64748b;">Découvrez notre flotte et réservez votre trajet idéal.</p>
     </header>
 
     <div id="container-voitures" class="catalogue-grid">
-        </div>
+        <p style="text-align:center; grid-column: 1/-1;">Chargement des véhicules...</p>
+    </div>
 </main>
 
 <footer class="site-footer">
@@ -88,23 +146,118 @@
     <div class="modal-content">
         <span class="close-modal" onclick="closeContactModal()">&times;</span>
         <h2 id="contact-car-name">Contact Direct</h2>
-        <p>Besoin d'aide pour ce véhicule ?</p>
+        <p>Ce véhicule nécessite une demande spécifique.</p>
         <div style="font-size: 1.5rem; font-weight: bold; margin: 20px 0;">+261 34 91 207 26</div>
         <div style="display: flex; gap: 10px;">
-            <a href="tel:+261349120726" class="btn-reserver" style="flex:1; text-align:center; text-decoration:none;">Appeler</a>
-            <a href="https://wa.me/261325264535" class="btn-contact" style="flex:1; text-align:center; text-decoration:none; background:#25d366; color:white;">WhatsApp</a>
+            <a href="tel:+261349120726" class="btn-card btn-reserver">Appeler</a>
+            <a href="https://wa.me/261349120726" class="btn-card btn-contact" style="background:#25d366;">WhatsApp</a>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="script-voitures.js"></script>
+<script src="index.js"></script>
 
 <script>
+    // --- Initialisation Supabase (Repris de tes fichiers précédents) ---
+    // Assure-toi que window.supabaseClient est bien initialisé dans index.js ou ici
+    // Si index.js initialise déjà, on utilise cette instance.
+
+    async function chargerVoitures() {
+        const container = document.getElementById('container-voitures');
+        
+        try {
+            // Récupération des données (adapter le nom de la table si besoin, ex: 'voitures')
+            const { data: voitures, error } = await window.supabaseClient
+                .from('voitures')
+                .select('*')
+                .eq('disponible', true); // On suppose qu'on affiche les voitures actives
+
+            if (error) throw error;
+
+            container.innerHTML = '';
+
+            if (!voitures || voitures.length === 0) {
+                container.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">Aucun véhicule disponible pour le moment.</p>';
+                return;
+            }
+
+            voitures.forEach(voiture => {
+                // LOGIQUE D'AFFICHAGE DES BOUTONS
+                let buttonsHtml = '';
+
+                // Vérifie si la voiture est réservable (champ 'reservable' dans la base, true/false)
+                // Si le champ n'existe pas, on considère true par défaut, sinon on utilise la valeur
+                const isReservable = (voiture.reservable !== false); 
+
+                if (isReservable) {
+                    // Cas normal : Bouton Réserver actif
+                    buttonsHtml = `
+                        <a href="reservations.html?id=${voiture.id}" class="btn-card btn-reserver">
+                           Réserver
+                        </a>
+                        <a href="details.html?id=${voiture.id}" class="btn-card btn-contact" style="background:#f1f5f9; color:#333;">
+                           Détails
+                        </a>
+                    `;
+                } else {
+                    // Cas NON réservable : Bouton Réserver grisé + Bouton Contact
+                    buttonsHtml = `
+                        <button class="btn-card btn-disabled">
+                           Réserver
+                        </button>
+                        <button onclick="openContactModal('${voiture.nom.replace(/'/g, "\\'")}')" class="btn-card btn-contact">
+                           <i class="fas fa-comment"></i> Contacter
+                        </button>
+                    `;
+                }
+
+                // Génération de la carte HTML
+                const card = document.createElement('div');
+                card.className = 'car-card';
+                card.innerHTML = `
+                    <img src="${voiture.image_url || 'https://via.placeholder.com/400x250?text=Voiture'}" alt="${voiture.nom}" class="car-image">
+                    <div class="car-details">
+                        <h3 class="car-title">${voiture.nom}</h3>
+                        <div class="car-specs">
+                            <span class="spec-tag"><i class="fas fa-gas-pump"></i> ${voiture.carburant || '-'}</span>
+                            <span class="spec-tag"><i class="fas fa-cogs"></i> ${voiture.transmission || '-'}</span>
+                            <span class="spec-tag"><i class="fas fa-users"></i> ${voiture.places || '5'} places</span>
+                        </div>
+                        <p class="car-price">${voiture.prix_jour ? voiture.prix_jour.toLocaleString() + ' Ar / jour' : 'Sur devis'}</p>
+                        
+                        <div class="btn-group">
+                            ${buttonsHtml}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+        } catch (err) {
+            console.error("Erreur chargement voitures:", err);
+            container.innerHTML = '<p style="color:red; text-align:center; grid-column: 1/-1;">Erreur lors du chargement des données.</p>';
+        }
+    }
+
+    // Gestion du Modal Contact
+    function openContactModal(nomVoiture) {
+        document.getElementById('contact-car-name').innerText = nomVoiture;
+        document.getElementById('modal-contact-only').style.display = 'flex';
+    }
+
+    function closeContactModal() {
+        document.getElementById('modal-contact-only').style.display = 'none';
+    }
+
+    // Menu Mobile
     function toggleMenu() {
         const navMenu = document.getElementById('nav-menu');
         navMenu.classList.toggle('active');
     }
+
+    // Lancer le chargement au démarrage
+    document.addEventListener('DOMContentLoaded', chargerVoitures);
 </script>
 
 </body>
