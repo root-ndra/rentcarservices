@@ -5,249 +5,220 @@
     <title>Catalogue · RentCarServices</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <link rel="stylesheet" href="style-ui.css">
 
     <style>
-        /* --- GRILLE RESPONSIVE --- */
+        /* --- CORRECTION DE LA GRILLE (PC: 3 colonnes) --- */
         .catalogue-grid {
             display: grid;
             gap: 25px;
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-            /* PC par défaut : 3 colonnes */
+            padding: 20px 0;
+            width: 100%;
+            /* PC : 3 colonnes égales */
             grid-template-columns: repeat(3, 1fr);
         }
 
-        /* Tablette (Entre 601px et 1024px) : 2 colonnes */
+        /* Tablette : 2 colonnes */
         @media (max-width: 1024px) {
             .catalogue-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
 
-        /* Mobile (Jusqu'à 600px) : 1 colonne */
-        @media (max-width: 600px) {
+        /* Mobile : 1 colonne */
+        @media (max-width: 768px) {
             .catalogue-grid {
                 grid-template-columns: 1fr;
             }
         }
 
-        /* --- STYLE DES CARTES --- */
+        /* Style des cartes de voitures */
         .car-card {
             background: white;
-            border-radius: 15px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
             border: 1px solid #eee;
+            transition: transform 0.3s;
         }
+
+        .car-card:hover { transform: translateY(-5px); }
 
         .car-image {
             width: 100%;
-            height: 220px;
+            height: 200px;
             object-fit: cover;
+            background: #f0f0f0;
         }
 
-        .car-info {
+        .car-details {
             padding: 20px;
             flex-grow: 1;
-        }
-
-        .car-title { font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; color: #1e293b; }
-        
-        .car-price { 
-            font-size: 1.2rem; 
-            color: #3498db; 
-            font-weight: bold; 
-            margin-bottom: 15px; 
-        }
-
-        /* Boutons */
-        .btn-container {
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            flex-direction: column;
         }
 
-        .btn-base {
+        .car-title { font-size: 1.25rem; margin: 0 0 10px; color: #1e293b; font-weight: 700; }
+        .car-price { font-size: 1.2rem; color: #3b82f6; font-weight: bold; margin-bottom: 15px; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: auto; }
+        
+        .btn-action {
             flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
+            padding: 10px;
+            border-radius: 6px;
             text-align: center;
             text-decoration: none;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 0.9rem;
+            border: none;
         }
 
-        .btn-reserver { background-color: #27ae60; color: white; }
-        .btn-contact { background-color: #3498db; color: white; }
+        .btn-reserver { background: #22c55e; color: white; }
+        .btn-contact { background: #3b82f6; color: white; }
 
-        /* Style pour bouton grisé */
+        /* Style Grisé pour non-réservable */
         .btn-disabled {
-            background-color: #bdc3c7 !important;
-            color: #7f8c8d !important;
+            background: #cbd5e1 !important;
+            color: #64748b !important;
             cursor: not-allowed;
             pointer-events: none;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.7);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
         }
     </style>
 </head>
 <body>
 
 <nav class="navbar">
-  <div class="logo-container">
-    <img src="" alt="Logo" class="nav-logo" id="header-logo">
-    <span id="header-site-name">RentCarServices</span>
-  </div>
-  <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
-  <ul class="nav-links" id="nav-menu">
-    <li><a href="index.html">Accueil</a></li>
-    <li><a href="voitures.html" class="active">Nos voitures</a></li>
-    <li><a href="divertissement.html">Divertissement</a></li>
-    <li><a href="emplois.html">Emplois</a></li>
-    <li><a href="contact.html">Contact & Avis</a></li>
-    <li><a href="login.html" class="btn-action btn-sec">Portail admin</a></li>
-  </ul>
+    <div class="logo-container">
+        <img src="" alt="Logo" class="nav-logo" id="header-logo">
+        <span id="header-site-name">RentCarServices</span>
+    </div>
+    <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+    <ul class="nav-links" id="nav-menu">
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="voitures.html" class="active">Nos voitures</a></li>
+        <li><a href="divertissement.html">Divertissement</a></li>
+        <li><a href="emplois.html">Emplois</a></li>
+        <li><a href="contact.html">Contact & Avis</a></li>
+        <li><a href="login.html" class="btn-action btn-sec">Portail admin</a></li>
+    </ul>
 </nav>
 
-<main>
-    <div style="text-align: center; padding: 50px 20px;">
-        <h1 style="color: #2c3e50;">Notre Flotte Premium</h1>
-        <p style="color: #7f8c8d;">Choisissez le véhicule adapté à vos besoins à Madagascar.</p>
-    </div>
+<main class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    <header style="text-align: center; padding: 40px 0;">
+        <h1>Nos Véhicules Disponibles</h1>
+        <p>Découvrez notre flotte et réservez votre trajet idéal.</p>
+    </header>
 
     <div id="container-voitures" class="catalogue-grid">
-        </div>
+        <p style="text-align:center; grid-column: 1/-1;">Chargement des véhicules...</p>
+    </div>
 </main>
 
-<footer class="site-footer">
-  <div class="footer-content">
-    <h3 id="footer-title">RentCarServices</h3>
-    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address">—</span></p>
-    <p class="footer-phone"><i class="fas fa-phone"></i> <span id="footer-phone">—</span></p>
-    <p class="footer-legal">NIF <span id="footer-nif">-</span> · STAT <span id="footer-stat">-</span></p>
-  </div>
-</footer>
-
-<div class="modal-overlay" id="modal-contact">
+<div class="modal-overlay" id="modal-contact-only" style="display:none;">
     <div class="modal-content">
-        <h2 id="modal-car-name">Contact</h2>
-        <p>Ce véhicule est disponible uniquement sur demande directe.</p>
-        <div style="margin: 20px 0; font-size: 1.2rem; font-weight: bold;">+261 34 91 207 26</div>
-        <div style="display:flex; gap:10px;">
-            <a href="tel:+261349120726" class="btn-base btn-reserver">Appeler</a>
-            <button onclick="closeModal()" class="btn-base" style="background:#eee; color:#333;">Fermer</button>
+        <span class="close-modal" onclick="closeContactModal()">&times;</span>
+        <h2 id="contact-car-name">Contact Direct</h2>
+        <p>Ce véhicule est disponible sur demande spécifique.</p>
+        <div style="font-size: 1.5rem; font-weight: bold; margin: 20px 0;">+261 34 91 207 26</div>
+        <div style="display: flex; gap: 10px;">
+            <a href="tel:+261349120726" class="btn-action btn-reserver">Appeler</a>
+            <a href="https://wa.me/261349120726" class="btn-action btn-contact">WhatsApp</a>
         </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
     let supabaseClient = null;
 
-    async function init() {
+    // Initialisation sécurisée de Supabase
+    async function initSupabase() {
         try {
-            // 1. Charger la config
-            const res = await fetch('supabase-config.json');
-            const config = await res.json();
-            
-            // 2. Initialiser Supabase
+            const response = await fetch('supabase-config.json');
+            const config = await response.json();
             supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseKey);
-            
-            // 3. Charger les voitures
             fetchVoitures();
-        } catch (e) {
-            console.error(e);
-            document.getElementById('container-voitures').innerHTML = "Erreur de connexion à la base de données.";
+        } catch (error) {
+            console.error("Erreur config:", error);
+            document.getElementById('container-voitures').innerHTML = "Erreur de configuration.";
         }
     }
 
     async function fetchVoitures() {
-        const { data, error } = await supabaseClient
-            .from('voitures')
-            .select('*')
-            .eq('disponible', true);
-
-        if (error) {
-            console.error(error);
-            return;
-        }
-
         const container = document.getElementById('container-voitures');
-        container.innerHTML = '';
+        
+        try {
+            // On récupère les voitures actives
+            const { data: voitures, error } = await supabaseClient
+                .from('voitures')
+                .select('*')
+                .eq('disponible', true);
 
-        data.forEach(v => {
-            const isReservable = (v.reservable !== false);
-            
-            let btnAction = '';
-            if (isReservable) {
-                // CAS RÉSERVABLE
-                btnAction = `<a href="reservations.html?id=${v.id}" class="btn-base btn-reserver">Réserver</a>`;
-            } else {
-                // CAS NON RÉSERVABLE
-                btnAction = `
-                    <button class="btn-base btn-disabled">Réserver</button>
-                    <button class="btn-base btn-contact" onclick="openModal('${v.nom}')">Contacter nous</button>
-                `;
+            if (error) throw error;
+
+            container.innerHTML = ''; // Vide le message de chargement
+
+            if (!voitures || voitures.length === 0) {
+                container.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">Aucun véhicule disponible.</p>';
+                return;
             }
 
-            container.innerHTML += `
-                <div class="car-card">
-                    <img src="${v.image_url || 'https://via.placeholder.com/400x220'}" class="car-image">
-                    <div class="car-info">
-                        <div class="car-title">${v.nom}</div>
-                        <div class="car-price">${v.prix_jour ? v.prix_jour.toLocaleString() + ' Ar / jour' : 'Sur devis'}</div>
-                        <div style="font-size:0.85rem; color:#7f8c8d;">
-                            <i class="fas fa-users"></i> ${v.places || 5} places | <i class="fas fa-cogs"></i> ${v.transmission || 'Manuelle'}
-                        </div>
-                        <div class="btn-container">
-                            ${btnAction}
+            voitures.forEach(v => {
+                // Logique : si reservable est false dans la DB
+                const estReservable = (v.reservable !== false);
+                
+                let boutonsHtml = '';
+                if (estReservable) {
+                    boutonsHtml = `
+                        <a href="reservations.html?id=${v.id}" class="btn-action btn-reserver">Réserver</a>
+                        <a href="details.html?id=${v.id}" class="btn-action" style="background:#f1f5f9; color:#333;">Détails</a>
+                    `;
+                } else {
+                    boutonsHtml = `
+                        <button class="btn-action btn-disabled">Réserver</button>
+                        <button onclick="openContactModal('${v.nom.replace(/'/g, "\\'")}')" class="btn-action btn-contact">Contacter nous</button>
+                    `;
+                }
+
+                container.innerHTML += `
+                    <div class="car-card">
+                        <img src="${v.image_url || 'https://via.placeholder.com/400x250'}" class="car-image" alt="${v.nom}">
+                        <div class="car-details">
+                            <h3 class="car-title">${v.nom}</h3>
+                            <p class="car-price">${v.prix_jour ? v.prix_jour.toLocaleString() + ' Ar / jour' : 'Sur devis'}</p>
+                            <div class="btn-group">
+                                ${boutonsHtml}
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-        });
+                `;
+            });
+
+        } catch (err) {
+            console.error("Erreur chargement:", err);
+            container.innerHTML = "Impossible de charger les données.";
+        }
     }
 
-    function openModal(name) {
-        document.getElementById('modal-car-name').innerText = name;
-        document.getElementById('modal-contact').style.display = 'flex';
+    // Gestion du Modal
+    function openContactModal(nom) {
+        document.getElementById('contact-car-name').innerText = nom;
+        document.getElementById('modal-contact-only').style.display = 'flex';
     }
-
-    function closeModal() {
-        document.getElementById('modal-contact').style.display = 'none';
+    function closeContactModal() {
+        document.getElementById('modal-contact-only').style.display = 'none';
     }
 
     function toggleMenu() {
         document.getElementById('nav-menu').classList.toggle('active');
     }
 
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', initSupabase);
 </script>
-
 </body>
 </html>
