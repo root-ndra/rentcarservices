@@ -2,9 +2,10 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Réservation · RentCarServices</title>
+    <title>Finaliser votre réservation · RentCarServices</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="reservations.css">
     
@@ -12,6 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <!-- jsPDF pour la génération de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -39,147 +41,158 @@
         <p>Sélectionnez vos dates et complétez votre demande</p>
     </header>
 
+    <!-- Champs cachés pour les données de la voiture -->
+    <input type="hidden" id="id-voiture-input">
+    <input type="hidden" id="nom-voiture-hidden">
+    <input type="hidden" id="prix-base-input">
+    <input type="hidden" id="ref-voiture-input">
+
     <!-- ÉTAPE 1 : Configuration de la réservation -->
     <section id="step-1-configuration" class="step-section">
         <div class="step-header">
             <span class="step-number">1</span>
-            <h2>Sélection des dates</h2>
+            <h2>Configuration de votre réservation</h2>
         </div>
 
-        <div class="calendar-section">
-            <div id="calendrier-dispo"></div>
-        </div>
-
-        <div class="reservation-form">
-            <input type="hidden" id="id-voiture-input">
-            <input type="hidden" id="nom-voiture-hidden">
-            <input type="hidden" id="prix-base-input">
-
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Date de début</label>
-                    <input type="text" id="date-debut" readonly placeholder="Sélectionnez sur le calendrier">
-                </div>
-                <div class="form-group">
-                    <label>Date de fin</label>
-                    <input type="text" id="date-fin" readonly placeholder="Sélectionnez sur le calendrier">
-                </div>
+        <div class="reservation-grid">
+            <div class="calendar-section">
+                <h3>Sélection des dates</h3>
+                <div id="calendrier-dispo"></div>
             </div>
 
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Votre nom complet</label>
-                    <input type="text" id="loueur-nom" required>
+            <div class="form-section">
+                <h3>Détails de la réservation</h3>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Date de début</label>
+                        <input type="text" id="date-debut" readonly placeholder="Sélectionnez sur le calendrier">
+                    </div>
+                    <div class="form-group">
+                        <label>Date de fin</label>
+                        <input type="text" id="date-fin" readonly placeholder="Sélectionnez sur le calendrier">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Téléphone / WhatsApp</label>
-                    <input type="tel" id="loueur-tel" required placeholder="+261...">
-                </div>
-            </div>
 
-            <div class="form-grid">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Votre nom complet</label>
+                        <input type="text" id="loueur-nom" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Prénom</label>
+                        <input type="text" id="loueur-prenom" required>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Téléphone / WhatsApp</label>
+                        <input type="tel" id="loueur-tel" required placeholder="+261...">
+                    </div>
+                    <div class="form-group">
+                        <label>CIN / Passeport</label>
+                        <input type="text" id="loueur-cin" required>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label>Adresse complète</label>
                     <input type="text" id="loueur-adresse" required>
                 </div>
-                <div class="form-group">
-                    <label>CIN / Passeport</label>
-                    <input type="text" id="loueur-cin" required>
-                </div>
-            </div>
 
-            <!-- Options de formule -->
-            <div class="form-group">
-                <label>Formule de location</label>
-                <div class="radio-group">
-                    <label class="radio-option">
-                        <input type="radio" name="offre" value="jour" checked onchange="calculerPrix()">
-                        <span>Tarif journée (8h-18h)</span>
-                    </label>
-                    <label class="radio-option">
-                        <input type="radio" name="offre" value="nuit" onchange="calculerPrix()">
-                        <span>Tarif nuit (+50%)</span>
-                    </label>
-                    <label class="radio-option">
-                        <input type="radio" name="offre" value="24h" onchange="calculerPrix()">
-                        <span>Tarif 24h (+100%)</span>
-                    </label>
+                <!-- Options de formule -->
+                <div class="options-section">
+                    <h4>Formule de location</h4>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="offre" value="jour" checked onchange="calculerPrix()">
+                            <span>Tarif journée (8h-18h)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="offre" value="nuit" onchange="calculerPrix()">
+                            <span>Tarif nuit (+50%)</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="offre" value="24h" onchange="calculerPrix()">
+                            <span>Tarif 24h (+100%)</span>
+                        </label>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Options supplémentaires -->
-            <div class="options-section">
-                <h3>Options supplémentaires</h3>
-                <div class="checkbox-group">
-                    <label class="checkbox-option">
-                        <input type="checkbox" id="opt-livraison" onchange="calculerPrix()">
-                        <span>Livraison à domicile (+15 000 Ar)</span>
-                    </label>
-                    <label class="checkbox-option">
-                        <input type="checkbox" id="opt-recuperation" onchange="calculerPrix()">
-                        <span>Récupération à domicile (+15 000 Ar)</span>
-                    </label>
+                <!-- Options supplémentaires -->
+                <div class="options-section">
+                    <h4>Options supplémentaires</h4>
+                    <div class="checkbox-group">
+                        <label class="checkbox-option">
+                            <input type="checkbox" id="opt-livraison" onchange="calculerPrix()">
+                            <span>Livraison à domicile (+15 000 Ar)</span>
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" id="opt-recuperation" onchange="calculerPrix()">
+                            <span>Récupération à domicile (+15 000 Ar)</span>
+                        </label>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Code promo -->
-            <div class="promo-section">
-                <div class="form-group">
-                    <label>Code promo (optionnel)</label>
+                <!-- Code promo -->
+                <div class="promo-section">
+                    <h4>Code promo (optionnel)</h4>
                     <div class="promo-input">
                         <input type="text" id="code-promo" placeholder="Entrez votre code">
                         <button type="button" onclick="verifierPromo()" class="btn-promo">Vérifier</button>
                     </div>
                     <span id="msg-promo" class="promo-message"></span>
                 </div>
-            </div>
 
-            <!-- Résumé prix -->
-            <div class="price-summary">
-                <div class="price-details">
-                    <div class="price-line">
-                        <span>Durée : <span id="txt-jours">0</span> jour(s)</span>
-                        <span>Formule : <span id="txt-formule">JOUR</span></span>
-                    </div>
-                    <div class="price-total">
-                        <strong>Total : <span id="prix-total">0</span> Ar</strong>
-                    </div>
-                    <div class="price-acompte">
-                        Acompte (50%) : <span id="prix-acompte">0</span> Ar
-                    </div>
-                </div>
-            </div>
-
-            <!-- Contact d'urgence -->
-            <div class="urgence-section">
-                <h3>Contact d'urgence</h3>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Nom du contact</label>
-                        <input type="text" id="urgence-nom" required>
+                <!-- Contact d'urgence -->
+                <div class="urgence-section">
+                    <h4>Contact d'urgence</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nom du contact</label>
+                            <input type="text" id="urgence-nom" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Téléphone</label>
+                            <input type="tel" id="urgence-tel" required>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>Téléphone</label>
-                        <input type="tel" id="urgence-tel" required>
+                        <label>Adresse du contact</label>
+                        <input type="text" id="urgence-adresse" required>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Adresse du contact</label>
-                    <input type="text" id="urgence-adresse" required>
+
+                <!-- Résumé prix -->
+                <div class="price-summary">
+                    <h4>Résumé de votre réservation</h4>
+                    <div class="price-details">
+                        <div class="price-line">
+                            <span>Durée : <span id="txt-jours">0</span> jour(s)</span>
+                            <span>Formule : <span id="txt-formule">JOUR</span></span>
+                        </div>
+                        <div class="price-total">
+                            <strong>Total : <span id="prix-total">0</span> Ar</strong>
+                        </div>
+                        <div class="price-acompte">
+                            Acompte (50%) : <span id="prix-acompte">0</span> Ar
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Conditions -->
-            <div class="conditions-section">
-                <label class="checkbox-option">
-                    <input type="checkbox" id="check-conditions-step1" required>
-                    <span>J'accepte les <a href="#" target="_blank">conditions générales</a> de location</span>
-                </label>
-            </div>
+                <!-- Conditions -->
+                <div class="conditions-section">
+                    <label class="checkbox-option">
+                        <input type="checkbox" id="check-conditions-step1" required>
+                        <span>J'accepte les <a href="#" target="_blank">conditions générales</a> de location</span>
+                    </label>
+                </div>
 
-            <button onclick="lancerReservationWhatsApp()" class="btn-primary btn-full">
-                <i class="fab fa-whatsapp"></i> Réserver via WhatsApp
-            </button>
+                <button onclick="lancerReservationWhatsApp()" class="btn-primary btn-full">
+                    <i class="fab fa-whatsapp"></i> Réserver via WhatsApp
+                </button>
+            </div>
         </div>
     </section>
 
@@ -212,3 +225,82 @@
                         <input type="tel" id="pay-mvola-num" placeholder="034...">
                     </div>
                 </div>
+                <div class="form-group">
+                    <label>Référence de transaction</label>
+                    <input type="text" id="pay-mvola-ref" placeholder="Référence MVola">
+                </div>
+            </div>
+
+            <!-- Champs Espèces -->
+            <div id="fields-espece" style="display:none;">
+                <div class="form-group">
+                    <label>Nom du payeur</label>
+                    <input type="text" id="pay-cash-nom">
+                </div>
+                <p class="info-text">
+                    <i class="fas fa-info-circle"></i>
+                    Paiement en espèces à effectuer lors de la prise en charge du véhicule.
+                </p>
+            </div>
+
+            <!-- Montant -->
+            <div id="fields-montant" style="display:none;">
+                <div class="form-group">
+                    <label>Montant payé</label>
+                    <select id="pay-choix-montant" onchange="toggleAutreMontant()">
+                        <option value="50">Acompte 50%</option>
+                        <option value="100">Totalité 100%</option>
+                        <option value="autre">Autre montant</option>
+                    </select>
+                </div>
+                <div id="field-autre-montant" class="form-group" style="display:none;">
+                    <label>Montant personnalisé (Ar)</label>
+                    <input type="number" id="pay-valeur-autre" placeholder="0">
+                </div>
+            </div>
+
+            <button onclick="envoyerInfosPaiement()" class="btn-primary btn-full">
+                <i class="fas fa-check"></i> Confirmer le paiement
+            </button>
+        </div>
+    </section>
+
+    <!-- ÉTAPE 3 : Téléchargement -->
+    <section id="step-3-download" class="step-section" style="display:none;">
+        <div class="step-header">
+            <span class="step-number">3</span>
+            <h2>Validation et téléchargement</h2>
+        </div>
+
+        <div class="download-section">
+            <div class="status-info">
+                <div id="loader-msg" class="status-message">
+                    <i class="fas fa-clock"></i> En attente de validation par l'administrateur...
+                </div>
+                
+                <div class="otp-section">
+                    <label>Code de validation (OTP)</label>
+                    <input type="text" id="input-otp-auto" readonly placeholder="En attente...">
+                </div>
+            </div>
+
+            <button id="btn-dl-pdf" onclick="telechargerFactureAuto()" class="btn-primary btn-full" disabled>
+                <i class="fas fa-download"></i> Télécharger la facture
+            </button>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="footer-content">
+        <h3 id="footer-title">RentCarServices</h3>
+        <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address">—</span></p>
+        <p class="footer-phone"><i class="fas fa-phone"></i> <span id="footer-phone">—</span></p>
+        <p class="footer-legal">NIF <span id="footer-nif">-</span> · STAT <span id="footer-stat">-</span></p>
+        <div id="footer-socials" style="margin-top:15px;"></div>
+    </div>
+</footer>
+
+<script src="reservations.js"></script>
+</body>
+</html>
