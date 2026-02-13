@@ -4,85 +4,211 @@
     <meta charset="UTF-8">
     <title>Réservation · RentCarServices</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="reservations.css">
     
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="style-ui.css">
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- FullCalendar -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <!-- jsPDF pour la génération de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body style="background:#f1f5f9;">
+<body>
 
 <nav class="navbar">
     <div class="logo-container">
         <img src="" alt="Logo" class="nav-logo" id="header-logo">
         <span id="header-site-name">RentCarServices</span>
     </div>
-    <ul class="nav-links">
+    <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+    <ul class="nav-links" id="nav-menu">
         <li><a href="index.html">Accueil</a></li>
         <li><a href="voitures.html">Nos voitures</a></li>
+        <li><a href="divertissement.html">Divertissement</a></li>
+        <li><a href="emplois.html">Emplois</a></li>
+        <li><a href="contact.html">Contact & Avis</a></li>
+        <li><a href="login.html" class="btn-action btn-sec">Portail admin</a></li>
     </ul>
 </nav>
 
-<main class="container" style="max-width: 900px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
-    <h2 id="titre-page">Finaliser votre réservation</h2>
-    <hr>
+<main class="reservation-container">
+    <header class="reservation-header">
+        <h1 id="titre-page">Finaliser votre réservation</h1>
+        <p>Sélectionnez vos dates et complétez votre demande</p>
+    </header>
 
-    <div id="step-1-configuration">
-        <div id="calendrier-dispo" style="margin-bottom:20px;"></div>
-        
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <!-- ÉTAPE 1 : Configuration de la réservation -->
+    <section id="step-1-configuration" class="step-section">
+        <div class="step-header">
+            <span class="step-number">1</span>
+            <h2>Sélection des dates</h2>
+        </div>
+
+        <div class="calendar-section">
+            <div id="calendrier-dispo"></div>
+        </div>
+
+        <div class="reservation-form">
             <input type="hidden" id="id-voiture-input">
             <input type="hidden" id="nom-voiture-hidden">
             <input type="hidden" id="prix-base-input">
-            
-            <div class="form-group">
-                <label>Date de début</label>
-                <input type="text" id="date-debut" readonly placeholder="Sélectionnez sur le calendrier">
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Date de début</label>
+                    <input type="text" id="date-debut" readonly placeholder="Sélectionnez sur le calendrier">
+                </div>
+                <div class="form-group">
+                    <label>Date de fin</label>
+                    <input type="text" id="date-fin" readonly placeholder="Sélectionnez sur le calendrier">
+                </div>
             </div>
-            <div class="form-group">
-                <label>Date de fin</label>
-                <input type="text" id="date-fin" readonly placeholder="Sélectionnez sur le calendrier">
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Votre nom complet</label>
+                    <input type="text" id="loueur-nom" required>
+                </div>
+                <div class="form-group">
+                    <label>Téléphone / WhatsApp</label>
+                    <input type="tel" id="loueur-tel" required placeholder="+261...">
+                </div>
             </div>
-            
-            <div class="form-group">
-                <label>Votre Nom</label>
-                <input type="text" id="loueur-nom">
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Adresse complète</label>
+                    <input type="text" id="loueur-adresse" required>
+                </div>
+                <div class="form-group">
+                    <label>CIN / Passeport</label>
+                    <input type="text" id="loueur-cin" required>
+                </div>
             </div>
+
+            <!-- Options de formule -->
             <div class="form-group">
-                <label>Téléphone / WhatsApp</label>
-                <input type="tel" id="loueur-tel">
+                <label>Formule de location</label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="offre" value="jour" checked onchange="calculerPrix()">
+                        <span>Tarif journée (8h-18h)</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="offre" value="nuit" onchange="calculerPrix()">
+                        <span>Tarif nuit (+50%)</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="offre" value="24h" onchange="calculerPrix()">
+                        <span>Tarif 24h (+100%)</span>
+                    </label>
+                </div>
             </div>
+
+            <!-- Options supplémentaires -->
+            <div class="options-section">
+                <h3>Options supplémentaires</h3>
+                <div class="checkbox-group">
+                    <label class="checkbox-option">
+                        <input type="checkbox" id="opt-livraison" onchange="calculerPrix()">
+                        <span>Livraison à domicile (+15 000 Ar)</span>
+                    </label>
+                    <label class="checkbox-option">
+                        <input type="checkbox" id="opt-recuperation" onchange="calculerPrix()">
+                        <span>Récupération à domicile (+15 000 Ar)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Code promo -->
+            <div class="promo-section">
+                <div class="form-group">
+                    <label>Code promo (optionnel)</label>
+                    <div class="promo-input">
+                        <input type="text" id="code-promo" placeholder="Entrez votre code">
+                        <button type="button" onclick="verifierPromo()" class="btn-promo">Vérifier</button>
+                    </div>
+                    <span id="msg-promo" class="promo-message"></span>
+                </div>
+            </div>
+
+            <!-- Résumé prix -->
+            <div class="price-summary">
+                <div class="price-details">
+                    <div class="price-line">
+                        <span>Durée : <span id="txt-jours">0</span> jour(s)</span>
+                        <span>Formule : <span id="txt-formule">JOUR</span></span>
+                    </div>
+                    <div class="price-total">
+                        <strong>Total : <span id="prix-total">0</span> Ar</strong>
+                    </div>
+                    <div class="price-acompte">
+                        Acompte (50%) : <span id="prix-acompte">0</span> Ar
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact d'urgence -->
+            <div class="urgence-section">
+                <h3>Contact d'urgence</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nom du contact</label>
+                        <input type="text" id="urgence-nom" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Téléphone</label>
+                        <input type="tel" id="urgence-tel" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Adresse du contact</label>
+                    <input type="text" id="urgence-adresse" required>
+                </div>
+            </div>
+
+            <!-- Conditions -->
+            <div class="conditions-section">
+                <label class="checkbox-option">
+                    <input type="checkbox" id="check-conditions-step1" required>
+                    <span>J'accepte les <a href="#" target="_blank">conditions générales</a> de location</span>
+                </label>
+            </div>
+
+            <button onclick="lancerReservationWhatsApp()" class="btn-primary btn-full">
+                <i class="fab fa-whatsapp"></i> Réserver via WhatsApp
+            </button>
+        </div>
+    </section>
+
+    <!-- ÉTAPE 2 : Paiement -->
+    <section id="step-2-paiement" class="step-section" style="display:none;">
+        <div class="step-header">
+            <span class="step-number">2</span>
+            <h2>Confirmation du paiement</h2>
         </div>
 
-        <div id="resume-prix" style="margin-top:20px; padding:15px; background:#f8fafc; border-radius:8px;">
-            <strong>Total : <span id="prix-total">0</span> Ar</strong>
-        </div>
+        <div class="payment-form">
+            <div class="form-group">
+                <label>Mode de paiement</label>
+                <select id="pay-method" onchange="togglePaymentFields()">
+                    <option value="">-- Choisir --</option>
+                    <option value="mvola">Mobile Money (MVola)</option>
+                    <option value="espece">Espèces</option>
+                </select>
+            </div>
 
-        <button onclick="lancerReservationWhatsApp()" class="btn-reserver" style="width:100%; padding:15px; margin-top:20px; cursor:pointer; background:#22c55e; color:white; border:none; border-radius:8px; font-weight:bold;">
-            <i class="fab fa-whatsapp"></i> RÉSERVER VIA WHATSAPP
-        </button>
-    </div>
-
-    <div id="step-2-paiement" style="display:none;"></div>
-    <div id="step-3-download" style="display:none;"></div>
-</main>
-
-<script src="script-reservations-1.js"></script>
-
-<script>
-    // Initialisation globale si script-reservations-1.js ne le fait pas
-    async function initResa() {
-        if (typeof supabase !== 'undefined') {
-            const res = await fetch('supabase-config.json');
-            const config = await res.json();
-            window.supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseKey);
-            // Si la fonction chargerDetailsVoiture existe dans ton script-reservations-1.js
-            if (typeof chargerDetailsVoiture === 'function') chargerDetailsVoiture();
-        }
-    }
-    document.addEventListener('DOMContentLoaded', initResa);
-</script>
-</body>
-</html>
+            <!-- Champs MVola -->
+            <div id="fields-mvola" style="display:none;">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nom du titulaire</label>
+                        <input type="text" id="pay-mvola-nom">
+                    </div>
+                    <div class="form-group">
+                        <label>Numéro MVola</label>
+                        <input type="tel" id="pay-mvola-num" placeholder="034...">
+                    </div>
+                </div>

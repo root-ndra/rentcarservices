@@ -2,35 +2,11 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Admin · Dashboard Unifié</title>
+  <title>Admin · Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="style-admin.css">
-  
-  <style>
-    /* Styles pour le dashboard des voitures */
-    .grid-dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 25px; }
-    .car-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; position: relative; border-top: 5px solid transparent; }
-    .car-card:hover { transform: translateY(-5px); }
-    
-    .status-dispo { border-top-color: #2ecc71; } .status-louee { border-top-color: #e74c3c; } .status-maintenance { border-top-color: #f39c12; }
-    .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; color: white; text-transform: uppercase; }
-    .bg-green { background: #2ecc71; } .bg-red { background: #e74c3c; } .bg-orange { background: #f39c12; }
-
-    .card-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
-    .card-body { padding: 20px; }
-    .kpi-row { display: flex; justify-content: space-between; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px; }
-    .kpi-item { text-align: center; flex: 1; }
-    .kpi-val { font-weight: bold; font-size: 1.1rem; color: #2c3e50; }
-    .kpi-label { font-size: 0.8rem; color: #7f8c8d; }
-
-    .card-actions { padding: 15px; background: #f8f9fa; border-top: 1px solid #eee; display: flex; gap: 10px; }
-    .btn-action-card { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.85rem; font-weight: 600; text-align:center; }
-    .btn-maint { background: #f39c12; color: white; } .btn-hist { background: #95a5a6; color: white; } .btn-edit-car { background: #3498db; color: white; }
-    
-    .history-list { list-style: none; padding: 0; margin: 0; }
-    .history-item { border-bottom: 1px solid #eee; padding: 12px 5px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-  </style>
+  <link rel="stylesheet" href="common.css">
+  <link rel="stylesheet" href="admin.css">
 </head>
 <body>
 <div id="admin-content">
@@ -47,24 +23,23 @@
   </header>
 
   <main>
-<nav>
-  <button class="tab-btn active" onclick="window.location.href='admin.html'">
-    <i class="fas fa-chart-line"></i> Dashboard
-  </button>
-  <button class="tab-btn" onclick="window.location.href='admin-reservations.html'">
-    <i class="fas fa-calendar-check"></i> Réservations
-  </button>
-  <button class="tab-btn" onclick="window.location.href='admin-maintenance.html'">
-    <i class="fas fa-tools"></i> Maintenance
-  </button>
-  <button class="tab-btn" onclick="window.location.href='admin-communication.html'">
-    <i class="fas fa-bullhorn"></i> Communication
-  </button>
-  <button class="tab-btn" onclick="window.location.href='admin-emplois.html'">
-    <i class="fas fa-briefcase"></i> Emplois
-  </button>
-</nav>
-
+    <nav>
+      <button class="tab-btn active">
+        <i class="fas fa-chart-line"></i> Dashboard
+      </button>
+      <button class="tab-btn" onclick="window.location.href='admin-reservations.html'">
+        <i class="fas fa-calendar-check"></i> Réservations
+      </button>
+      <button class="tab-btn" onclick="window.location.href='admin-maintenance.html'">
+        <i class="fas fa-tools"></i> Maintenance
+      </button>
+      <button class="tab-btn" onclick="window.location.href='admin-communication.html'">
+        <i class="fas fa-bullhorn"></i> Communication
+      </button>
+      <button class="tab-btn" onclick="window.location.href='admin-emplois.html'">
+        <i class="fas fa-briefcase"></i> Emplois
+      </button>
+    </nav>
 
     <section class="content-area">
       <!-- Section Voitures -->
@@ -94,7 +69,6 @@
 </div>
 
 <!-- MODAUX -->
-
 <!-- Modal Ajout/Modification Voiture -->
 <div class="modal-overlay" id="car-modal">
     <div class="modal-content" style="max-width: 600px;">
@@ -181,4 +155,3 @@
 <script src="admin.js"></script>
 </body>
 </html>
-

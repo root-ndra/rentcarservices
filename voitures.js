@@ -97,12 +97,14 @@ function createCarCard(v) {
   const estReservable = v.reservable !== false;
   const aChauffeur = (v.chauffeur_option === true || v.chauffeur_option === "true");
   
-  // CORRECTION : Utilisation de data-attributes au lieu d'onclick avec guillemets
+  // 🔧 CORRECTION PRINCIPALE : Redirection vers reservations.html avec tous les paramètres nécessaires
   const boutonsHtml = estReservable 
-    ? `<a href="reservations.html?id=${v.id}&nom=${encodeURIComponent(v.nom)}&prix=${v.prix_base}" class="btn-car btn-reserver">
+    ? `<a href="reservations.html?id=${v.id}&nom=${encodeURIComponent(v.nom)}&prix=${v.prix_base}&ref=${encodeURIComponent(v.ref_id || '')}" 
+          class="btn-car btn-reserver">
          <i class="fas fa-calendar-check"></i> Réserver
        </a>`
-    : `<button class="btn-car btn-contact" data-car-name="${v.nom.replace(/"/g, '&quot;')}" onclick="openContactModal(this.dataset.carName)">
+    : `<button class="btn-car btn-contact" data-car-name="${v.nom.replace(/"/g, '&quot;')}" 
+              onclick="openContactModal(this.dataset.carName)">
          <i class="fas fa-phone"></i> Contacter
        </button>`;
 
