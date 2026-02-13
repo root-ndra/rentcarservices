@@ -5,33 +5,62 @@
     <title>Catalogue · RentCarServices</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style-ui.css">
     <link rel="stylesheet" href="style-2.css">
+
+    <style>
+        /* --- STYLE RESPONSIVE DE LA GRILLE VOITURES (3 PC / 2 Tablette / 1 Mobile) --- */
+        .catalogue-grid {
+            display: grid;
+            gap: 20px;
+            padding: 20px;
+            /* Par défaut (PC/Large écrans) : 3 colonnes */
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        /* Tablette (environ moins de 992px) */
+        @media (max-width: 992px) {
+            .catalogue-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Mobile (environ moins de 600px) */
+        @media (max-width: 600px) {
+            .catalogue-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Ajustement pour que le contenu ne soit pas caché par le header fixe si nécessaire */
+        main.container {
+            margin-top: 20px; 
+            min-height: 60vh;
+        }
+    </style>
 </head>
 <body>
 
 <nav class="navbar">
-    <div class="logo-container">
-        <img src="" alt="Logo" class="nav-logo" id="header-logo">
-        <span id="header-site-name">RentCarServices</span>
-    </div>
-
-    <div class="burger-menu" onclick="toggleMenu()">
-        <i class="fas fa-bars"></i>
-    </div>
-
-    <ul class="nav-links" id="nav-links">
-        <li><a href="index.html" class="active">Accueil</a></li>
-        <li><a href="voitures.html">Nos voitures</a></li>
-        <li><a href="divertissement.html">Divertissement</a></li>
-        <li><a href="emplois.html">Emplois</a></li>
-        <li><a href="contact.html">Contact & Avis</a></li>
-        <li><a href="login.html" class="btn-action btn-sec">Portail admin</a></li>
-    </ul>
+  <div class="logo-container">
+    <img src="" alt="Logo" class="nav-logo" id="header-logo">
+    <span id="header-site-name">RentCarServices</span>
+  </div>
+  <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+  <ul class="nav-links" id="nav-menu">
+    <li><a href="index.html">Accueil</a></li>
+    <li><a href="voitures.html" class="active">Nos voitures</a></li>
+    <li><a href="divertissement.html">Divertissement</a></li>
+    <li><a href="emplois.html">Emplois</a></li>
+    <li><a href="contact.html">Contact & Avis</a></li>
+    <li><a href="login.html" class="btn-action btn-sec">Portail admin</a></li>
+  </ul>
 </nav>
 
 <main class="container">
-    <header style="text-align: center; padding: 40px 0; color: white;">
+    <header style="text-align: center; padding: 40px 0; color: #333;">
         <h1>Nos Véhicules Disponibles</h1>
         <p>Découvrez notre flotte et réservez votre trajet idéal.</p>
     </header>
@@ -39,6 +68,21 @@
     <div id="container-voitures" class="catalogue-grid">
         </div>
 </main>
+
+<footer class="site-footer">
+  <div class="footer-content">
+    <h3 id="footer-title">RentCarServices</h3>
+    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address">—</span></p>
+    <p class="footer-phone"><i class="fas fa-phone"></i> <span id="footer-phone">—</span></p>
+    <p class="footer-legal">NIF <span id="footer-nif">-</span> · STAT <span id="footer-stat">-</span></p>
+    <div id="footer-socials" style="margin-top:15px;"></div>
+  </div>
+</footer>
+
+<a class="floating-call-btn" id="cta-hotline" href="tel:+2610000000" aria-label="Appeler RentCarServices">
+  <i class="fas fa-phone"></i>
+  <span>Appeler</span>
+</a>
 
 <div class="modal-overlay" id="modal-contact-only" style="display:none;">
     <div class="modal-content">
@@ -58,8 +102,8 @@
 
 <script>
     function toggleMenu() {
-        const navLinks = document.getElementById('nav-links');
-        navLinks.classList.toggle('mobile-active');
+        const navMenu = document.getElementById('nav-menu');
+        navMenu.classList.toggle('active');
     }
 </script>
 
