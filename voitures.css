@@ -1,0 +1,421 @@
+/* Styles spécifiques à la page catalogue des voitures */
+
+/* Hero Section */
+.hero-catalogue {
+  background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(37,99,235,0.9)), 
+              url('https://i.ibb.co/JR6fhqY8/soarano.png') center/cover;
+  color: white;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero-catalogue h1 {
+  font-size: 3rem;
+  margin: 0 0 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.hero-description {
+  font-size: 1.2rem;
+  color: #e2e8f0;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Section des filtres */
+.filters-section {
+  background: rgba(15,23,42,0.95);
+  padding: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+}
+
+.filters-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  align-items: center;
+}
+
+.filters-container select,
+.filters-container input {
+  padding: 12px 16px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  font-size: 0.95rem;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+}
+
+.filters-container select:focus,
+.filters-container input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(255,255,255,0.15);
+  box-shadow: 0 0 0 3px rgba(26,188,156,0.2);
+}
+
+.filters-container select option {
+  background: #1f2937;
+  color: white;
+}
+
+.filters-container input::placeholder {
+  color: rgba(255,255,255,0.7);
+}
+
+/* Main catalogue */
+.catalogue-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+.catalogue-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 15px 20px;
+  background: rgba(255,255,255,0.9);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(15,23,42,0.1);
+}
+
+.catalogue-stats span {
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.btn-reset {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-reset:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+/* Grille des voitures */
+.catalogue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 25px;
+  margin-bottom: 40px;
+}
+
+/* Placeholder de chargement */
+.loading-placeholder {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: white;
+}
+
+.loading-placeholder i {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  color: var(--accent);
+}
+
+.loading-placeholder p {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+/* Cartes de voitures */
+.car-card {
+  background: rgba(255,255,255,0.95);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 15px 35px rgba(15,23,42,0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.3);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.car-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 25px 50px rgba(15,23,42,0.2);
+}
+
+.car-image-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.car-image {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.car-card:hover .car-image {
+  transform: scale(1.05);
+}
+
+.badge-chauffeur {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+}
+
+.car-body {
+  padding: 25px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.car-body h3 {
+  margin: 0 0 15px;
+  font-size: 1.4rem;
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+.car-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.car-specs span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.car-description {
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  flex-grow: 1;
+  font-size: 0.95rem;
+}
+
+.car-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 20px;
+}
+
+.car-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.price-amount {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.price-period {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.car-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-car {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-reserver {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-reserver:hover {
+  background: #16a085;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(26,188,156,0.3);
+}
+
+.btn-contact {
+  background: #f1f5f9;
+  color: var(--primary-dark);
+  border: 1px solid #e2e8f0;
+}
+
+.btn-contact:hover {
+  background: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+.btn-disabled {
+  background: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Modal contact */
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: var(--primary);
+}
+
+.modal-header i {
+  font-size: 1.5rem;
+}
+
+.contact-info {
+  margin: 20px 0;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+.btn-modal {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.btn-call {
+  background: var(--success);
+  color: white;
+}
+
+.btn-call:hover {
+  background: #22c55e;
+  transform: translateY(-2px);
+}
+
+.btn-whatsapp {
+  background: #25d366;
+  color: white;
+}
+
+.btn-whatsapp:hover {
+  background: #22c55e;
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-catalogue {
+    padding: 60px 20px;
+  }
+  
+  .hero-catalogue h1 {
+    font-size: 2.2rem;
+  }
+  
+  .hero-description {
+    font-size: 1rem;
+  }
+  
+  .filters-container {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .catalogue-main {
+    padding: 20px 15px;
+  }
+  
+  .catalogue-stats {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .catalogue-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .car-body {
+    padding: 20px;
+  }
+  
+  .car-footer {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .car-actions {
+    justify-content: stretch;
+  }
+  
+  .btn-car {
+    flex: 1;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+}

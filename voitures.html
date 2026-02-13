@@ -6,89 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <link rel="stylesheet" href="style-ui.css">
-
-    <style>
-        /* --- CORRECTION DE LA GRILLE (PC: 3 colonnes) --- */
-        .catalogue-grid {
-            display: grid;
-            gap: 25px;
-            padding: 20px 0;
-            width: 100%;
-            /* PC : 3 colonnes égales */
-            grid-template-columns: repeat(3, 1fr);
-        }
-
-        /* Tablette : 2 colonnes */
-        @media (max-width: 1024px) {
-            .catalogue-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        /* Mobile : 1 colonne */
-        @media (max-width: 768px) {
-            .catalogue-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Style des cartes de voitures */
-        .car-card {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            border: 1px solid #eee;
-            transition: transform 0.3s;
-        }
-
-        .car-card:hover { transform: translateY(-5px); }
-
-        .car-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            background: #f0f0f0;
-        }
-
-        .car-details {
-            padding: 20px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .car-title { font-size: 1.25rem; margin: 0 0 10px; color: #1e293b; font-weight: 700; }
-        .car-price { font-size: 1.2rem; color: #3b82f6; font-weight: bold; margin-bottom: 15px; }
-
-        .btn-group { display: flex; gap: 10px; margin-top: auto; }
-        
-        .btn-action {
-            flex: 1;
-            padding: 10px;
-            border-radius: 6px;
-            text-align: center;
-            text-decoration: none;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn-reserver { background: #22c55e; color: white; }
-        .btn-contact { background: #3b82f6; color: white; }
-
-        /* Style Grisé pour non-réservable */
-        .btn-disabled {
-            background: #cbd5e1 !important;
-            color: #64748b !important;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-    </style>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="voitures.css">
 </head>
 <body>
 
@@ -108,117 +27,120 @@
     </ul>
 </nav>
 
-<main class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
-    <header style="text-align: center; padding: 40px 0;">
-        <h1>Nos Véhicules Disponibles</h1>
-        <p>Découvrez notre flotte et réservez votre trajet idéal.</p>
-    </header>
+<header class="hero-catalogue">
+  <div class="hero-content">
+    <h1>Notre Flotte Premium</h1>
+    <p class="hero-description">
+      Découvrez notre sélection de véhicules soigneusement entretenus, 
+      adaptés à tous vos besoins de déplacement à Madagascar.
+    </p>
+  </div>
+</header>
 
-    <div id="container-voitures" class="catalogue-grid">
-        <p style="text-align:center; grid-column: 1/-1;">Chargement des véhicules...</p>
+<section class="filters-section">
+  <div class="filters-container">
+    <select id="filter-type" onchange="filtrerVoitures()">
+      <option value="">Tous les types</option>
+      <option value="Berline">Berline</option>
+      <option value="SUV">SUV</option>
+      <option value="4x4">4x4</option>
+      <option value="Utilitaire">Utilitaire</option>
+      <option value="Minibus">Minibus</option>
+    </select>
+    
+    <select id="filter-transmission" onchange="filtrerVoitures()">
+      <option value="">Transmission</option>
+      <option value="Manuelle">Manuelle</option>
+      <option value="Automatique">Automatique</option>
+    </select>
+    
+    <select id="filter-places" onchange="filtrerVoitures()">
+      <option value="">Nombre de places</option>
+      <option value="2">2 places</option>
+      <option value="4">4 places</option>
+      <option value="5">5 places</option>
+      <option value="7">7 places</option>
+      <option value="9">9+ places</option>
+    </select>
+    
+    <select id="filter-prix" onchange="filtrerVoitures()">
+      <option value="">Gamme de prix</option>
+      <option value="0-50000">0 - 50 000 Ar</option>
+      <option value="50000-100000">50 000 - 100 000 Ar</option>
+      <option value="100000-200000">100 000 - 200 000 Ar</option>
+      <option value="200000+">200 000+ Ar</option>
+    </select>
+    
+    <select id="filter-chauffeur" onchange="filtrerVoitures()">
+      <option value="">Option chauffeur</option>
+      <option value="avec">Avec chauffeur</option>
+      <option value="sans">Sans chauffeur</option>
+    </select>
+    
+    <input type="text" id="search-input" placeholder="Rechercher un véhicule..." oninput="filtrerVoitures()">
+  </div>
+</section>
+
+<main class="catalogue-main">
+  <div class="catalogue-stats">
+    <span id="results-count">Chargement...</span>
+    <button class="btn-reset" onclick="resetFiltres()" style="display:none;">
+      <i class="fas fa-times"></i> Réinitialiser
+    </button>
+  </div>
+  
+  <div id="container-voitures" class="catalogue-grid">
+    <div class="loading-placeholder">
+      <i class="fas fa-car fa-spin"></i>
+      <p>Chargement des véhicules...</p>
     </div>
+  </div>
 </main>
 
-<div class="modal-overlay" id="modal-contact-only" style="display:none;">
-    <div class="modal-content">
-        <span class="close-modal" onclick="closeContactModal()">&times;</span>
-        <h2 id="contact-car-name">Contact Direct</h2>
-        <p>Ce véhicule est disponible sur demande spécifique.</p>
-        <div style="font-size: 1.5rem; font-weight: bold; margin: 20px 0;">+261 34 91 207 26</div>
-        <div style="display: flex; gap: 10px;">
-            <a href="tel:+261349120726" class="btn-action btn-reserver">Appeler</a>
-            <a href="https://wa.me/261349120726" class="btn-action btn-contact">WhatsApp</a>
-        </div>
+<!-- Modal contact direct -->
+<div class="modal-overlay" id="modal-contact-only">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeContactModal()">&times;</span>
+    <div class="modal-header">
+      <i class="fas fa-phone-alt"></i>
+      <h3>Contact Direct</h3>
     </div>
+    <div class="modal-body">
+      <h4 id="contact-car-name">Véhicule</h4>
+      <p>Ce véhicule est disponible sur demande spécifique. Contactez-nous directement pour plus d'informations.</p>
+      <div class="contact-info">
+        <div class="contact-item">
+          <i class="fas fa-phone"></i>
+          <span id="contact-phone">+261 34 91 207 26</span>
+        </div>
+        <div class="contact-item">
+          <i class="fab fa-whatsapp"></i>
+          <span>WhatsApp disponible</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <a id="btn-modal-call" href="tel:+261349120726" class="btn-modal btn-call">
+        <i class="fas fa-phone"></i> Appeler
+      </a>
+      <a id="btn-modal-wa" href="#" target="_blank" class="btn-modal btn-whatsapp">
+        <i class="fab fa-whatsapp"></i> WhatsApp
+      </a>
+    </div>
+  </div>
 </div>
 
+<footer class="site-footer">
+  <div class="footer-content">
+    <h3 id="footer-title">RentCarServices</h3>
+    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address">—</span></p>
+    <p class="footer-phone"><i class="fas fa-phone"></i> <span id="footer-phone">—</span></p>
+    <p class="footer-legal">NIF <span id="footer-nif">-</span> · STAT <span id="footer-stat">-</span></p>
+    <div id="footer-socials" style="margin-top:15px;"></div>
+  </div>
+</footer>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-    let supabaseClient = null;
-
-    // Initialisation sécurisée de Supabase
-    async function initSupabase() {
-        try {
-            const response = await fetch('supabase-config.json');
-            const config = await response.json();
-            supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseKey);
-            fetchVoitures();
-        } catch (error) {
-            console.error("Erreur config:", error);
-            document.getElementById('container-voitures').innerHTML = "Erreur de configuration.";
-        }
-    }
-
-    async function fetchVoitures() {
-        const container = document.getElementById('container-voitures');
-        
-        try {
-            // On récupère les voitures actives
-            const { data: voitures, error } = await supabaseClient
-                .from('voitures')
-                .select('*')
-                .eq('disponible', true);
-
-            if (error) throw error;
-
-            container.innerHTML = ''; // Vide le message de chargement
-
-            if (!voitures || voitures.length === 0) {
-                container.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">Aucun véhicule disponible.</p>';
-                return;
-            }
-
-            voitures.forEach(v => {
-                // Logique : si reservable est false dans la DB
-                const estReservable = (v.reservable !== false);
-                
-                let boutonsHtml = '';
-                if (estReservable) {
-                    boutonsHtml = `
-                        <a href="reservations.html?id=${v.id}" class="btn-action btn-reserver">Réserver</a>
-                        <a href="details.html?id=${v.id}" class="btn-action" style="background:#f1f5f9; color:#333;">Détails</a>
-                    `;
-                } else {
-                    boutonsHtml = `
-                        <button class="btn-action btn-disabled">Réserver</button>
-                        <button onclick="openContactModal('${v.nom.replace(/'/g, "\\'")}')" class="btn-action btn-contact">Contacter nous</button>
-                    `;
-                }
-
-                container.innerHTML += `
-                    <div class="car-card">
-                        <img src="${v.image_url || 'https://via.placeholder.com/400x250'}" class="car-image" alt="${v.nom}">
-                        <div class="car-details">
-                            <h3 class="car-title">${v.nom}</h3>
-                            <p class="car-price">${v.prix_jour ? v.prix_jour.toLocaleString() + ' Ar / jour' : 'Sur devis'}</p>
-                            <div class="btn-group">
-                                ${boutonsHtml}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-        } catch (err) {
-            console.error("Erreur chargement:", err);
-            container.innerHTML = "Impossible de charger les données.";
-        }
-    }
-
-    // Gestion du Modal
-    function openContactModal(nom) {
-        document.getElementById('contact-car-name').innerText = nom;
-        document.getElementById('modal-contact-only').style.display = 'flex';
-    }
-    function closeContactModal() {
-        document.getElementById('modal-contact-only').style.display = 'none';
-    }
-
-    function toggleMenu() {
-        document.getElementById('nav-menu').classList.toggle('active');
-    }
-
-    document.addEventListener('DOMContentLoaded', initSupabase);
-</script>
+<script src="voitures.js"></script>
 </body>
 </html>
