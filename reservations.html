@@ -5,112 +5,84 @@
     <title>Réservation · RentCarServices</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style-ui.css">
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-
-    <link rel="stylesheet" href="style-ui.css">
-
-    <style>
-        body { background-color: #f4f7f6; }
-        .resa-container { max-width: 1000px; margin: 40px auto; padding: 20px; }
-        .resa-card { background: white; border-radius: 20px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        @media (max-width: 768px) { .grid-form { grid-template-columns: 1fr; } }
-        
-        input, select, textarea { 
-            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-top: 5px; box-sizing: border-box;
-        }
-        label { font-weight: bold; color: #34495e; font-size: 0.9rem; }
-        .step-title { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; color: #2c3e50; }
-        .hidden-step { display: none; }
-        
-        .btn-main { 
-            background: #27ae60; color: white; border: none; padding: 15px; width: 100%; 
-            border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.1rem; margin-top: 20px;
-        }
-    </style>
 </head>
-<body>
+<body style="background:#f1f5f9;">
 
 <nav class="navbar">
-  <div class="logo-container">
-    <img src="" alt="Logo" class="nav-logo" id="header-logo">
-    <span id="header-site-name">RentCarServices</span>
-  </div>
-  <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
-  <ul class="nav-links" id="nav-menu">
-    <li><a href="index.html">Accueil</a></li>
-    <li><a href="voitures.html">Nos voitures</a></li>
-    <li><a href="contact.html">Aide</a></li>
-  </ul>
+    <div class="logo-container">
+        <img src="" alt="Logo" class="nav-logo" id="header-logo">
+        <span id="header-site-name">RentCarServices</span>
+    </div>
+    <ul class="nav-links">
+        <li><a href="index.html">Accueil</a></li>
+        <li><a href="voitures.html">Nos voitures</a></li>
+    </ul>
 </nav>
 
-<div class="resa-container">
-    <div class="resa-card">
-        <h2 id="titre-page" class="step-title">Réservation de véhicule</h2>
-        
-        <input type="hidden" id="id-voiture-input">
-        <input type="hidden" id="nom-voiture-hidden">
-        <input type="hidden" id="prix-base-input">
+<main class="container" style="max-width: 900px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+    <h2 id="titre-page">Finaliser votre réservation</h2>
+    <hr>
 
-        <div id="step-1-configuration">
-            <div class="grid-form">
-                <div>
-                    <h3 style="font-size:1.1rem;">1. Dates de location</h3>
-                    <div id="calendrier-dispo" style="margin-bottom:15px; background:#fff; border:1px solid #eee;"></div>
-                    <div style="display:flex; gap:10px;">
-                        <div><label>Début</label><input type="text" id="date-debut" readonly></div>
-                        <div><label>Fin</label><input type="text" id="date-fin" readonly></div>
-                    </div>
-                </div>
-                <div>
-                    <h3 style="font-size:1.1rem;">2. Vos informations</h3>
-                    <input type="text" id="loueur-nom" placeholder="Nom">
-                    <input type="text" id="loueur-prenom" placeholder="Prénom">
-                    <input type="tel" id="loueur-tel" placeholder="Téléphone (WhatsApp)">
-                    <input type="text" id="loueur-adresse" placeholder="Adresse complète">
-                    <input type="text" id="loueur-cin" placeholder="N° CIN ou Passeport">
-                    
-                    <div style="background:#f8f9fa; padding:15px; border-radius:10px; margin-top:20px;">
-                        <strong>Total estimé : <span id="prix-total">0</span> Ar</strong>
-                    </div>
-                    
-                    <button class="btn-main" onclick="lancerReservationWhatsApp()">
-                        <i class="fab fa-whatsapp"></i> Envoyer la demande
-                    </button>
-                </div>
+    <div id="step-1-configuration">
+        <div id="calendrier-dispo" style="margin-bottom:20px;"></div>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <input type="hidden" id="id-voiture-input">
+            <input type="hidden" id="nom-voiture-hidden">
+            <input type="hidden" id="prix-base-input">
+            
+            <div class="form-group">
+                <label>Date de début</label>
+                <input type="text" id="date-debut" readonly placeholder="Sélectionnez sur le calendrier">
+            </div>
+            <div class="form-group">
+                <label>Date de fin</label>
+                <input type="text" id="date-fin" readonly placeholder="Sélectionnez sur le calendrier">
+            </div>
+            
+            <div class="form-group">
+                <label>Votre Nom</label>
+                <input type="text" id="loueur-nom">
+            </div>
+            <div class="form-group">
+                <label>Téléphone / WhatsApp</label>
+                <input type="tel" id="loueur-tel">
             </div>
         </div>
 
-        <div id="step-2-paiement" class="hidden-step">
-            <h3 class="step-title">Finalisation du paiement</h3>
-            <p>Veuillez effectuer le dépôt de l'acompte (50%) pour confirmer.</p>
-            <select id="pay-method" onchange="togglePaymentFields()">
-                <option value="mvola">Mvola</option>
-                <option value="espece">Espèces en Agence</option>
-            </select>
-            <button class="btn-main" onclick="envoyerInfosPaiement()">Confirmer le paiement</button>
+        <div id="resume-prix" style="margin-top:20px; padding:15px; background:#f8fafc; border-radius:8px;">
+            <strong>Total : <span id="prix-total">0</span> Ar</strong>
         </div>
-    </div>
-</div>
 
-<footer class="site-footer">
-  <div class="footer-content">
-    <h3 id="footer-title">RentCarServices</h3>
-    <p><i class="fas fa-map-marker-alt"></i> <span id="footer-address">—</span></p>
-  </div>
-</footer>
+        <button onclick="lancerReservationWhatsApp()" class="btn-reserver" style="width:100%; padding:15px; margin-top:20px; cursor:pointer; background:#22c55e; color:white; border:none; border-radius:8px; font-weight:bold;">
+            <i class="fab fa-whatsapp"></i> RÉSERVER VIA WHATSAPP
+        </button>
+    </div>
+
+    <div id="step-2-paiement" style="display:none;"></div>
+    <div id="step-3-download" style="display:none;"></div>
+</main>
 
 <script src="script-reservations-1.js"></script>
 
 <script>
-    function toggleMenu() {
-        document.getElementById('nav-menu').classList.toggle('active');
+    // Initialisation globale si script-reservations-1.js ne le fait pas
+    async function initResa() {
+        if (typeof supabase !== 'undefined') {
+            const res = await fetch('supabase-config.json');
+            const config = await res.json();
+            window.supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseKey);
+            // Si la fonction chargerDetailsVoiture existe dans ton script-reservations-1.js
+            if (typeof chargerDetailsVoiture === 'function') chargerDetailsVoiture();
+        }
     }
+    document.addEventListener('DOMContentLoaded', initResa);
 </script>
-
 </body>
 </html>
