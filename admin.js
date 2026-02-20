@@ -177,9 +177,10 @@ async function submitCar(event) {
         carburant: document.getElementById('car-carburant').value,
         image_url: document.getElementById('car-image-url').value,
         description: document.getElementById('car-description').value,
-        reservable: document.getElementById('car-reservable').checked,
-        // Option chauffeur envoyée à la base de données
-        chauffeur_option: document.getElementById('car-chauffeur').checked
+        // On convertit le booléen en chaîne de caractères pour s'aligner sur la BDD
+        reservable: document.getElementById('car-reservable').checked ? 'true' : 'false', 
+        // Si la case est cochée, on envoie le texte 'option', sinon on envoie 'non' (ou null selon ce que vous préférez)
+        chauffeur_option: document.getElementById('car-chauffeur').checked ? 'option' : 'non'
     };
 
     let error;
@@ -403,3 +404,4 @@ window.updateMotifs = updateMotifs;
 window.openMaint = openMaint;
 window.sauvegarderMaintenance = sauvegarderMaintenance;
 window.voirHistorique = voirHistorique;
+
